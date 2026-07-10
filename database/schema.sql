@@ -32,11 +32,14 @@ CREATE TABLE users (
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,
     deleted_at DATETIME NULL,
+    restored_by BIGINT UNSIGNED NULL,
+    restored_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_users_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_users_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_users_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_users_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_users_restored_by FOREIGN KEY (restored_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE categories (
@@ -47,11 +50,14 @@ CREATE TABLE categories (
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,
     deleted_at DATETIME NULL,
+    restored_by BIGINT UNSIGNED NULL,
+    restored_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_categories_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_categories_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_categories_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_categories_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_categories_restored_by FOREIGN KEY (restored_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE assets (
@@ -74,12 +80,15 @@ CREATE TABLE assets (
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,
     deleted_at DATETIME NULL,
+    restored_by BIGINT UNSIGNED NULL,
+    restored_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_asset_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
     CONSTRAINT fk_assets_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_assets_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_assets_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_assets_restored_by FOREIGN KEY (restored_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_asset_status (status),
     INDEX idx_asset_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -93,11 +102,14 @@ CREATE TABLE packages (
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,
     deleted_at DATETIME NULL,
+    restored_by BIGINT UNSIGNED NULL,
+    restored_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_packages_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_packages_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_packages_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_packages_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_packages_restored_by FOREIGN KEY (restored_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE package_items (
@@ -127,6 +139,8 @@ CREATE TABLE loans (
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,
     deleted_at DATETIME NULL,
+    restored_by BIGINT UNSIGNED NULL,
+    restored_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_loan_requester FOREIGN KEY (requester_id) REFERENCES users(id),
@@ -134,6 +148,7 @@ CREATE TABLE loans (
     CONSTRAINT fk_loans_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_loans_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_loans_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_loans_restored_by FOREIGN KEY (restored_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_loan_status (status),
     INDEX idx_loan_dates (start_date, end_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -174,6 +189,8 @@ CREATE TABLE repairs (
     updated_by BIGINT UNSIGNED NULL,
     deleted_by BIGINT UNSIGNED NULL,
     deleted_at DATETIME NULL,
+    restored_by BIGINT UNSIGNED NULL,
+    restored_at DATETIME NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_rep_asset FOREIGN KEY (asset_id) REFERENCES assets(id),
@@ -182,6 +199,7 @@ CREATE TABLE repairs (
     CONSTRAINT fk_repairs_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_repairs_updated_by FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT fk_repairs_deleted_by FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_repairs_restored_by FOREIGN KEY (restored_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_repair_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

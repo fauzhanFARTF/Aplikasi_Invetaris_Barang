@@ -221,5 +221,7 @@ function soft_delete(string $table, int $id): void {
 
 /** Pulihkan baris yang sudah di-soft-delete (dipakai halaman Riwayat Terhapus). */
 function restore_record(string $table, int $id): void {
-    db()->prepare("UPDATE $table SET deleted_at = NULL, deleted_by = NULL WHERE id = ?")->execute([$id]);
+    // deleted_by sengaja TIDAK di-null-kan — tetap jadi jejak historis "terakhir
+    // dihapus oleh X", berdampingan dengan restored_by/restored_at yang baru.
+    db()->prepare("UPDATE $table SET deleted_at = NULL, restored_by = ?, restored_at = NOW() WHERE id = ?")->execute([Auth::id(), $id]);
 }
