@@ -19,7 +19,10 @@
                         <img id="photoPreview" src="<?= e($currentPhotoUrl ?? '') ?>" alt="Foto alat" style="width:140px;height:140px;object-fit:cover;border-radius:12px;border:1px solid #E2E8F0;">
                     </div>
                     <div class="flex-grow-1" style="min-width:220px;">
-                        <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo" style="max-width:280px;">
+                            <button type="button" class="btn btn-outline-navy" id="btnOpenCamera" data-testid="btn-open-camera"><i class="fa-solid fa-camera"></i> Ambil dari Kamera</button>
+                        </div>
                         <div class="form-text">JPG, PNG, atau WEBP. Maksimal 3MB.</div>
                         <?php if ($isEdit && $currentPhotoUrl): ?>
                             <div class="form-check mt-2">
@@ -27,6 +30,14 @@
                                 <label class="form-check-label" for="removePhotoCheck">Hapus foto saat ini</label>
                             </div>
                         <?php endif; ?>
+
+                        <div id="cameraPanel" style="display:none;" class="mt-3 p-2 border rounded-3" data-testid="camera-panel">
+                            <video id="cameraVideo" autoplay playsinline muted style="width:100%;max-width:320px;border-radius:8px;background:#000;"></video>
+                            <div class="d-flex gap-2 mt-2">
+                                <button type="button" class="btn btn-primary btn-sm" id="btnCapturePhoto" data-testid="btn-capture-photo"><i class="fa-solid fa-circle-dot"></i> Ambil Foto</button>
+                                <button type="button" class="btn btn-outline-navy btn-sm" id="btnCloseCamera" data-testid="btn-close-camera">Batal</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -122,6 +133,58 @@
                 if (removeCheck) removeCheck.checked = false; // pilih file baru membatalkan "hapus foto"
             };
             reader.readAsDataURL(file);
+        });
+    })();
+
+    // Ambil foto langsung dari kamera (webcam / kamera HP), sebagai alternatif choose file
+    (function () {
+        var btnOpen = document.getElementById('btnOpenCamera');
+        var btnCapture = document.getElementById('btnCapturePhoto');
+        var btnClose = document.getElementById('btnCloseCamera');
+        var panel = document.getElementById('cameraPanel');
+        var video = document.getElementById('cameraVideo');
+        var input = document.getElementById('photoInput');
+        if (!btnOpen) return;
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            btnOpen.disabled = true;
+            btnOpen.title = 'Kamera tidak didukung di browser ini.';
+            return;
+        }
+
+        var stream = null;
+
+        function stopCamera() {
+            if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+            panel.style.display = 'none';
+        }
+
+        btnOpen.addEventListener('click', async function () {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+                panel.style.display = '';
+            } catch (e) {
+                if (window.toast) toast('Tidak bisa mengakses kamera: ' + e.message, 'error');
+            }
+        });
+
+        btnClose.addEventListener('click', stopCamera);
+
+        btnCapture.addEventListener('click', function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(function (blob) {
+                if (!blob) return;
+                var file = new File([blob], 'kamera_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                var dt = new DataTransfer();
+                dt.items.add(file);
+                input.files = dt.files;
+                input.dispatchEvent(new Event('change'));
+                stopCamera();
+            }, 'image/jpeg', 0.9);
         });
     })();
 </script>
