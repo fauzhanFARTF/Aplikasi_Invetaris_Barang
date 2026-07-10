@@ -3,6 +3,7 @@
     <div>
         <h1>Peminjaman <span class="text-mono text-slate" style="font-size:16px;"><?= e($loan['loan_code']) ?></span></h1>
         <p class="subtitle"><?= e($loan['event_name']) ?></p>
+        <?= audit_trail_info($loan) ?>
     </div>
     <div class="d-flex gap-2">
         <a href="<?= BASE_PATH ?>/loans" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>

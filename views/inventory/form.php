@@ -3,6 +3,7 @@
     <div>
         <h1><?= $isEdit ? 'Ubah Alat' : 'Tambah Alat Baru' ?></h1>
         <p class="subtitle">Registrasi aset streaming BMN.</p>
+        <?php if ($isEdit): ?><?= audit_trail_info($asset) ?><?php endif; ?>
     </div>
     <a href="<?= BASE_PATH ?>/inventory" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>

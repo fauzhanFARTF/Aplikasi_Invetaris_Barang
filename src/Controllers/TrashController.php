@@ -18,24 +18,40 @@ function trash_index(): void {
     Auth::requireRole('admin');
     $pdo = db();
     $rows = [];
+    $restoredRows = [];
     foreach (_trash_entities() as $table => $meta) {
-        $stmt = $pdo->query("SELECT t.id, t.{$meta['name_col']} AS label, t.deleted_at, u.name AS deleted_by_name
-                              FROM $table t LEFT JOIN users u ON u.id = t.deleted_by
-                              WHERE t.deleted_at IS NOT NULL ORDER BY t.deleted_at DESC");
+        // deleted_by TIDAK di-null-kan saat restore (lihat restore_record()), jadi baris
+        // yang sudah dipulihkan pun tetap menyimpan jejak siapa yang dulu menghapusnya.
+        $stmt = $pdo->query("SELECT t.id, t.{$meta['name_col']} AS label, t.deleted_at, t.restored_at,
+                              du.name AS deleted_by_name, ru.name AS restored_by_name
+                              FROM $table t
+                              LEFT JOIN users du ON du.id = t.deleted_by
+                              LEFT JOIN users ru ON ru.id = t.restored_by
+                              WHERE t.deleted_at IS NOT NULL OR t.restored_at IS NOT NULL");
         foreach ($stmt->fetchAll() as $r) {
-            $rows[] = [
+            $base = [
                 'type' => $table,
                 'type_label' => $meta['label'],
                 'id' => (int) $r['id'],
                 'label' => $r['label'],
                 'deleted_at' => $r['deleted_at'],
                 'deleted_by_name' => $r['deleted_by_name'],
+                'restored_at' => $r['restored_at'],
+                'restored_by_name' => $r['restored_by_name'],
             ];
+            if ($r['deleted_at']) $rows[] = $base;
+            if ($r['restored_at']) $restoredRows[] = $base;
         }
     }
     usort($rows, fn($a, $b) => strcmp((string)$b['deleted_at'], (string)$a['deleted_at']));
+    usort($restoredRows, fn($a, $b) => strcmp((string)$b['restored_at'], (string)$a['restored_at']));
 
-    layout('main', 'trash/index', ['title' => 'Riwayat Terhapus', 'rows' => $rows, 'currentPath' => '/trash']);
+    layout('main', 'trash/index', [
+        'title' => 'Riwayat Terhapus',
+        'rows' => $rows,
+        'restoredRows' => $restoredRows,
+        'currentPath' => '/trash',
+    ]);
 }
 
 function trash_restore(string $type, string $id): void {

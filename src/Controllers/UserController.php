@@ -40,7 +40,13 @@ function user_create_post(): void {
 
 function user_edit_get(string $id): void {
     Auth::requireRole('admin');
-    $stmt = db()->prepare("SELECT * FROM users WHERE id = ? AND deleted_at IS NULL"); $stmt->execute([(int)$id]);
+    $stmt = db()->prepare("SELECT u.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
+                           FROM users u
+                           LEFT JOIN users cu ON cu.id = u.created_by
+                           LEFT JOIN users uu ON uu.id = u.updated_by
+                           LEFT JOIN users ru ON ru.id = u.restored_by
+                           WHERE u.id = ? AND u.deleted_at IS NULL");
+    $stmt->execute([(int)$id]);
     $user = $stmt->fetch();
     if (!$user) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
     layout('main', 'users/form', ['title' => 'Ubah User', 'user' => $user, 'currentPath' => '/users']);
@@ -121,7 +127,13 @@ function _user_capture(): array {
 
 function category_index(): void {
     Auth::requireRole('admin', 'admin_gudang');
-    $cats = db()->query("SELECT c.*, COUNT(a.id) AS asset_count FROM categories c LEFT JOIN assets a ON a.category_id = c.id WHERE c.deleted_at IS NULL GROUP BY c.id ORDER BY c.name")->fetchAll();
+    $cats = db()->query("SELECT c.*, COUNT(a.id) AS asset_count, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
+                         FROM categories c
+                         LEFT JOIN assets a ON a.category_id = c.id
+                         LEFT JOIN users cu ON cu.id = c.created_by
+                         LEFT JOIN users uu ON uu.id = c.updated_by
+                         LEFT JOIN users ru ON ru.id = c.restored_by
+                         WHERE c.deleted_at IS NULL GROUP BY c.id ORDER BY c.name")->fetchAll();
     layout('main', 'inventory/categories', ['title' => 'Kategori Alat', 'cats' => $cats, 'currentPath' => '/categories']);
 }
 function category_create(): void {

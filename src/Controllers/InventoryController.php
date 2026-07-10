@@ -73,7 +73,12 @@ function inventory_create_post(): void {
 function inventory_edit_get(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM assets WHERE id = ? AND deleted_at IS NULL");
+    $stmt = $pdo->prepare("SELECT a.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
+                           FROM assets a
+                           LEFT JOIN users cu ON cu.id = a.created_by
+                           LEFT JOIN users uu ON uu.id = a.updated_by
+                           LEFT JOIN users ru ON ru.id = a.restored_by
+                           WHERE a.id = ? AND a.deleted_at IS NULL");
     $stmt->execute([(int)$id]);
     $asset = $stmt->fetch();
     if (!$asset) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
