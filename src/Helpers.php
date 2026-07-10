@@ -184,7 +184,7 @@ function status_badge(string $status): string {
 function role_label(string $role): string {
     return [
         'admin' => 'Administrator',
-        'pemohon' => 'Tim Liputan (Pemohon)',
+        'pemohon' => 'Pemohon',
         'supervisor' => 'Kepala Bagian / Supervisor',
         'admin_gudang' => 'Admin Gudang',
     ][$role] ?? $role;

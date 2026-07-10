@@ -11,8 +11,8 @@ echo "Seeding data...\n";
 // -------- Users --------
 $users = [
     ['name' => 'Administrator Sistem', 'email' => 'admin@diskominfo.tangerangkab.go.id', 'password' => 'admin123', 'role' => 'admin',        'phone' => '021-000-1111', 'unit_kerja' => 'Diskominfo — IT'],
-    ['name' => 'Andi Pratama (Tim Liputan)', 'email' => 'andi@diskominfo.tangerangkab.go.id', 'password' => 'pemohon123', 'role' => 'pemohon', 'phone' => '0812-1111-2222', 'unit_kerja' => 'Diskominfo — Multimedia'],
-    ['name' => 'Siti Rahayu (Tim Liputan)', 'email' => 'siti@diskominfo.tangerangkab.go.id', 'password' => 'pemohon123', 'role' => 'pemohon', 'phone' => '0812-3333-4444', 'unit_kerja' => 'Diskominfo — Multimedia'],
+    ['name' => 'Andi Pratama (Pemohon)', 'email' => 'andi@diskominfo.tangerangkab.go.id', 'password' => 'pemohon123', 'role' => 'pemohon', 'phone' => '0812-1111-2222', 'unit_kerja' => 'Diskominfo — Multimedia'],
+    ['name' => 'Siti Rahayu (Pemohon)', 'email' => 'siti@diskominfo.tangerangkab.go.id', 'password' => 'pemohon123', 'role' => 'pemohon', 'phone' => '0812-3333-4444', 'unit_kerja' => 'Diskominfo — Multimedia'],
     ['name' => 'Budi Santoso (Kepala Bagian)', 'email' => 'budi@diskominfo.tangerangkab.go.id', 'password' => 'supervisor123', 'role' => 'supervisor', 'phone' => '0812-5555-6666', 'unit_kerja' => 'Diskominfo — Kabag Publikasi'],
     ['name' => 'Dewi Lestari (Admin Gudang)', 'email' => 'dewi@diskominfo.tangerangkab.go.id', 'password' => 'gudang123', 'role' => 'admin_gudang', 'phone' => '0812-7777-8888', 'unit_kerja' => 'Diskominfo — Gudang Aset'],
 ];
