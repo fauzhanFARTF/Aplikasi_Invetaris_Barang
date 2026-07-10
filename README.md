@@ -3,6 +3,8 @@
 
 Stack: **PHP 8.1+ native · Bootstrap 5.3 · MySQL/MariaDB · Vanilla JS + html5-qrcode**
 
+Repository: <https://github.com/fauzhanFARTF/Aplikasi_Invetaris_Barang>
+
 Aplikasi ini menggunakan **auto-detect BASE_PATH**, sehingga bisa dijalankan di **root domain** (mis. `http://simassta.go.id/`) maupun di **subdirektori** (mis. `http://localhost/simassta-bmn/public/`).
 
 ---
