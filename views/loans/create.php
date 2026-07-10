@@ -82,7 +82,7 @@
                             </div>
                             <?= status_badge($a['status']) ?>
                             <?php if ($photoUrl): ?>
-                                <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" class="asset-thumb rounded d-none" style="width:44px;height:44px;object-fit:cover;" data-testid="asset-photo-<?= (int)$a['id'] ?>">
+                                <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" class="asset-thumb rounded" style="width:44px;height:44px;object-fit:cover;" data-testid="asset-photo-<?= (int)$a['id'] ?>">
                             <?php endif; ?>
                         </label>
                     <?php endforeach; ?>
@@ -122,16 +122,6 @@ function applyAssetFilters() {
 document.getElementById('assetSearch')?.addEventListener('input', applyAssetFilters);
 document.getElementById('assetCategoryFilter')?.addEventListener('change', applyAssetFilters);
 
-// Tampilkan foto alat di sebelah kanan baris saat alat individual dipilih (dicentang)
-function toggleAssetPhoto(checkbox) {
-    const thumb = checkbox.closest('.asset-row')?.querySelector('.asset-thumb');
-    if (thumb) thumb.classList.toggle('d-none', !checkbox.checked);
-}
-document.querySelectorAll('#assetList input[type=checkbox]').forEach(cb => {
-    toggleAssetPhoto(cb);
-    cb.addEventListener('change', () => toggleAssetPhoto(cb));
-});
-
 // Refresh availability when date range changes
 async function refreshAvail() {
     const s = document.getElementById('start_date').value;
@@ -150,7 +140,6 @@ async function refreshAvail() {
             row.style.opacity = '';
             // Do not enable if original status was not Available - check attribute
         }
-        toggleAssetPhoto(cb);
     });
 }
 document.getElementById('start_date').addEventListener('change', refreshAvail);
