@@ -2,6 +2,7 @@
     <div>
         <h1>Perbaikan <span class="text-mono text-slate" style="font-size:16px;"><?= e($repair['repair_code']) ?></span></h1>
         <p class="subtitle"><?= e($repair['asset_name']) ?> · <?= e($repair['bmn_number']) ?></p>
+        <?= audit_trail_info($repair) ?>
     </div>
     <div class="d-flex gap-2">
         <a href="<?= BASE_PATH ?>/repairs" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>

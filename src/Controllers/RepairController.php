@@ -25,12 +25,16 @@ function repair_show(string $id): void {
     $id = (int) $id;
     $pdo = db();
     $stmt = $pdo->prepare("SELECT r.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.brand, a.model, a.serial_number,
-                            u.name AS completed_by_name, l.loan_code, req.name AS requester_name
+                            u.name AS completed_by_name, l.loan_code, req.name AS requester_name,
+                            cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                             FROM repairs r JOIN assets a ON a.id = r.asset_id
                             LEFT JOIN loan_items li ON li.id = r.loan_item_id
                             LEFT JOIN loans l ON l.id = li.loan_id
                             LEFT JOIN users req ON req.id = l.requester_id
                             LEFT JOIN users u ON u.id = r.completed_by
+                            LEFT JOIN users cu ON cu.id = r.created_by
+                            LEFT JOIN users uu ON uu.id = r.updated_by
+                            LEFT JOIN users ru ON ru.id = r.restored_by
                             WHERE r.id = ? AND r.deleted_at IS NULL");
     $stmt->execute([$id]);
     $repair = $stmt->fetch();

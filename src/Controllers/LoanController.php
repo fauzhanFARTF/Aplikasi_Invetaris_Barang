@@ -139,9 +139,14 @@ function loan_show(string $id): void {
     Auth::requireLogin();
     $pdo = db();
     $id = (int) $id;
-    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit, s.name AS supervisor_name
+    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit, s.name AS supervisor_name,
+                           cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM loans l JOIN users u ON u.id = l.requester_id
-                           LEFT JOIN users s ON s.id = l.supervisor_id WHERE l.id = ? AND l.deleted_at IS NULL");
+                           LEFT JOIN users s ON s.id = l.supervisor_id
+                           LEFT JOIN users cu ON cu.id = l.created_by
+                           LEFT JOIN users uu ON uu.id = l.updated_by
+                           LEFT JOIN users ru ON ru.id = l.restored_by
+                           WHERE l.id = ? AND l.deleted_at IS NULL");
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT . '/views/errors/404.php'; return; }

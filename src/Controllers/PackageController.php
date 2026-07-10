@@ -42,7 +42,13 @@ function package_edit_get(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     $id = (int) $id;
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM packages WHERE id = ? AND deleted_at IS NULL"); $stmt->execute([$id]); $package = $stmt->fetch();
+    $stmt = $pdo->prepare("SELECT p.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
+                           FROM packages p
+                           LEFT JOIN users cu ON cu.id = p.created_by
+                           LEFT JOIN users uu ON uu.id = p.updated_by
+                           LEFT JOIN users ru ON ru.id = p.restored_by
+                           WHERE p.id = ? AND p.deleted_at IS NULL");
+    $stmt->execute([$id]); $package = $stmt->fetch();
     if (!$package) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
     $selectedIds = array_map('intval', $pdo->prepare("SELECT asset_id FROM package_items WHERE package_id = ?")->fetchAll(PDO::FETCH_COLUMN) ?: []);
     $s2 = $pdo->prepare("SELECT asset_id FROM package_items WHERE package_id = ?"); $s2->execute([$id]);

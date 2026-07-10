@@ -77,11 +77,21 @@ function run_pending_migrations(PDO $pdo): void {
                 $pdo->exec("ALTER TABLE $table ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
             }
         }
+
+        // Jejak pemulihan (siapa & kapan memulihkan data yang di-soft-delete),
+        // melengkapi created_by/updated_by/deleted_by di atas.
+        foreach ($softDeleteTables as $table) {
+            $col = $pdo->query("SHOW COLUMNS FROM $table LIKE 'restored_at'")->fetch();
+            if ($col) continue;
+            $pdo->exec("ALTER TABLE $table
+                        ADD COLUMN restored_by BIGINT UNSIGNED NULL,
+                        ADD COLUMN restored_at DATETIME NULL");
+        }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
         // just log it so an admin can still apply database/migration_add_asset_price.sql /
-        // database/migration_add_user_photo.sql / database/migration_add_soft_delete.sql
-        // manually if needed.
+        // database/migration_add_user_photo.sql / database/migration_add_soft_delete.sql /
+        // database/migration_add_restore_trail.sql manually if needed.
         error_log('[simassta-bmn] auto-migration check failed: ' . $e->getMessage());
     }
 }
