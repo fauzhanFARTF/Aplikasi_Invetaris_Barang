@@ -55,7 +55,7 @@
                         <td><input type="checkbox" class="form-check-input asset-check" value="<?= (int)$a['id'] ?>" data-testid="check-<?= (int)$a['id'] ?>"></td>
                     <?php endif; ?>
                     <td>
-                        <?php $photoUrl = asset_photo_url($a['photo'] ?? null); ?>
+                        <?php $photoUrl = photo_url($a['photo'] ?? null); ?>
                         <?php if ($photoUrl): ?>
                             <a href="<?= e($photoUrl) ?>" target="_blank" title="Lihat foto ukuran penuh">
                                 <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;">

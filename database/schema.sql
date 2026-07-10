@@ -26,6 +26,7 @@ CREATE TABLE users (
     role ENUM('admin','pemohon','supervisor','admin_gudang') NOT NULL,
     phone VARCHAR(30) NULL,
     unit_kerja VARCHAR(150) NULL,
+    photo VARCHAR(255) NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
