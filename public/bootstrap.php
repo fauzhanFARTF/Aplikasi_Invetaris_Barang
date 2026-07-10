@@ -76,6 +76,7 @@ $routes = [
     ['GET',  '#^/inventory/(\d+)/edit$#',     'inventory_edit_get'],
     ['POST', '#^/inventory/(\d+)/edit$#',     'inventory_edit_post'],
     ['POST', '#^/inventory/(\d+)/retire$#',   'inventory_retire'],
+    ['POST', '#^/inventory/(\d+)/delete$#',   'inventory_delete'],
 
     // Packages
     ['GET',  '#^/packages$#',                 'package_index'],
@@ -97,6 +98,11 @@ $routes = [
     ['GET',  '#^/users/(\d+)/edit$#',         'user_edit_get'],
     ['POST', '#^/users/(\d+)/edit$#',         'user_edit_post'],
     ['POST', '#^/users/(\d+)/toggle$#',       'user_toggle'],
+    ['POST', '#^/users/(\d+)/delete$#',       'user_delete'],
+
+    // Riwayat Terhapus / Trash (admin)
+    ['GET',  '#^/trash$#',                            'trash_index'],
+    ['POST', '#^/trash/([a-z_]+)/(\d+)/restore$#',    'trash_restore'],
 
     // Notifications
     ['GET',  '#^/notifications$#',            'notification_index'],

@@ -5,15 +5,15 @@ declare(strict_types=1);
 function package_index(): void {
     Auth::requireLogin();
     $pdo = db();
-    $packages = $pdo->query("SELECT p.*, COUNT(pi.asset_id) AS item_count FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id GROUP BY p.id ORDER BY p.name")->fetchAll();
+    $packages = $pdo->query("SELECT p.*, COUNT(pi.asset_id) AS item_count FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY p.name")->fetchAll();
     layout('main', 'packages/index', ['title' => 'Paket Alat', 'packages' => $packages, 'currentPath' => '/packages']);
 }
 
 function package_create_get(): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
-    $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' ORDER BY a.name")->fetchAll();
-    $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+    $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
+    $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     layout('main', 'packages/form', ['title' => 'Tambah Paket', 'package' => null, 'assets' => $assets, 'categories' => $categories, 'selectedIds' => [], 'currentPath' => '/packages']);
 }
 
@@ -27,7 +27,7 @@ function package_create_post(): void {
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("INSERT INTO packages (name, description) VALUES (?,?)")->execute([$name, $desc]);
+        $pdo->prepare("INSERT INTO packages (name, description, created_by) VALUES (?,?,?)")->execute([$name, $desc, Auth::id()]);
         $pid = (int) $pdo->lastInsertId();
         $ins = $pdo->prepare("INSERT IGNORE INTO package_items (package_id, asset_id) VALUES (?,?)");
         foreach ($ids as $aid) { $ins->execute([$pid, $aid]); }
@@ -42,13 +42,13 @@ function package_edit_get(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     $id = (int) $id;
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM packages WHERE id = ?"); $stmt->execute([$id]); $package = $stmt->fetch();
+    $stmt = $pdo->prepare("SELECT * FROM packages WHERE id = ? AND deleted_at IS NULL"); $stmt->execute([$id]); $package = $stmt->fetch();
     if (!$package) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
     $selectedIds = array_map('intval', $pdo->prepare("SELECT asset_id FROM package_items WHERE package_id = ?")->fetchAll(PDO::FETCH_COLUMN) ?: []);
     $s2 = $pdo->prepare("SELECT asset_id FROM package_items WHERE package_id = ?"); $s2->execute([$id]);
     $selectedIds = array_map('intval', $s2->fetchAll(PDO::FETCH_COLUMN));
-    $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' ORDER BY a.name")->fetchAll();
-    $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+    $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
+    $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     layout('main', 'packages/form', ['title' => 'Ubah Paket', 'package' => $package, 'assets' => $assets, 'categories' => $categories, 'selectedIds' => $selectedIds, 'currentPath' => '/packages']);
 }
 
@@ -62,7 +62,7 @@ function package_edit_post(string $id): void {
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("UPDATE packages SET name=?, description=? WHERE id=?")->execute([$name, $desc, $id]);
+        $pdo->prepare("UPDATE packages SET name=?, description=?, updated_by=? WHERE id=?")->execute([$name, $desc, Auth::id(), $id]);
         $pdo->prepare("DELETE FROM package_items WHERE package_id = ?")->execute([$id]);
         $ins = $pdo->prepare("INSERT IGNORE INTO package_items (package_id, asset_id) VALUES (?,?)");
         foreach ($ids as $aid) { $ins->execute([$id, $aid]); }
@@ -76,8 +76,8 @@ function package_edit_post(string $id): void {
 function package_delete(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
-    db()->prepare("DELETE FROM packages WHERE id = ?")->execute([(int)$id]);
+    soft_delete('packages', (int)$id);
     log_audit('package.delete', 'package', $id);
-    flash('success', 'Paket dihapus.');
+    flash('success', 'Paket dihapus (bisa dipulihkan lewat Riwayat Terhapus).');
     redirect('/packages');
 }

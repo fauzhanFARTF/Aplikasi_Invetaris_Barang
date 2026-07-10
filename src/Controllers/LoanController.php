@@ -13,7 +13,7 @@ function loan_index(): void {
     // menentukan pill mana yang aktif saat halaman pertama dibuka.
     $status = $_GET['status'] ?? '';
     $params = [];
-    $where = ['1=1'];
+    $where = ['l.deleted_at IS NULL'];
     if ($role === 'pemohon') {
         $where[] = 'l.requester_id = ?';
         $params[] = $uid;
@@ -34,9 +34,9 @@ function loan_index(): void {
 function loan_create_get(): void {
     Auth::requireRole('pemohon', 'admin');
     $pdo = db();
-    $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
-    $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' ORDER BY a.name")->fetchAll();
-    $packages = $pdo->query("SELECT p.*, GROUP_CONCAT(a.name SEPARATOR ', ') AS items FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id LEFT JOIN assets a ON a.id = pi.asset_id WHERE p.is_active = 1 GROUP BY p.id ORDER BY p.name")->fetchAll();
+    $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
+    $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
+    $packages = $pdo->query("SELECT p.*, GROUP_CONCAT(a.name SEPARATOR ', ') AS items FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id LEFT JOIN assets a ON a.id = pi.asset_id WHERE p.is_active = 1 AND p.deleted_at IS NULL GROUP BY p.id ORDER BY p.name")->fetchAll();
 
     layout('main', 'loans/create', [
         'title' => 'Ajukan Peminjaman',
@@ -107,8 +107,8 @@ function loan_create_post(): void {
         if ($bad) throw new RuntimeException('Alat tidak dapat dipinjam (rusak / dihapus): ' . implode(', ', array_column($bad,'name')));
 
         $code = generate_code('LN', 'loans', 'loan_code');
-        $ins = $pdo->prepare("INSERT INTO loans (loan_code, requester_id, event_name, event_location, start_date, end_date, purpose, status) VALUES (?,?,?,?,?,?,?,'Pending')");
-        $ins->execute([$code, Auth::id(), $eventName, $location, $start, $end, $purpose]);
+        $ins = $pdo->prepare("INSERT INTO loans (loan_code, requester_id, event_name, event_location, start_date, end_date, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,'Pending',?)");
+        $ins->execute([$code, Auth::id(), $eventName, $location, $start, $end, $purpose, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
         $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status) VALUES (?,?,?, 'Reserved')");
@@ -141,7 +141,7 @@ function loan_show(string $id): void {
     $id = (int) $id;
     $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit, s.name AS supervisor_name
                            FROM loans l JOIN users u ON u.id = l.requester_id
-                           LEFT JOIN users s ON s.id = l.supervisor_id WHERE l.id = ?");
+                           LEFT JOIN users s ON s.id = l.supervisor_id WHERE l.id = ? AND l.deleted_at IS NULL");
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT . '/views/errors/404.php'; return; }
@@ -185,7 +185,7 @@ function loan_cancel(string $id): void {
 
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("UPDATE loans SET status='Cancelled' WHERE id = ?")->execute([$id]);
+        $pdo->prepare("UPDATE loans SET status='Cancelled', updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
         // Release assets that are still Booked (not yet CheckedOut)
         $pdo->prepare("UPDATE assets SET status = 'Available' WHERE id IN (SELECT asset_id FROM loan_items WHERE loan_id = ? AND item_status IN ('Reserved'))")->execute([$id]);
         $pdo->commit();
@@ -219,9 +219,9 @@ function loan_delete(string $id): void {
     }
 
     try {
-        // loan_items cascade-deletes with the loan; repairs.loan_item_id is set NULL
-        // (repair history itself is preserved, just detached from the deleted loan).
-        $pdo->prepare("DELETE FROM loans WHERE id = ?")->execute([$id]);
+        // Soft delete — baris loan_items tetap ada (diakses lewat loan_id yang sekarang
+        // "tersembunyi"), riwayatnya masih bisa dicek & dipulihkan lewat Riwayat Terhapus.
+        soft_delete('loans', $id);
         log_audit('loan.delete', 'loan', $id, ['code' => $loan['loan_code'], 'status' => $loan['status']]);
         flash('success', "Riwayat peminjaman {$loan['loan_code']} berhasil dihapus.");
     } catch (Throwable $e) {
@@ -238,7 +238,7 @@ function loan_delete_all(): void {
     $in = implode(',', array_fill(0, count($finalStatuses), '?'));
 
     try {
-        $count = $pdo->prepare("SELECT COUNT(*) FROM loans WHERE status IN ($in)");
+        $count = $pdo->prepare("SELECT COUNT(*) FROM loans WHERE status IN ($in) AND deleted_at IS NULL");
         $count->execute($finalStatuses);
         $total = (int) $count->fetchColumn();
 
@@ -247,9 +247,9 @@ function loan_delete_all(): void {
             redirect('/loans');
         }
 
-        // loan_items cascade-deletes with each loan; repairs.loan_item_id is set NULL
-        // (repair history itself is preserved, just detached from the deleted loans).
-        $pdo->prepare("DELETE FROM loans WHERE status IN ($in)")->execute($finalStatuses);
+        // Soft delete massal — tetap bisa dipulihkan lewat Riwayat Terhapus.
+        $pdo->prepare("UPDATE loans SET deleted_at = NOW(), deleted_by = ? WHERE status IN ($in) AND deleted_at IS NULL")
+            ->execute(array_merge([Auth::id()], $finalStatuses));
         log_audit('loan.delete_all', 'loan', null, ['count' => $total, 'statuses' => $finalStatuses]);
         flash('success', "$total riwayat peminjaman berhasil dihapus.");
     } catch (Throwable $e) {
@@ -265,11 +265,11 @@ function approval_index(): void {
     $pdo = db();
     $pending = $pdo->query("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit
                             FROM loans l JOIN users u ON u.id = l.requester_id
-                            WHERE l.status = 'Pending' ORDER BY l.created_at ASC")->fetchAll();
+                            WHERE l.status = 'Pending' AND l.deleted_at IS NULL ORDER BY l.created_at ASC")->fetchAll();
     $decided = $pdo->query("SELECT l.*, u.name AS requester_name, s.name AS supervisor_name
                             FROM loans l JOIN users u ON u.id = l.requester_id
                             LEFT JOIN users s ON s.id = l.supervisor_id
-                            WHERE l.status IN ('Approved','Rejected','CheckedOut','Returned','Completed')
+                            WHERE l.status IN ('Approved','Rejected','CheckedOut','Returned','Completed') AND l.deleted_at IS NULL
                             ORDER BY l.approved_at DESC LIMIT 20")->fetchAll();
     layout('main', 'loans/approvals', [
         'title' => 'Approval Peminjaman',
@@ -300,8 +300,8 @@ function _loan_decide(int $id, string $decision): void {
 
     $pdo->beginTransaction();
     try {
-        $u = $pdo->prepare("UPDATE loans SET status = ?, supervisor_id = ?, approval_note = ?, approved_at = NOW() WHERE id = ?");
-        $u->execute([$decision, Auth::id(), $note, $id]);
+        $u = $pdo->prepare("UPDATE loans SET status = ?, supervisor_id = ?, approval_note = ?, approved_at = NOW(), updated_by = ? WHERE id = ?");
+        $u->execute([$decision, Auth::id(), $note, Auth::id(), $id]);
 
         if ($decision === 'Rejected') {
             // Release assets

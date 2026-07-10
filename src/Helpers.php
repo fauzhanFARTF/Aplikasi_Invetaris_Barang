@@ -210,3 +210,16 @@ function log_audit(string $action, ?string $entityType = null, $entityId = null,
         ]);
     } catch (Throwable $e) { /* ignore */ }
 }
+
+/**
+ * Soft delete satu baris: tandai deleted_at/deleted_by, tidak dihapus permanen.
+ * $table selalu literal hardcoded di tiap call site, bukan input pengguna.
+ */
+function soft_delete(string $table, int $id): void {
+    db()->prepare("UPDATE $table SET deleted_at = NOW(), deleted_by = ? WHERE id = ?")->execute([Auth::id(), $id]);
+}
+
+/** Pulihkan baris yang sudah di-soft-delete (dipakai halaman Riwayat Terhapus). */
+function restore_record(string $table, int $id): void {
+    db()->prepare("UPDATE $table SET deleted_at = NULL, deleted_by = NULL WHERE id = ?")->execute([$id]);
+}

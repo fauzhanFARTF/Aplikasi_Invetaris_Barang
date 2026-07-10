@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 function user_index(): void {
     Auth::requireRole('admin');
-    $users = db()->query("SELECT * FROM users ORDER BY role, name")->fetchAll();
+    $users = db()->query("SELECT * FROM users WHERE deleted_at IS NULL ORDER BY role, name")->fetchAll();
     layout('main', 'users/index', ['title' => 'Manajemen User', 'users' => $users, 'currentPath' => '/users']);
 }
 
@@ -26,8 +26,8 @@ function user_create_post(): void {
         redirect('/users/create');
     }
     try {
-        db()->prepare("INSERT INTO users (name,email,password_hash,role,phone,unit_kerja,photo,is_active) VALUES (?,?,?,?,?,?,?,1)")
-            ->execute([$d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja'], $upload['filename']]);
+        db()->prepare("INSERT INTO users (name,email,password_hash,role,phone,unit_kerja,photo,is_active,created_by) VALUES (?,?,?,?,?,?,?,1,?)")
+            ->execute([$d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja'], $upload['filename'], Auth::id()]);
         log_audit('user.create', 'user', db()->lastInsertId(), ['email' => $d['email']]);
         flash('success', 'User dibuat.');
         redirect('/users');
@@ -40,7 +40,7 @@ function user_create_post(): void {
 
 function user_edit_get(string $id): void {
     Auth::requireRole('admin');
-    $stmt = db()->prepare("SELECT * FROM users WHERE id = ?"); $stmt->execute([(int)$id]);
+    $stmt = db()->prepare("SELECT * FROM users WHERE id = ? AND deleted_at IS NULL"); $stmt->execute([(int)$id]);
     $user = $stmt->fetch();
     if (!$user) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
     layout('main', 'users/form', ['title' => 'Ubah User', 'user' => $user, 'currentPath' => '/users']);
@@ -72,8 +72,8 @@ function user_edit_post(string $id): void {
         $photo = $oldPhoto;
     }
 
-    $sql = "UPDATE users SET name=?, email=?, role=?, phone=?, unit_kerja=?, photo=?";
-    $params = [$d['name'], $d['email'], $d['role'], $d['phone'], $d['unit_kerja'], $photo];
+    $sql = "UPDATE users SET name=?, email=?, role=?, phone=?, unit_kerja=?, photo=?, updated_by=?";
+    $params = [$d['name'], $d['email'], $d['role'], $d['phone'], $d['unit_kerja'], $photo, Auth::id()];
     if (!empty($_POST['password'])) { $sql .= ", password_hash=?"; $params[] = password_hash($_POST['password'], PASSWORD_BCRYPT); }
     $sql .= " WHERE id = ?"; $params[] = (int)$id;
     try {
@@ -87,9 +87,23 @@ function user_edit_post(string $id): void {
 function user_toggle(string $id): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
-    db()->prepare("UPDATE users SET is_active = 1 - is_active WHERE id = ?")->execute([(int)$id]);
+    db()->prepare("UPDATE users SET is_active = 1 - is_active, updated_by = ? WHERE id = ?")->execute([Auth::id(), (int)$id]);
     log_audit('user.toggle', 'user', $id);
     flash('success', 'Status user diubah.');
+    redirect('/users');
+}
+
+function user_delete(string $id): void {
+    Auth::requireRole('admin');
+    Auth::verifyCsrf();
+    $id = (int) $id;
+    if ($id === Auth::id()) {
+        flash('error', 'Tidak bisa menghapus akun Anda sendiri.');
+        redirect('/users');
+    }
+    soft_delete('users', $id);
+    log_audit('user.delete', 'user', $id);
+    flash('success', 'User dihapus (bisa dipulihkan lewat Riwayat Terhapus).');
     redirect('/users');
 }
 
@@ -107,7 +121,7 @@ function _user_capture(): array {
 
 function category_index(): void {
     Auth::requireRole('admin', 'admin_gudang');
-    $cats = db()->query("SELECT c.*, COUNT(a.id) AS asset_count FROM categories c LEFT JOIN assets a ON a.category_id = c.id GROUP BY c.id ORDER BY c.name")->fetchAll();
+    $cats = db()->query("SELECT c.*, COUNT(a.id) AS asset_count FROM categories c LEFT JOIN assets a ON a.category_id = c.id WHERE c.deleted_at IS NULL GROUP BY c.id ORDER BY c.name")->fetchAll();
     layout('main', 'inventory/categories', ['title' => 'Kategori Alat', 'cats' => $cats, 'currentPath' => '/categories']);
 }
 function category_create(): void {
@@ -115,14 +129,14 @@ function category_create(): void {
     Auth::verifyCsrf();
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '');
     if (!$name) { flash('error', 'Nama kategori wajib.'); redirect('/categories'); }
-    try { db()->prepare("INSERT INTO categories (name, description) VALUES (?,?)")->execute([$name, $desc]); flash('success', 'Kategori ditambahkan.'); }
+    try { db()->prepare("INSERT INTO categories (name, description, created_by) VALUES (?,?,?)")->execute([$name, $desc, Auth::id()]); flash('success', 'Kategori ditambahkan.'); }
     catch (Throwable $e) { flash('error', $e->getMessage()); }
     redirect('/categories');
 }
 function category_delete(string $id): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
-    try { db()->prepare("DELETE FROM categories WHERE id = ?")->execute([(int)$id]); flash('success','Kategori dihapus.'); }
+    try { soft_delete('categories', (int)$id); flash('success','Kategori dihapus (bisa dipulihkan lewat Riwayat Terhapus).'); }
     catch (Throwable $e) { flash('error', $e->getMessage()); }
     redirect('/categories');
 }
@@ -210,7 +224,7 @@ function api_asset_search(): void {
     Auth::requireLogin();
     $q = trim($_GET['q'] ?? '');
     $cat = (int) ($_GET['category_id'] ?? 0);
-    $where = ["a.status != 'Retired'"];
+    $where = ["a.status != 'Retired'", "a.deleted_at IS NULL"];
     $params = [];
     if ($q) { $where[] = "(a.name LIKE ? OR a.bmn_number LIKE ? OR a.asset_code LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
     if ($cat) { $where[] = "a.category_id = ?"; $params[] = $cat; }
@@ -220,7 +234,7 @@ function api_asset_search(): void {
 }
 function api_loan_detail(string $id): void {
     Auth::requireLogin();
-    $stmt = db()->prepare("SELECT * FROM loans WHERE id = ?"); $stmt->execute([(int)$id]);
+    $stmt = db()->prepare("SELECT * FROM loans WHERE id = ? AND deleted_at IS NULL"); $stmt->execute([(int)$id]);
     json_response(['loan' => $stmt->fetch() ?: null]);
 }
 function api_unread_notif(): void {
