@@ -73,7 +73,7 @@
                     </div>
                 </div>
                 <div id="assetList" style="max-height:400px; overflow-y:auto;" data-testid="asset-list">
-                    <?php foreach ($assets as $a): ?>
+                    <?php foreach ($assets as $a): $photoUrl = asset_photo_url($a['photo'] ?? null); ?>
                         <label class="d-flex gap-2 align-items-center p-2 border-bottom asset-row" data-name="<?= e(strtolower($a['name'].' '.$a['bmn_number'].' '.$a['asset_code'].' '.($a['category_name'] ?? ''))) ?>" data-category="<?= (int)($a['category_id'] ?? 0) ?>" data-id="<?= (int)$a['id'] ?>">
                             <input type="checkbox" name="asset_ids[]" value="<?= (int)$a['id'] ?>" class="form-check-input" <?= $a['status'] !== 'Available' ? 'disabled' : '' ?> data-testid="asset-<?= (int)$a['id'] ?>">
                             <div class="flex-grow-1">
@@ -81,6 +81,9 @@
                                 <div class="text-slate small text-mono"><?= e($a['bmn_number']) ?> · <?= e($a['asset_code']) ?></div>
                             </div>
                             <?= status_badge($a['status']) ?>
+                            <?php if ($photoUrl): ?>
+                                <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" class="asset-thumb rounded d-none" style="width:44px;height:44px;object-fit:cover;" data-testid="asset-photo-<?= (int)$a['id'] ?>">
+                            <?php endif; ?>
                         </label>
                     <?php endforeach; ?>
                     <div id="assetNoResult" class="text-slate small text-center py-3" style="display:none;">Tidak ada alat yang cocok dengan pencarian.</div>
@@ -119,6 +122,15 @@ function applyAssetFilters() {
 document.getElementById('assetSearch')?.addEventListener('input', applyAssetFilters);
 document.getElementById('assetCategoryFilter')?.addEventListener('change', applyAssetFilters);
 
+// Tampilkan foto alat di sebelah kanan baris saat alat individual dipilih (dicentang)
+function toggleAssetPhoto(checkbox) {
+    const thumb = checkbox.closest('.asset-row')?.querySelector('.asset-thumb');
+    if (thumb) thumb.classList.toggle('d-none', !checkbox.checked);
+}
+document.querySelectorAll('#assetList input[type=checkbox]').forEach(cb => {
+    toggleAssetPhoto(cb);
+    cb.addEventListener('change', () => toggleAssetPhoto(cb));
+});
 
 // Refresh availability when date range changes
 async function refreshAvail() {
@@ -138,6 +150,7 @@ async function refreshAvail() {
             row.style.opacity = '';
             // Do not enable if original status was not Available - check attribute
         }
+        toggleAssetPhoto(cb);
     });
 }
 document.getElementById('start_date').addEventListener('change', refreshAvail);
