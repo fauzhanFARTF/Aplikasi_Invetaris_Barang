@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Alur penyerahan — Admin Gudang memindai barcode untuk menyerahkan aset
 
 function checkout_index(): void {

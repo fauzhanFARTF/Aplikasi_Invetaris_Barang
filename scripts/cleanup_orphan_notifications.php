@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // ==============================================================
 //  SIMASSTA BMN — One-time cleanup for orphaned notifications
 //

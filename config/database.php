@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // PDO singleton
 function db(): PDO {
     static $pdo = null;
