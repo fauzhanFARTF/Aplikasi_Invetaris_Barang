@@ -73,7 +73,7 @@
                     </div>
                 </div>
                 <div id="assetList" style="max-height:400px; overflow-y:auto;" data-testid="asset-list">
-                    <?php foreach ($assets as $a): $photoUrl = asset_photo_url($a['photo'] ?? null); ?>
+                    <?php foreach ($assets as $a): $photoUrl = photo_url($a['photo'] ?? null); ?>
                         <label class="d-flex gap-2 align-items-center p-2 border-bottom asset-row" data-name="<?= e(strtolower($a['name'].' '.$a['bmn_number'].' '.$a['asset_code'].' '.($a['category_name'] ?? ''))) ?>" data-category="<?= (int)($a['category_id'] ?? 0) ?>" data-id="<?= (int)$a['id'] ?>">
                             <input type="checkbox" name="asset_ids[]" value="<?= (int)$a['id'] ?>" class="form-check-input" <?= $a['status'] !== 'Available' ? 'disabled' : '' ?> data-testid="asset-<?= (int)$a['id'] ?>">
                             <div class="flex-grow-1">
