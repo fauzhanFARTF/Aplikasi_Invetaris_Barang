@@ -64,7 +64,7 @@ function inventory_create_post(): void {
         flash('success', 'Alat berhasil ditambahkan.');
         redirect('/inventory');
     } catch (Throwable $e) {
-        delete_asset_photo($upload['filename']); // rollback file kalau insert gagal
+        delete_photo($upload['filename']); // rollback file kalau insert gagal
         flash('error', 'Gagal: ' . $e->getMessage());
         redirect('/inventory/create');
     }
@@ -106,7 +106,7 @@ function inventory_edit_post(string $id): void {
     if ($upload['filename']) {
         $photo = $upload['filename'];
     } elseif (!empty($_POST['remove_photo'])) {
-        delete_asset_photo($oldPhoto);
+        delete_photo($oldPhoto);
         $photo = null;
     } else {
         $photo = $oldPhoto;

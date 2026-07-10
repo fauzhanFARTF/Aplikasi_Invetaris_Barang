@@ -8,6 +8,9 @@ storage/logs/*.log
 # Runtime-uploaded asset photos (seed fixtures cat_*.jpg are kept tracked)
 public/uploads/assets/asset_*
 
+# Runtime-uploaded user photos
+public/uploads/users/user_*
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db

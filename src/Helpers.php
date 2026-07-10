@@ -81,20 +81,21 @@ function generate_code(string $prefix, string $table, string $col = 'loan_code')
 }
 
 /**
- * Bangun URL publik untuk foto aset. Mengembalikan null kalau tidak ada foto.
+ * Bangun URL publik untuk foto (aset atau user) di public/uploads/{$dir}/.
+ * Mengembalikan null kalau tidak ada foto.
  */
-function asset_photo_url(?string $photo): ?string {
+function photo_url(?string $photo, string $dir = 'assets'): ?string {
     if (!$photo) return null;
     $prefix = defined('ASSET_PREFIX') ? ASSET_PREFIX : '';
-    return $prefix . '/uploads/assets/' . rawurlencode($photo);
+    return $prefix . '/uploads/' . $dir . '/' . rawurlencode($photo);
 }
 
 /**
- * Tangani upload foto dari $_FILES[$field]. Mengembalikan array:
+ * Tangani upload foto dari $_FILES[$field] ke public/uploads/{$dir}/. Mengembalikan array:
  *  ['filename' => string|null, 'error' => string|null]
  * 'filename' adalah null jika tidak ada file baru yang diupload (bukan error).
  */
-function handle_photo_upload(string $field, ?string $oldPhoto = null): array {
+function handle_photo_upload(string $field, ?string $oldPhoto = null, string $dir = 'assets', string $prefix = 'asset'): array {
     if (empty($_FILES[$field]) || ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return ['filename' => null, 'error' => null]; // Tidak ada file baru diupload
     }
@@ -121,12 +122,12 @@ function handle_photo_upload(string $field, ?string $oldPhoto = null): array {
         return ['filename' => null, 'error' => 'Format foto harus JPG, PNG, atau WEBP.'];
     }
 
-    $dir = APP_ROOT . '/public/uploads/assets';
-    if (!is_dir($dir)) { @mkdir($dir, 0775, true); }
+    $uploadDir = APP_ROOT . '/public/uploads/' . $dir;
+    if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0775, true); }
 
     $ext = $allowed[$mime];
-    $filename = 'asset_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-    $dest = $dir . '/' . $filename;
+    $filename = $prefix . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $dest = $uploadDir . '/' . $filename;
 
     if (!move_uploaded_file($file['tmp_name'], $dest)) {
         return ['filename' => null, 'error' => 'Gagal menyimpan file foto ke server.'];
@@ -134,7 +135,7 @@ function handle_photo_upload(string $field, ?string $oldPhoto = null): array {
 
     // Hapus foto lama supaya tidak menumpuk file sampah
     if ($oldPhoto) {
-        $oldPath = $dir . '/' . basename($oldPhoto);
+        $oldPath = $uploadDir . '/' . basename($oldPhoto);
         if (is_file($oldPath)) { @unlink($oldPath); }
     }
 
@@ -142,11 +143,11 @@ function handle_photo_upload(string $field, ?string $oldPhoto = null): array {
 }
 
 /**
- * Hapus file foto aset dari disk (dipakai saat user memilih "hapus foto").
+ * Hapus file foto (aset atau user) dari disk (dipakai saat user memilih "hapus foto").
  */
-function delete_asset_photo(?string $photo): void {
+function delete_photo(?string $photo, string $dir = 'assets'): void {
     if (!$photo) return;
-    $path = APP_ROOT . '/public/uploads/assets/' . basename($photo);
+    $path = APP_ROOT . '/public/uploads/' . $dir . '/' . basename($photo);
     if (is_file($path)) { @unlink($path); }
 }
 

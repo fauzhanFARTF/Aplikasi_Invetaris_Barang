@@ -20,13 +20,22 @@ function user_create_post(): void {
     if (!$d['name'] || !$d['email'] || !$d['role'] || empty($_POST['password'])) {
         flash('error', 'Nama, email, role, dan password wajib.'); redirect('/users/create');
     }
+    $upload = handle_photo_upload('photo', null, 'users', 'user');
+    if ($upload['error']) {
+        flash('error', $upload['error']);
+        redirect('/users/create');
+    }
     try {
-        db()->prepare("INSERT INTO users (name,email,password_hash,role,phone,unit_kerja,is_active) VALUES (?,?,?,?,?,?,1)")
-            ->execute([$d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja']]);
+        db()->prepare("INSERT INTO users (name,email,password_hash,role,phone,unit_kerja,photo,is_active) VALUES (?,?,?,?,?,?,?,1)")
+            ->execute([$d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja'], $upload['filename']]);
         log_audit('user.create', 'user', db()->lastInsertId(), ['email' => $d['email']]);
         flash('success', 'User dibuat.');
         redirect('/users');
-    } catch (Throwable $e) { flash('error', $e->getMessage()); redirect('/users/create'); }
+    } catch (Throwable $e) {
+        delete_photo($upload['filename'], 'users'); // rollback file kalau insert gagal
+        flash('error', $e->getMessage());
+        redirect('/users/create');
+    }
 }
 
 function user_edit_get(string $id): void {
@@ -41,8 +50,30 @@ function user_edit_post(string $id): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
     $d = _user_capture();
-    $sql = "UPDATE users SET name=?, email=?, role=?, phone=?, unit_kerja=?";
-    $params = [$d['name'], $d['email'], $d['role'], $d['phone'], $d['unit_kerja']];
+
+    $stmt = db()->prepare("SELECT photo FROM users WHERE id = ?");
+    $stmt->execute([(int)$id]);
+    $existing = $stmt->fetch();
+    if (!$existing) { flash('error', 'User tidak ditemukan.'); redirect('/users'); }
+    $oldPhoto = $existing['photo'];
+
+    $upload = handle_photo_upload('photo', $oldPhoto, 'users', 'user');
+    if ($upload['error']) {
+        flash('error', $upload['error']);
+        redirect('/users/' . (int)$id . '/edit');
+    }
+
+    if ($upload['filename']) {
+        $photo = $upload['filename'];
+    } elseif (!empty($_POST['remove_photo'])) {
+        delete_photo($oldPhoto, 'users');
+        $photo = null;
+    } else {
+        $photo = $oldPhoto;
+    }
+
+    $sql = "UPDATE users SET name=?, email=?, role=?, phone=?, unit_kerja=?, photo=?";
+    $params = [$d['name'], $d['email'], $d['role'], $d['phone'], $d['unit_kerja'], $photo];
     if (!empty($_POST['password'])) { $sql .= ", password_hash=?"; $params[] = password_hash($_POST['password'], PASSWORD_BCRYPT); }
     $sql .= " WHERE id = ?"; $params[] = (int)$id;
     try {
