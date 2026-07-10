@@ -1,0 +1,51 @@
+<?php
+// PDO singleton
+function db(): PDO {
+    static $pdo = null;
+    if ($pdo === null) {
+        // Prefer unix socket if available; fallback to TCP
+        if (defined('DB_SOCKET') && file_exists(DB_SOCKET)) {
+            $dsn = 'mysql:unix_socket=' . DB_SOCKET . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+        } else {
+            $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+        }
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+        run_pending_migrations($pdo);
+    }
+    return $pdo;
+}
+
+// Self-healing migration runner — keeps databases created before the "Lost/Hilang"
+// feature was added in sync automatically, so no manual SQL step is ever required.
+// Cheap SHOW COLUMNS check on every request; ALTER only runs once, the first time
+// it detects the old schema, then never triggers again.
+function run_pending_migrations(PDO $pdo): void {
+    static $checked = false;
+    if ($checked) return; // avoid re-checking more than once per request
+    $checked = true;
+    try {
+        $col = $pdo->query("SHOW COLUMNS FROM loan_items LIKE 'item_status'")->fetch();
+        if ($col && strpos($col['Type'], 'ReturnedLost') === false) {
+            $pdo->exec("ALTER TABLE assets MODIFY COLUMN status ENUM('Available','Booked','CheckedOut','Damaged','Retired','Lost') NOT NULL DEFAULT 'Available'");
+            $pdo->exec("ALTER TABLE loan_items
+                        MODIFY COLUMN return_condition ENUM('Good','Damaged','Lost') NULL,
+                        MODIFY COLUMN item_status ENUM('Reserved','CheckedOut','ReturnedGood','ReturnedDamaged','ReturnedLost','InRepair','Restored') NOT NULL DEFAULT 'Reserved'");
+        }
+
+        $priceCol = $pdo->query("SHOW COLUMNS FROM assets LIKE 'purchase_price'")->fetch();
+        if (!$priceCol) {
+            $pdo->exec("ALTER TABLE assets
+                        ADD COLUMN purchase_price DECIMAL(15,2) NULL COMMENT 'Harga perolehan (harga dulu / beli)' AFTER photo,
+                        ADD COLUMN purchase_date DATE NULL COMMENT 'Tanggal perolehan/pembelian' AFTER purchase_price,
+                        ADD COLUMN current_value DECIMAL(15,2) NULL COMMENT 'Nilai sekarang / nilai buku saat ini' AFTER purchase_date");
+        }
+    } catch (Throwable $e) {
+        // Never let a migration hiccup break the app (e.g. limited DB privileges) —
+        // just log it so an admin can still apply database/migration_add_asset_price.sql manually if needed.
+        error_log('[simassta-bmn] auto-migration check failed: ' . $e->getMessage());
+    }
+}

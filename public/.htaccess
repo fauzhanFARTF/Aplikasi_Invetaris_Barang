@@ -1,0 +1,19 @@
+# SIMASSTA BMN — Apache .htaccess
+# Sederhana agar kompatibel dengan XAMPP versi lama maupun baru.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Kalau file/direktori tidak ada → serahkan ke index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Blokir akses langsung ke dotfiles (mis. .env)
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+DirectoryIndex index.php

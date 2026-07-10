@@ -1,0 +1,110 @@
+<?php
+$user = Auth::user();
+$currentPath = $currentPath ?? '/';
+$unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= e($title ?? 'Dashboard') ?> · <?= e(APP_NAME) ?></title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="<?= ASSET_PREFIX ?>/assets/css/app.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= ASSET_PREFIX ?>/assets/img/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= ASSET_PREFIX ?>/assets/img/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= ASSET_PREFIX ?>/assets/img/favicon-180.png">
+    <link rel="shortcut icon" href="<?= ASSET_PREFIX ?>/assets/img/favicon.ico">
+</head>
+<body>
+<div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop" data-testid="sidebar-backdrop"></div>
+    <aside class="sidebar" id="sidebar" data-testid="sidebar">
+        <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Tutup menu" data-testid="btn-sidebar-close"><i class="fa-solid fa-xmark"></i></button>
+        <div class="brand">
+            <div class="brand-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
+            <div>
+                <div class="brand-title">SIMASSTA BMN</div>
+                <div class="brand-sub">Diskominfo · Kab. Tangerang</div>
+            </div>
+        </div>
+
+        <div class="nav-section">Menu</div>
+        <a href="<?= BASE_PATH ?>/dashboard" class="nav-item <?= active('/dashboard', $currentPath) ?>" data-testid="nav-dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+        <a href="<?= BASE_PATH ?>/loans" class="nav-item <?= active('/loans', $currentPath) ?>" data-testid="nav-loans"><i class="fa-solid fa-clipboard-list"></i> Peminjaman</a>
+
+        <?php if (in_array($user['role'], ['supervisor','admin'])): ?>
+            <a href="<?= BASE_PATH ?>/approvals" class="nav-item <?= active('/approvals', $currentPath) ?>" data-testid="nav-approvals"><i class="fa-solid fa-check-double"></i> Approval</a>
+        <?php endif; ?>
+
+        <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+            <div class="nav-section">Gudang</div>
+            <a href="<?= BASE_PATH ?>/checkout" class="nav-item <?= active('/checkout', $currentPath) ?>" data-testid="nav-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Penyerahan</a>
+            <a href="<?= BASE_PATH ?>/checkin" class="nav-item <?= active('/checkin', $currentPath) ?>" data-testid="nav-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i> Pengembalian</a>
+            <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i> Perbaikan</a>
+        <?php endif; ?>
+
+        <?php if (in_array($user['role'], ['admin_gudang','admin','supervisor'])): ?>
+            <div class="nav-section">Master Data</div>
+            <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Alat / Aset</a>
+            <a href="<?= BASE_PATH ?>/packages" class="nav-item <?= active('/packages', $currentPath) ?>" data-testid="nav-packages"><i class="fa-solid fa-cubes"></i> Paket Alat</a>
+            <a href="<?= BASE_PATH ?>/categories" class="nav-item <?= active('/categories', $currentPath) ?>" data-testid="nav-categories"><i class="fa-solid fa-tags"></i> Kategori</a>
+        <?php endif; ?>
+
+        <?php if ($user['role'] === 'admin'): ?>
+            <div class="nav-section">Administrasi</div>
+            <a href="<?= BASE_PATH ?>/users" class="nav-item <?= active('/users', $currentPath) ?>" data-testid="nav-users"><i class="fa-solid fa-user-shield"></i> Manajemen User</a>
+        <?php endif; ?>
+
+        <div class="nav-section">Akun</div>
+        <a href="<?= BASE_PATH ?>/profile" class="nav-item <?= active('/profile', $currentPath) ?>" data-testid="nav-profile"><i class="fa-solid fa-user"></i> Profil Saya</a>
+        <form method="POST" action="<?= BASE_PATH ?>/logout" style="margin-top:8px;">
+            <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+            <button type="submit" class="nav-item" style="border:0;background:transparent;width:100%;text-align:left;cursor:pointer;color:#F87171;" data-testid="nav-logout">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+            </button>
+        </form>
+    </aside>
+
+    <div class="main-wrap">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-2 min-w-0">
+                <button type="button" class="menu-toggle" id="menuToggle" aria-label="Buka menu" data-testid="btn-menu-toggle"><i class="fa-solid fa-bars"></i></button>
+                <div class="min-w-0">
+                    <h1 class="page-title"><?= e($title ?? '') ?></h1>
+                    <div class="breadcrumbs"><?= e(APP_NAME) ?></div>
+                </div>
+            </div>
+            <div class="top-actions">
+                <a href="<?= BASE_PATH ?>/notifications" class="bell" data-testid="notif-bell" title="Notifikasi">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="dot" id="bell-count" style="<?= $unread ? '' : 'display:none;' ?>" data-testid="bell-count"><?= $unread ?></span>
+                </a>
+                <div class="user-chip" data-testid="user-chip">
+                    <div class="av"><?= e(strtoupper(mb_substr($user['name'],0,1))) ?></div>
+                    <div class="who"><div><?= e($user['name']) ?></div><div class="role"><?= e(role_label($user['role'])) ?></div></div>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-body">
+            <?php if ($msg = flash('success')): ?>
+                <div class="alert alert-success autoclose" data-testid="flash-success"><i class="fa-solid fa-circle-check me-2"></i><?= e($msg) ?></div>
+            <?php endif; ?>
+            <?php if ($msg = flash('error')): ?>
+                <div class="alert alert-danger autoclose" data-testid="flash-error"><i class="fa-solid fa-triangle-exclamation me-2"></i><?= e($msg) ?></div>
+            <?php endif; ?>
+
+            <?= $content ?>
+        </main>
+    </div>
+</div>
+
+<script>window.BASE_PATH = <?= json_encode(BASE_PATH) ?>;</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= ASSET_PREFIX ?>/assets/js/live-search.js"></script>
+<script src="<?= ASSET_PREFIX ?>/assets/js/app.js"></script>
+</body>
+</html>
