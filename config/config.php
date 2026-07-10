@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Polyfills for PHP 7.4 (functions added in PHP 8.0)
 if (!function_exists('str_starts_with')) {
     function str_starts_with($haystack, $needle) {

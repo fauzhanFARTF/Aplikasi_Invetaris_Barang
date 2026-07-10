@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Simple mailer: writes email to storage/emails/ (log mode). Swap to SMTP later.
 class Mailer {
     public static function send(string $toEmail, string $toName, string $subject, string $htmlBody): bool {

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Auth controllers
 
 function auth_login_get(): void {

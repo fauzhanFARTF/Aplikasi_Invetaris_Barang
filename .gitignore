@@ -1,0 +1,13 @@
+# Environment secrets — copy .env.example to .env locally, never commit real .env
+.env
+
+# Runtime-generated email logs (MAIL_MODE=log)
+storage/emails/*.html
+storage/logs/*.log
+
+# Runtime-uploaded asset photos (seed fixtures cat_*.jpg are kept tracked)
+public/uploads/assets/asset_*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db

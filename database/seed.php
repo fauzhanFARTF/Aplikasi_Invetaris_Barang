@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Seed data script - run: php /app/php_app/database/seed.php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';

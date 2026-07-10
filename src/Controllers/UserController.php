@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // User management (admin only)
 
 function user_index(): void {

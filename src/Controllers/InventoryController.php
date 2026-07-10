@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Inventory (Assets) CRUD
 
 function inventory_index(): void {

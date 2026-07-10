@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Loan / Booking controllers
 
 function loan_index(): void {

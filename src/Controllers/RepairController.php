@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Repair (SPK Fisik) flow
 
 function repair_index(): void {

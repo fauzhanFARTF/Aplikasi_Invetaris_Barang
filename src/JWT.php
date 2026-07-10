@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Minimal HS256 JWT implementation (self-contained, no external deps)
 class JWT {
     public static function encode(array $payload, string $secret): string {

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Alur pengembalian — pindai saat alat dikembalikan, tandai kondisi Baik / Rusak
 
 function checkin_index(): void {
