@@ -84,9 +84,13 @@
                             <?php if (in_array($a['status'], ['Available','Damaged'])): ?>
                                 <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/retire" data-confirm="Nonaktifkan (retire) alat ini?" style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
-                                    <button class="btn btn-sm btn-outline-danger" data-testid="btn-retire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-archive"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Retire" data-testid="btn-retire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-archive"></i></button>
                                 </form>
                             <?php endif; ?>
+                            <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/delete" data-confirm="Hapus alat ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
+                                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                <button class="btn btn-sm btn-outline-danger" title="Hapus" data-testid="btn-delete-<?= (int)$a['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
+                            </form>
                         <?php endif; ?>
                     </td>
                 </tr>

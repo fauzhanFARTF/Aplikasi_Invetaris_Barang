@@ -9,7 +9,7 @@ function inventory_index(): void {
     $status = $_GET['status'] ?? '';
     $categoryId = (int) ($_GET['category_id'] ?? 0);
 
-    $where = ["a.status != 'Retired' OR a.status = 'Retired'"]; // include all
+    $where = ["a.deleted_at IS NULL"];
     $params = [];
     if ($q) { $where[] = "(a.name LIKE ? OR a.bmn_number LIKE ? OR a.asset_code LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
     if ($status) { $where[] = "a.status = ?"; $params[] = $status; }
@@ -18,7 +18,7 @@ function inventory_index(): void {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $assets = $stmt->fetchAll();
-    $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+    $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
 
     layout('main', 'inventory/index', [
         'title' => 'Manajemen Alat',
@@ -34,7 +34,7 @@ function inventory_index(): void {
 function inventory_create_get(): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
-    $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+    $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     layout('main', 'inventory/form', [
         'title' => 'Tambah Alat',
         'asset' => null,
@@ -58,8 +58,8 @@ function inventory_create_post(): void {
     }
     try {
         $pdo = db();
-        $stmt = $pdo->prepare("INSERT INTO assets (asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available')");
-        $stmt->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value']]);
+        $stmt = $pdo->prepare("INSERT INTO assets (asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
+        $stmt->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id()]);
         log_audit('asset.create', 'asset', $pdo->lastInsertId(), $data);
         flash('success', 'Alat berhasil ditambahkan.');
         redirect('/inventory');
@@ -73,11 +73,11 @@ function inventory_create_post(): void {
 function inventory_edit_get(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM assets WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM assets WHERE id = ? AND deleted_at IS NULL");
     $stmt->execute([(int)$id]);
     $asset = $stmt->fetch();
     if (!$asset) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
-    $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+    $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     layout('main', 'inventory/form', ['title' => 'Ubah Alat', 'asset' => $asset, 'categories' => $categories, 'currentPath' => '/inventory']);
 }
 
@@ -113,8 +113,8 @@ function inventory_edit_post(string $id): void {
     }
 
     try {
-        $pdo->prepare("UPDATE assets SET asset_code=?, bmn_number=?, name=?, category_id=?, brand=?, model=?, serial_number=?, barcode=?, condition_note=?, photo=?, purchase_price=?, purchase_date=?, current_value=? WHERE id=?")
-            ->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $photo, $data['purchase_price'], $data['purchase_date'], $data['current_value'], (int)$id]);
+        $pdo->prepare("UPDATE assets SET asset_code=?, bmn_number=?, name=?, category_id=?, brand=?, model=?, serial_number=?, barcode=?, condition_note=?, photo=?, purchase_price=?, purchase_date=?, current_value=?, updated_by=? WHERE id=?")
+            ->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $photo, $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id(), (int)$id]);
         log_audit('asset.update', 'asset', $id, $data);
         flash('success', 'Perubahan disimpan.');
     } catch (Throwable $e) { flash('error', $e->getMessage()); }
@@ -124,9 +124,18 @@ function inventory_edit_post(string $id): void {
 function inventory_retire(string $id): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
-    db()->prepare("UPDATE assets SET status='Retired' WHERE id=? AND status IN ('Available','Damaged')")->execute([(int)$id]);
+    db()->prepare("UPDATE assets SET status='Retired', updated_by=? WHERE id=? AND status IN ('Available','Damaged')")->execute([Auth::id(), (int)$id]);
     log_audit('asset.retire', 'asset', $id);
     flash('success', 'Alat dinonaktifkan (Retired).');
+    redirect('/inventory');
+}
+
+function inventory_delete(string $id): void {
+    Auth::requireRole('admin', 'admin_gudang');
+    Auth::verifyCsrf();
+    soft_delete('assets', (int)$id);
+    log_audit('asset.delete', 'asset', $id);
+    flash('success', 'Alat dihapus (bisa dipulihkan lewat Riwayat Terhapus).');
     redirect('/inventory');
 }
 
