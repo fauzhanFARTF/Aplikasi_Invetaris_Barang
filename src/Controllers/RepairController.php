@@ -7,11 +7,11 @@ function repair_index(): void {
     $pdo = db();
     $active = $pdo->query("SELECT r.*, a.name AS asset_name, a.bmn_number, a.asset_code
                            FROM repairs r JOIN assets a ON a.id = r.asset_id
-                           WHERE r.status != 'Completed' ORDER BY r.created_at DESC")->fetchAll();
+                           WHERE r.status != 'Completed' AND r.deleted_at IS NULL ORDER BY r.created_at DESC")->fetchAll();
     $done   = $pdo->query("SELECT r.*, a.name AS asset_name, a.bmn_number, u.name AS completed_by_name
                            FROM repairs r JOIN assets a ON a.id = r.asset_id
                            LEFT JOIN users u ON u.id = r.completed_by
-                           WHERE r.status = 'Completed' ORDER BY r.completed_at DESC LIMIT 20")->fetchAll();
+                           WHERE r.status = 'Completed' AND r.deleted_at IS NULL ORDER BY r.completed_at DESC LIMIT 20")->fetchAll();
     layout('main', 'repairs/index', [
         'title' => 'Perbaikan Alat',
         'active' => $active,
@@ -31,7 +31,7 @@ function repair_show(string $id): void {
                             LEFT JOIN loans l ON l.id = li.loan_id
                             LEFT JOIN users req ON req.id = l.requester_id
                             LEFT JOIN users u ON u.id = r.completed_by
-                            WHERE r.id = ?");
+                            WHERE r.id = ? AND r.deleted_at IS NULL");
     $stmt->execute([$id]);
     $repair = $stmt->fetch();
     if (!$repair) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
@@ -59,7 +59,7 @@ function repair_print(string $id): void {
 
     // Mark as FormPrinted (idempotent)
     if ($repair['status'] === 'Open') {
-        $pdo->prepare("UPDATE repairs SET status='FormPrinted', form_printed_at=NOW() WHERE id=?")->execute([$id]);
+        $pdo->prepare("UPDATE repairs SET status='FormPrinted', form_printed_at=NOW(), updated_by=? WHERE id=?")->execute([Auth::id(), $id]);
         log_audit('repair.print', 'repair', $id);
         $repair['status'] = 'FormPrinted';
         $repair['form_printed_at'] = date('Y-m-d H:i:s');
@@ -87,7 +87,7 @@ function repair_delete(string $id): void {
     }
 
     try {
-        $pdo->prepare("DELETE FROM repairs WHERE id = ?")->execute([$id]);
+        soft_delete('repairs', $id);
         log_audit('repair.delete', 'repair', $id, ['code' => $repair['repair_code']]);
         flash('success', "Riwayat perbaikan {$repair['repair_code']} berhasil dihapus.");
     } catch (Throwable $e) {
@@ -101,13 +101,13 @@ function repair_delete_all(): void {
     Auth::verifyCsrf();
     $pdo = db();
     try {
-        $count = $pdo->query("SELECT COUNT(*) FROM repairs WHERE status = 'Completed'")->fetchColumn();
+        $count = $pdo->query("SELECT COUNT(*) FROM repairs WHERE status = 'Completed' AND deleted_at IS NULL")->fetchColumn();
         $total = (int) $count;
         if ($total === 0) {
             flash('error', 'Tidak ada riwayat perbaikan yang bisa dihapus.');
             redirect('/repairs');
         }
-        $pdo->exec("DELETE FROM repairs WHERE status = 'Completed'");
+        $pdo->prepare("UPDATE repairs SET deleted_at = NOW(), deleted_by = ? WHERE status = 'Completed' AND deleted_at IS NULL")->execute([Auth::id()]);
         log_audit('repair.delete_all', 'repair', null, ['count' => $total]);
         flash('success', "$total riwayat perbaikan berhasil dihapus.");
     } catch (Throwable $e) {
@@ -126,7 +126,7 @@ function repair_complete(string $id): void {
         redirect("/repairs/$id");
     }
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT * FROM repairs WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM repairs WHERE id = ? AND deleted_at IS NULL");
     $stmt->execute([$id]);
     $repair = $stmt->fetch();
     if (!$repair) { flash('error', 'Perbaikan tidak ditemukan.'); redirect('/repairs'); }
@@ -134,8 +134,8 @@ function repair_complete(string $id): void {
 
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("UPDATE repairs SET status='Completed', technician_name=?, action_taken=?, completed_by=?, completed_at=NOW() WHERE id=?")
-            ->execute([$techName, $action, Auth::id(), $id]);
+        $pdo->prepare("UPDATE repairs SET status='Completed', technician_name=?, action_taken=?, completed_by=?, completed_at=NOW(), updated_by=? WHERE id=?")
+            ->execute([$techName, $action, Auth::id(), Auth::id(), $id]);
         $pdo->prepare("UPDATE assets SET status='Available' WHERE id=?")->execute([$repair['asset_id']]);
         if ($repair['loan_item_id']) {
             $pdo->prepare("UPDATE loan_items SET item_status='Restored' WHERE id=?")->execute([$repair['loan_item_id']]);
@@ -147,7 +147,7 @@ function repair_complete(string $id): void {
                 $rem = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status IN ('Reserved','CheckedOut','ReturnedDamaged','InRepair')");
                 $rem->execute([$loanId]);
                 if ((int)$rem->fetchColumn() === 0) {
-                    $pdo->prepare("UPDATE loans SET status='Completed' WHERE id = ? AND status IN ('Returned','CheckedOut')")->execute([$loanId]);
+                    $pdo->prepare("UPDATE loans SET status='Completed', updated_by=? WHERE id = ? AND status IN ('Returned','CheckedOut')")->execute([Auth::id(), $loanId]);
                 }
             }
         }

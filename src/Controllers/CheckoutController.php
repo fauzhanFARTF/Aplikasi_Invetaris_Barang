@@ -27,7 +27,7 @@ function checkout_scan_page(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
     $id = (int) $id;
-    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.id = ?");
+    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.id = ? AND l.deleted_at IS NULL");
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
@@ -73,7 +73,7 @@ function checkout_scan_submit(): void {
         $stmt2->execute([$loanId]);
         $loanStatus = $stmt2->fetchColumn();
         if ($loanStatus === 'Approved') {
-            $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at=NOW() WHERE id = ?")->execute([$loanId]);
+            $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at=NOW(), updated_by=? WHERE id = ?")->execute([Auth::id(), $loanId]);
         }
         $pdo->commit();
     } catch (Throwable $e) {
@@ -96,7 +96,7 @@ function checkout_finalize(string $id): void {
         flash('error', 'Masih ada alat yang belum di-scan untuk penyerahan.');
         redirect("/checkout/$id");
     }
-    $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at = COALESCE(checkout_at, NOW()) WHERE id = ?")->execute([$id]);
+    $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at = COALESCE(checkout_at, NOW()), updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
     log_audit('loan.checkout_finalize', 'loan', $id);
     // Notify requester
     $r = $pdo->prepare("SELECT requester_id, loan_code FROM loans WHERE id = ?");

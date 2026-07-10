@@ -224,7 +224,7 @@ function api_asset_search(): void {
     Auth::requireLogin();
     $q = trim($_GET['q'] ?? '');
     $cat = (int) ($_GET['category_id'] ?? 0);
-    $where = ["a.status != 'Retired'"];
+    $where = ["a.status != 'Retired'", "a.deleted_at IS NULL"];
     $params = [];
     if ($q) { $where[] = "(a.name LIKE ? OR a.bmn_number LIKE ? OR a.asset_code LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
     if ($cat) { $where[] = "a.category_id = ?"; $params[] = $cat; }
@@ -234,7 +234,7 @@ function api_asset_search(): void {
 }
 function api_loan_detail(string $id): void {
     Auth::requireLogin();
-    $stmt = db()->prepare("SELECT * FROM loans WHERE id = ?"); $stmt->execute([(int)$id]);
+    $stmt = db()->prepare("SELECT * FROM loans WHERE id = ? AND deleted_at IS NULL"); $stmt->execute([(int)$id]);
     json_response(['loan' => $stmt->fetch() ?: null]);
 }
 function api_unread_notif(): void {
