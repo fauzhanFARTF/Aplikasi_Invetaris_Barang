@@ -44,9 +44,15 @@ function run_pending_migrations(PDO $pdo): void {
                         ADD COLUMN purchase_date DATE NULL COMMENT 'Tanggal perolehan/pembelian' AFTER purchase_price,
                         ADD COLUMN current_value DECIMAL(15,2) NULL COMMENT 'Nilai sekarang / nilai buku saat ini' AFTER purchase_date");
         }
+
+        $userPhotoCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'photo'")->fetch();
+        if (!$userPhotoCol) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN photo VARCHAR(255) NULL AFTER unit_kerja");
+        }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
-        // just log it so an admin can still apply database/migration_add_asset_price.sql manually if needed.
+        // just log it so an admin can still apply database/migration_add_asset_price.sql /
+        // database/migration_add_user_photo.sql manually if needed.
         error_log('[simassta-bmn] auto-migration check failed: ' . $e->getMessage());
     }
 }

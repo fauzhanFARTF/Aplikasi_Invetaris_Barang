@@ -27,11 +27,20 @@
     </div>
     <div class="table-responsive">
         <table class="table table-sb align-middle" data-testid="users-table">
-            <thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Unit Kerja</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th></th><th>Nama</th><th>Email</th><th>Role</th><th>Unit Kerja</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
             <tbody>
-            <?php foreach ($users as $u): ?>
+            <?php foreach ($users as $u): $photoUrl = photo_url($u['photo'] ?? null, 'users'); ?>
                 <tr data-ls-row data-ls-role="<?= e($u['role']) ?>" data-ls-active="<?= $u['is_active'] ? '1' : '0' ?>"
                     data-ls-text="<?= e(strtolower($u['name'].' '.$u['email'].' '.($u['unit_kerja'] ?? '').' '.($u['phone'] ?? ''))) ?>">
+                    <td>
+                        <?php if ($photoUrl): ?>
+                            <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($u['name']) ?>" style="width:36px;height:36px;object-fit:cover;border-radius:50%;border:1px solid #E2E8F0;">
+                        <?php else: ?>
+                            <div class="d-flex align-items-center justify-content-center text-slate" style="width:36px;height:36px;border-radius:50%;background:#F1F5F9;">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                        <?php endif; ?>
+                    </td>
                     <td><strong><?= e($u['name']) ?></strong></td>
                     <td class="small"><?= e($u['email']) ?></td>
                     <td><span class="badge bg-secondary"><?= e(role_label($u['role'])) ?></span></td>
@@ -53,7 +62,7 @@
                     </td>
                 </tr>
             <?php endforeach; ?>
-            <tr data-ls-empty style="display:none;"><td colspan="7" class="text-center text-slate py-4">Tidak ada user yang cocok dengan pencarian / filter.</td></tr>
+            <tr data-ls-empty style="display:none;"><td colspan="8" class="text-center text-slate py-4">Tidak ada user yang cocok dengan pencarian / filter.</td></tr>
             </tbody>
         </table>
     </div>

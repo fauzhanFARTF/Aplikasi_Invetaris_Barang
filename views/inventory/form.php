@@ -14,12 +14,15 @@
             <div class="col-md-12">
                 <label class="form-label">Foto Alat</label>
                 <div class="d-flex align-items-start gap-3 flex-wrap">
-                    <?php $currentPhotoUrl = asset_photo_url($asset['photo'] ?? null); ?>
+                    <?php $currentPhotoUrl = photo_url($asset['photo'] ?? null); ?>
                     <div id="photoPreviewWrap" style="<?= $currentPhotoUrl ? '' : 'display:none;' ?>">
                         <img id="photoPreview" src="<?= e($currentPhotoUrl ?? '') ?>" alt="Foto alat" style="width:140px;height:140px;object-fit:cover;border-radius:12px;border:1px solid #E2E8F0;">
                     </div>
                     <div class="flex-grow-1" style="min-width:220px;">
-                        <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo" style="max-width:280px;">
+                            <button type="button" class="btn btn-outline-navy" id="btnOpenCamera" data-testid="btn-open-camera"><i class="fa-solid fa-camera"></i> Ambil dari Kamera</button>
+                        </div>
                         <div class="form-text">JPG, PNG, atau WEBP. Maksimal 3MB.</div>
                         <?php if ($isEdit && $currentPhotoUrl): ?>
                             <div class="form-check mt-2">
@@ -27,6 +30,14 @@
                                 <label class="form-check-label" for="removePhotoCheck">Hapus foto saat ini</label>
                             </div>
                         <?php endif; ?>
+
+                        <div id="cameraPanel" style="display:none;" class="mt-3 p-2 border rounded-3" data-testid="camera-panel">
+                            <video id="cameraVideo" autoplay playsinline muted style="width:100%;max-width:320px;border-radius:8px;background:#000;"></video>
+                            <div class="d-flex gap-2 mt-2">
+                                <button type="button" class="btn btn-primary btn-sm" id="btnCapturePhoto" data-testid="btn-capture-photo"><i class="fa-solid fa-circle-dot"></i> Ambil Foto</button>
+                                <button type="button" class="btn btn-outline-navy btn-sm" id="btnCloseCamera" data-testid="btn-close-camera">Batal</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -105,23 +116,12 @@
     </div>
 </form>
 
+<script src="<?= ASSET_PREFIX ?>/assets/js/photo-capture.js"></script>
 <script>
-    (function () {
-        var input = document.getElementById('photoInput');
-        var wrap = document.getElementById('photoPreviewWrap');
-        var img = document.getElementById('photoPreview');
-        var removeCheck = document.getElementById('removePhotoCheck');
-        if (!input) return;
-        input.addEventListener('change', function () {
-            var file = input.files && input.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                img.src = e.target.result;
-                wrap.style.display = '';
-                if (removeCheck) removeCheck.checked = false; // pilih file baru membatalkan "hapus foto"
-            };
-            reader.readAsDataURL(file);
-        });
-    })();
+    initPhotoCapture({
+        inputId: 'photoInput', previewWrapId: 'photoPreviewWrap', previewImgId: 'photoPreview',
+        removeCheckId: 'removePhotoCheck', openBtnId: 'btnOpenCamera', captureBtnId: 'btnCapturePhoto',
+        closeBtnId: 'btnCloseCamera', panelId: 'cameraPanel', videoId: 'cameraVideo',
+        facingMode: 'environment', // foto alat -> kamera belakang
+    });
 </script>

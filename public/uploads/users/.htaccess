@@ -1,0 +1,11 @@
+# Cegah eksekusi PHP di folder upload demi keamanan
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.(php|phtml|php\d?)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
