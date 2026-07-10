@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 // Dashboard controller — role-aware summary
 
 function dashboard_index(): void {
