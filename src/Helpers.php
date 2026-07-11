@@ -210,3 +210,38 @@ function log_audit(string $action, ?string $entityType = null, $entityId = null,
         ]);
     } catch (Throwable $e) { /* ignore */ }
 }
+
+/**
+ * Soft delete satu baris: tandai deleted_at/deleted_by, tidak dihapus permanen.
+ * $table selalu literal hardcoded di tiap call site, bukan input pengguna.
+ */
+function soft_delete(string $table, int $id): void {
+    db()->prepare("UPDATE $table SET deleted_at = NOW(), deleted_by = ? WHERE id = ?")->execute([Auth::id(), $id]);
+}
+
+/** Pulihkan baris yang sudah di-soft-delete (dipakai halaman Riwayat Terhapus). */
+function restore_record(string $table, int $id): void {
+    // deleted_by sengaja TIDAK di-null-kan — tetap jadi jejak historis "terakhir
+    // dihapus oleh X", berdampingan dengan restored_by/restored_at yang baru.
+    db()->prepare("UPDATE $table SET deleted_at = NULL, restored_by = ?, restored_at = NOW() WHERE id = ?")->execute([Auth::id(), $id]);
+}
+
+/**
+ * Render baris kecil "Dibuat oleh X · Diubah oleh Y · Dipulihkan oleh Z" dari
+ * kolom created_by_name/updated_by_name/restored_by_name (hasil JOIN ke users)
+ * yang ada di $row. Dipakai di halaman detail/edit tiap entitas ber-audit-trail.
+ */
+function audit_trail_info(array $row): string {
+    $parts = [];
+    if (!empty($row['created_by_name'])) {
+        $parts[] = 'Dibuat: ' . e($row['created_by_name']) . ' · ' . fmt_datetime($row['created_at'] ?? null);
+    }
+    if (!empty($row['updated_by_name'])) {
+        $parts[] = 'Diubah: ' . e($row['updated_by_name']) . ' · ' . fmt_datetime($row['updated_at'] ?? null);
+    }
+    if (!empty($row['restored_by_name'])) {
+        $parts[] = 'Dipulihkan: ' . e($row['restored_by_name']) . ' · ' . fmt_datetime($row['restored_at'] ?? null);
+    }
+    if (!$parts) return '';
+    return '<div class="text-slate small mt-2" data-testid="audit-trail-info">' . implode(' &middot; ', $parts) . '</div>';
+}

@@ -24,7 +24,7 @@ function checkin_scan_page(string $id): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
     $id = (int) $id;
-    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.id = ?");
+    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.id = ? AND l.deleted_at IS NULL");
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
@@ -73,8 +73,8 @@ function checkin_scan_submit(): void {
         $repairId = null;
         if ($condition === 'Damaged') {
             $code = generate_code('RP', 'repairs', 'repair_code');
-            $r = $pdo->prepare("INSERT INTO repairs (repair_code, asset_id, loan_item_id, complaint, status) VALUES (?,?,?,?, 'Open')");
-            $r->execute([$code, $item['asset_id'], $item['id'], $note]);
+            $r = $pdo->prepare("INSERT INTO repairs (repair_code, asset_id, loan_item_id, complaint, status, created_by) VALUES (?,?,?,?, 'Open', ?)");
+            $r->execute([$code, $item['asset_id'], $item['id'], $note, Auth::id()]);
             $repairId = (int)$pdo->lastInsertId();
             $pdo->prepare("UPDATE loan_items SET item_status='InRepair' WHERE id=?")->execute([$item['id']]);
         }
@@ -88,7 +88,7 @@ function checkin_scan_submit(): void {
             $allGood = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status != 'ReturnedGood'");
             $allGood->execute([$loanId]);
             $newStatus = (int)$allGood->fetchColumn() === 0 ? 'Completed' : 'Returned';
-            $pdo->prepare("UPDATE loans SET status=?, checkin_at = COALESCE(checkin_at, NOW()) WHERE id = ?")->execute([$newStatus, $loanId]);
+            $pdo->prepare("UPDATE loans SET status=?, checkin_at = COALESCE(checkin_at, NOW()), updated_by=? WHERE id = ?")->execute([$newStatus, Auth::id(), $loanId]);
         }
 
         $pdo->commit();
@@ -131,13 +131,13 @@ function checkin_finalize(string $id): void {
         flash('error', 'Masih ada alat yang belum di-scan untuk pengembalian.');
         redirect("/checkin/$id");
     }
-    $pdo->prepare("UPDATE loans SET status='Returned', checkin_at = COALESCE(checkin_at, NOW()) WHERE id = ?")->execute([$id]);
+    $pdo->prepare("UPDATE loans SET status='Returned', checkin_at = COALESCE(checkin_at, NOW()), updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
 
     // Determine if all items ReturnedGood → Completed, else Returned (with pending repairs)
     $allGood = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status != 'ReturnedGood'");
     $allGood->execute([$id]);
     if ((int)$allGood->fetchColumn() === 0) {
-        $pdo->prepare("UPDATE loans SET status='Completed' WHERE id = ?")->execute([$id]);
+        $pdo->prepare("UPDATE loans SET status='Completed', updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
     }
     log_audit('loan.checkin_finalize', 'loan', $id);
     $r = $pdo->prepare("SELECT requester_id, loan_code FROM loans WHERE id = ?"); $r->execute([$id]); $row = $r->fetch();

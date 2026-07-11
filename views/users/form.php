@@ -2,6 +2,7 @@
 <div class="page-header">
     <div>
         <h1><?= $isEdit ? 'Ubah User' : 'Tambah User' ?></h1>
+        <?php if ($isEdit): ?><?= audit_trail_info($user) ?><?php endif; ?>
     </div>
     <a href="<?= BASE_PATH ?>/users" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>

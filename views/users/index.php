@@ -59,6 +59,12 @@
                             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                             <button class="btn btn-sm btn-outline-danger" data-confirm="Ubah status user ini?"><i class="fa-solid fa-power-off"></i></button>
                         </form>
+                        <?php if ((int)$u['id'] !== Auth::id()): ?>
+                            <form method="POST" action="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/delete" style="display:inline;">
+                                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                <button class="btn btn-sm btn-outline-danger" data-confirm="Hapus user ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" data-testid="btn-delete-user-<?= (int)$u['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
+                            </form>
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

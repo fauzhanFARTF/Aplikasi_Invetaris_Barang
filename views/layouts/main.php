@@ -56,6 +56,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
         <?php if ($user['role'] === 'admin'): ?>
             <div class="nav-section">Administrasi</div>
             <a href="<?= BASE_PATH ?>/users" class="nav-item <?= active('/users', $currentPath) ?>" data-testid="nav-users"><i class="fa-solid fa-user-shield"></i> Manajemen User</a>
+            <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i> Riwayat Terhapus</a>
         <?php endif; ?>
 
         <div class="nav-section">Akun</div>
