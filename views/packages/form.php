@@ -3,6 +3,7 @@
     <div>
         <h1><?= $isEdit ? 'Ubah Paket' : 'Tambah Paket' ?></h1>
         <p class="subtitle">Kumpulan alat yang bisa dipinjam sekaligus.</p>
+        <?php if ($isEdit): ?><?= audit_trail_info($package) ?><?php endif; ?>
     </div>
     <a href="<?= BASE_PATH ?>/packages" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>

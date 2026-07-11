@@ -49,10 +49,49 @@ function run_pending_migrations(PDO $pdo): void {
         if (!$userPhotoCol) {
             $pdo->exec("ALTER TABLE users ADD COLUMN photo VARCHAR(255) NULL AFTER unit_kerja");
         }
+
+        // Soft delete + audit trail (created_by/updated_by/deleted_by/deleted_at)
+        // di 6 tabel entitas utama. Cek satu kolom penanda (deleted_at) per tabel;
+        // kalau belum ada, tambahkan semua kolom terkait sekaligus untuk tabel itu.
+        $softDeleteTables = ['users', 'categories', 'assets', 'packages', 'loans', 'repairs'];
+        foreach ($softDeleteTables as $table) {
+            $col = $pdo->query("SHOW COLUMNS FROM $table LIKE 'deleted_at'")->fetch();
+            if ($col) continue;
+            $pdo->exec("ALTER TABLE $table
+                        ADD COLUMN created_by BIGINT UNSIGNED NULL,
+                        ADD COLUMN updated_by BIGINT UNSIGNED NULL,
+                        ADD COLUMN deleted_by BIGINT UNSIGNED NULL,
+                        ADD COLUMN deleted_at DATETIME NULL");
+        }
+        // categories tidak punya created_at/updated_at sejak awal; packages & repairs
+        // sudah punya created_at tapi belum updated_at — lengkapi kalau belum ada.
+        $catCreatedAt = $pdo->query("SHOW COLUMNS FROM categories LIKE 'created_at'")->fetch();
+        if (!$catCreatedAt) {
+            $pdo->exec("ALTER TABLE categories
+                        ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+        }
+        foreach (['packages', 'repairs'] as $table) {
+            $updatedAt = $pdo->query("SHOW COLUMNS FROM $table LIKE 'updated_at'")->fetch();
+            if (!$updatedAt) {
+                $pdo->exec("ALTER TABLE $table ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+            }
+        }
+
+        // Jejak pemulihan (siapa & kapan memulihkan data yang di-soft-delete),
+        // melengkapi created_by/updated_by/deleted_by di atas.
+        foreach ($softDeleteTables as $table) {
+            $col = $pdo->query("SHOW COLUMNS FROM $table LIKE 'restored_at'")->fetch();
+            if ($col) continue;
+            $pdo->exec("ALTER TABLE $table
+                        ADD COLUMN restored_by BIGINT UNSIGNED NULL,
+                        ADD COLUMN restored_at DATETIME NULL");
+        }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
         // just log it so an admin can still apply database/migration_add_asset_price.sql /
-        // database/migration_add_user_photo.sql manually if needed.
+        // database/migration_add_user_photo.sql / database/migration_add_soft_delete.sql /
+        // database/migration_add_restore_trail.sql manually if needed.
         error_log('[simassta-bmn] auto-migration check failed: ' . $e->getMessage());
     }
 }

@@ -6,7 +6,7 @@ class Auth {
     private const COOKIE = 'simassta_token';
 
     public static function attempt(string $email, string $password): ?array {
-        $stmt = db()->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1 LIMIT 1");
+        $stmt = db()->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1 AND deleted_at IS NULL LIMIT 1");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         if (!$user || !password_verify($password, $user['password_hash'])) return null;
@@ -45,7 +45,7 @@ class Auth {
         if (!$token) return $cache = null;
         $payload = JWT::decode($token, JWT_SECRET);
         if (!$payload) return $cache = null;
-        $stmt = db()->prepare("SELECT id,name,email,role,phone,unit_kerja,is_active FROM users WHERE id = ? AND is_active = 1");
+        $stmt = db()->prepare("SELECT id,name,email,role,phone,unit_kerja,is_active FROM users WHERE id = ? AND is_active = 1 AND deleted_at IS NULL");
         $stmt->execute([$payload['sub']]);
         $u = $stmt->fetch();
         return $cache = ($u ?: null);

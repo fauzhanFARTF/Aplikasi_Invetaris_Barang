@@ -28,7 +28,7 @@
                     <tbody>
                     <?php foreach ($cats as $c): ?>
                         <tr data-ls-row data-ls-text="<?= e(strtolower($c['name'].' '.$c['description'])) ?>">
-                            <td><strong><?= e($c['name']) ?></strong></td>
+                            <td><strong><?= e($c['name']) ?></strong><?= audit_trail_info($c) ?></td>
                             <td class="small text-slate"><?= e($c['description'] ?: '—') ?></td>
                             <td><span class="badge bg-info text-dark"><?= (int)$c['asset_count'] ?></span></td>
                             <td>
