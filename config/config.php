@@ -45,6 +45,9 @@ define('APP_URL', env('APP_URL', 'http://localhost:3000'));
 define('APP_ENV', env('APP_ENV', 'production'));
 define('JWT_SECRET', env('JWT_SECRET', 'change-me-in-production-simasstabmn-2026'));
 define('JWT_TTL_SEC', (int) env('JWT_TTL_SEC', 60 * 60 * 8)); // 8 hours
+// Cloudflare Turnstile (CAPTCHA anti-bot di halaman login). Kosongkan untuk menonaktifkan.
+define('TURNSTILE_SITE_KEY', env('TURNSTILE_SITE_KEY', ''));
+define('TURNSTILE_SECRET_KEY', env('TURNSTILE_SECRET_KEY', ''));
 define('DB_HOST', env('DB_HOST', '127.0.0.1'));
 define('DB_PORT', (int) env('DB_PORT', 3307));
 define('DB_NAME', env('DB_NAME', 'bmn_streaming'));

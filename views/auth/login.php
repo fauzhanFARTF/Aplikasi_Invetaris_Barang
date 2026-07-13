@@ -22,8 +22,16 @@
                 </button>
             </div>
         </div>
+        <?php if (turnstile_enabled()): ?>
+            <div class="mb-3 d-flex justify-content-center">
+                <div class="cf-turnstile" data-sitekey="<?= e(TURNSTILE_SITE_KEY) ?>" data-theme="auto" data-testid="turnstile-widget"></div>
+            </div>
+        <?php endif; ?>
         <button type="submit" class="btn btn-primary btn-lg w-100" data-testid="login-submit"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
     </form>
+    <?php if (turnstile_enabled()): ?>
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <?php endif; ?>
     <script>
         document.getElementById('togglePassword')?.addEventListener('click', function () {
             const input = document.getElementById('loginPassword');

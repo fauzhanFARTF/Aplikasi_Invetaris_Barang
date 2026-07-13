@@ -227,6 +227,53 @@ function restore_record(string $table, int $id): void {
 }
 
 /**
+ * Turnstile (CAPTCHA Cloudflare) hanya aktif jika kedua key diisi di .env.
+ * Kalau kosong (mis. saat dev lokal), fitur dilewati total tanpa mengganggu login.
+ */
+function turnstile_enabled(): bool {
+    return TURNSTILE_SITE_KEY !== '' && TURNSTILE_SECRET_KEY !== '';
+}
+
+/**
+ * Verifikasi token Turnstile ke server Cloudflare. Mengembalikan true jika valid.
+ * Fail-closed: kalau aktif tapi token kosong/verifikasi gagal -> false (login ditolak).
+ */
+function turnstile_verify(string $token): bool {
+    if (TURNSTILE_SECRET_KEY === '') return true; // tidak diaktifkan -> lewati
+    if ($token === '') return false;
+    $data = http_build_query([
+        'secret'   => TURNSTILE_SECRET_KEY,
+        'response' => $token,
+        'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+    ]);
+    $url = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+    $result = false;
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $data,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 8,
+        ]);
+        $result = curl_exec($ch);
+        curl_close($ch);
+    }
+    if ($result === false) {
+        $ctx = stream_context_create(['http' => [
+            'method'  => 'POST',
+            'header'  => 'Content-Type: application/x-www-form-urlencoded',
+            'content' => $data,
+            'timeout' => 8,
+        ]]);
+        $result = @file_get_contents($url, false, $ctx);
+    }
+    if (!$result) return false;
+    $json = json_decode((string) $result, true);
+    return is_array($json) && !empty($json['success']);
+}
+
+/**
  * Render baris kecil "Dibuat oleh X · Diubah oleh Y · Dipulihkan oleh Z" dari
  * kolom created_by_name/updated_by_name/restored_by_name (hasil JOIN ke users)
  * yang ada di $row. Dipakai di halaman detail/edit tiap entitas ber-audit-trail.
