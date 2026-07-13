@@ -18,10 +18,16 @@
                     <td class="small text-slate"><?= e($r['deleted_by_name'] ?? '—') ?></td>
                     <td class="small text-mono"><?= fmt_datetime($r['deleted_at']) ?></td>
                     <td class="text-nowrap">
-                        <form method="POST" action="<?= BASE_PATH ?>/trash/<?= e($r['type']) ?>/<?= $r['id'] ?>/restore" data-confirm="Pulihkan data ini?">
-                            <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
-                            <button class="btn btn-sm btn-outline-navy" data-testid="btn-restore-<?= e($r['type']) ?>-<?= $r['id'] ?>"><i class="fa-solid fa-rotate-left"></i> Pulihkan</button>
-                        </form>
+                        <div class="d-flex gap-2">
+                            <form method="POST" action="<?= BASE_PATH ?>/trash/<?= e($r['type']) ?>/<?= $r['id'] ?>/restore" data-confirm="Pulihkan data ini?">
+                                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                <button class="btn btn-sm btn-outline-navy" data-testid="btn-restore-<?= e($r['type']) ?>-<?= $r['id'] ?>"><i class="fa-solid fa-rotate-left"></i> Pulihkan</button>
+                            </form>
+                            <form method="POST" action="<?= BASE_PATH ?>/trash/<?= e($r['type']) ?>/<?= $r['id'] ?>/purge" data-confirm="HAPUS PERMANEN &quot;<?= e($r['label']) ?>&quot;? Tindakan ini TIDAK BISA dibatalkan dan data akan hilang selamanya dari database.">
+                                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                <button class="btn btn-sm btn-danger" data-testid="btn-purge-<?= e($r['type']) ?>-<?= $r['id'] ?>"><i class="fa-solid fa-trash-can"></i> Hapus Permanen</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
