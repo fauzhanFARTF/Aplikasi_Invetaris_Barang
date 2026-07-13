@@ -33,20 +33,5 @@
             icon.className = showing ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
         });
     </script>
-
-    <div class="creds-hint" data-testid="demo-credentials">
-        <strong>Akun demo:</strong><br>
-        Admin — admin@diskominfo.tangerangkab.go.id / admin123<br>
-        Pemohon — andi@diskominfo.tangerangkab.go.id / pemohon123<br>
-        Supervisor — budi@diskominfo.tangerangkab.go.id / supervisor123<br>
-        Admin Gudang — dewi@diskominfo.tangerangkab.go.id / gudang123
-    </div>
-
-    <div class="text-center mt-3">
-        <a href="<?= ASSET_PREFIX ?>/download/simassta-bmn.zip" class="btn btn-outline-navy btn-sm" data-testid="download-source"
-           download="simassta-bmn.zip">
-            <i class="fa-solid fa-download"></i> Download Source Code (.zip)
-        </a>
-    </div>
 </div>
 <?php unset($_SESSION['_old']); ?>
