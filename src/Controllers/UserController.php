@@ -136,17 +136,58 @@ function category_index(): void {
                          WHERE c.deleted_at IS NULL GROUP BY c.id ORDER BY c.name")->fetchAll();
     layout('main', 'inventory/categories', ['title' => 'Kategori Alat', 'cats' => $cats, 'currentPath' => '/categories']);
 }
-function category_create(): void {
+
+function category_create_get(): void {
+    Auth::requireRole('admin', 'admin_gudang');
+    layout('main', 'inventory/category_form', ['title' => 'Tambah Kategori', 'category' => null, 'currentPath' => '/categories']);
+}
+
+function category_create_post(): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
-    $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '');
-    if (!$name) { flash('error', 'Nama kategori wajib.'); redirect('/categories'); }
-    try { db()->prepare("INSERT INTO categories (name, description, created_by) VALUES (?,?,?)")->execute([$name, $desc, Auth::id()]); flash('success', 'Kategori ditambahkan.'); }
-    catch (Throwable $e) { flash('error', $e->getMessage()); }
-    redirect('/categories');
+    $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
+    if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/create'); }
+    try {
+        db()->prepare("INSERT INTO categories (name, description, created_by) VALUES (?,?,?)")->execute([$name, $desc, Auth::id()]);
+        flash('success', 'Kategori ditambahkan.');
+        redirect('/categories');
+    } catch (Throwable $e) {
+        flash('error', 'Gagal menambah kategori (nama mungkin sudah dipakai): ' . $e->getMessage());
+        redirect('/categories/create');
+    }
 }
+
+function category_edit_get(string $id): void {
+    Auth::requireRole('admin', 'admin_gudang');
+    $stmt = db()->prepare("SELECT c.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
+                           FROM categories c
+                           LEFT JOIN users cu ON cu.id = c.created_by
+                           LEFT JOIN users uu ON uu.id = c.updated_by
+                           LEFT JOIN users ru ON ru.id = c.restored_by
+                           WHERE c.id = ? AND c.deleted_at IS NULL");
+    $stmt->execute([(int)$id]);
+    $category = $stmt->fetch();
+    if (!$category) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
+    layout('main', 'inventory/category_form', ['title' => 'Ubah Kategori', 'category' => $category, 'currentPath' => '/categories']);
+}
+
+function category_edit_post(string $id): void {
+    Auth::requireRole('admin', 'admin_gudang');
+    Auth::verifyCsrf();
+    $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
+    if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/' . (int)$id . '/edit'); }
+    try {
+        db()->prepare("UPDATE categories SET name=?, description=?, updated_by=? WHERE id=?")->execute([$name, $desc, Auth::id(), (int)$id]);
+        flash('success', 'Kategori diperbarui.');
+        redirect('/categories');
+    } catch (Throwable $e) {
+        flash('error', 'Gagal memperbarui kategori (nama mungkin sudah dipakai): ' . $e->getMessage());
+        redirect('/categories/' . (int)$id . '/edit');
+    }
+}
+
 function category_delete(string $id): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
     try { soft_delete('categories', (int)$id); flash('success','Kategori dihapus (bisa dipulihkan lewat Riwayat Terhapus).'); }
     catch (Throwable $e) { flash('error', $e->getMessage()); }
