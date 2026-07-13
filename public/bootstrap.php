@@ -88,7 +88,10 @@ $routes = [
 
     // Categories (admin)
     ['GET',  '#^/categories$#',               'category_index'],
-    ['POST', '#^/categories/create$#',        'category_create'],
+    ['GET',  '#^/categories/create$#',        'category_create_get'],
+    ['POST', '#^/categories/create$#',        'category_create_post'],
+    ['GET',  '#^/categories/(\d+)/edit$#',    'category_edit_get'],
+    ['POST', '#^/categories/(\d+)/edit$#',    'category_edit_post'],
     ['POST', '#^/categories/(\d+)/delete$#',  'category_delete'],
 
     // Users (admin)
