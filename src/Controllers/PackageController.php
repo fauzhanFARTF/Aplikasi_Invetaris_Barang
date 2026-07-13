@@ -5,7 +5,7 @@ declare(strict_types=1);
 function package_index(): void {
     Auth::requireLogin();
     $pdo = db();
-    $packages = $pdo->query("SELECT p.*, COUNT(pi.asset_id) AS item_count FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY p.name")->fetchAll();
+    $packages = $pdo->query("SELECT p.*, COUNT(pi.asset_id) AS item_count FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id WHERE p.deleted_at IS NULL GROUP BY p.id ORDER BY p.updated_at DESC, p.id DESC")->fetchAll();
     layout('main', 'packages/index', ['title' => 'Paket Alat', 'packages' => $packages, 'currentPath' => '/packages']);
 }
 

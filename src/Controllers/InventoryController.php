@@ -14,7 +14,7 @@ function inventory_index(): void {
     if ($q) { $where[] = "(a.name LIKE ? OR a.bmn_number LIKE ? OR a.asset_code LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
     if ($status) { $where[] = "a.status = ?"; $params[] = $status; }
     if ($categoryId) { $where[] = "a.category_id = ?"; $params[] = $categoryId; }
-    $sql = "SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE " . implode(' AND ', $where) . " ORDER BY a.name";
+    $sql = "SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE " . implode(' AND ', $where) . " ORDER BY a.updated_at DESC, a.id DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $assets = $stmt->fetchAll();
