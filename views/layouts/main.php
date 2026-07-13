@@ -83,9 +83,28 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
                     <i class="fa-regular fa-bell"></i>
                     <span class="dot" id="bell-count" style="<?= $unread ? '' : 'display:none;' ?>" data-testid="bell-count"><?= $unread ?></span>
                 </a>
-                <div class="user-chip" data-testid="user-chip">
-                    <div class="av"><?= e(strtoupper(mb_substr($user['name'],0,1))) ?></div>
-                    <div class="who"><div><?= e($user['name']) ?></div><div class="role"><?= e(role_label($user['role'])) ?></div></div>
+                <div class="dropdown">
+                    <button class="user-chip" type="button" id="userMenuBtn" data-bs-toggle="dropdown" aria-expanded="false" data-testid="user-chip">
+                        <div class="av"><?= e(strtoupper(mb_substr($user['name'],0,1))) ?></div>
+                        <div class="who"><div><?= e($user['name']) ?></div><div class="role"><?= e(role_label($user['role'])) ?></div></div>
+                        <i class="fa-solid fa-chevron-down user-chip-caret"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenuBtn" data-testid="user-menu">
+                        <li class="px-3 py-2">
+                            <div class="fw-semibold" style="font-size:13.5px;"><?= e($user['name']) ?></div>
+                            <div class="text-slate" style="font-size:12px;"><?= e($user['email']) ?></div>
+                            <div class="text-slate" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;"><?= e(role_label($user['role'])) ?></div>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="<?= BASE_PATH ?>/profile" data-testid="menu-profile"><i class="fa-regular fa-user me-2"></i> Kelola Profil</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="POST" action="<?= BASE_PATH ?>/logout" class="m-0">
+                                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                <button type="submit" class="dropdown-item text-danger" data-testid="menu-logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </header>

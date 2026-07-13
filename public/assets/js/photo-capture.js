@@ -23,8 +23,14 @@ function initPhotoCapture(opts) {
     if (!btnOpen) return;
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        // Di origin http:// biasa (mis. http://172.16.64.250) browser MEMBLOKIR akses
+        // kamera demi keamanan, sehingga navigator.mediaDevices tidak tersedia. Kamera
+        // hanya aktif di https:// atau di localhost. Beri pesan yang tepat, bukan
+        // sekadar "tidak didukung browser".
         btnOpen.disabled = true;
-        btnOpen.title = 'Kamera tidak didukung di browser ini.';
+        btnOpen.title = window.isSecureContext
+            ? 'Kamera tidak didukung di browser ini.'
+            : 'Kamera butuh HTTPS. Buka aplikasi lewat https:// (atau localhost) agar bisa ambil foto. Sementara ini gunakan pilih file.';
         return;
     }
 
