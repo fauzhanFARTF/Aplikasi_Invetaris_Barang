@@ -103,6 +103,7 @@ $routes = [
     // Riwayat Terhapus / Trash (admin)
     ['GET',  '#^/trash$#',                            'trash_index'],
     ['POST', '#^/trash/([a-z_]+)/(\d+)/restore$#',    'trash_restore'],
+    ['POST', '#^/trash/([a-z_]+)/(\d+)/purge$#',      'trash_purge'],
 
     // Notifications
     ['GET',  '#^/notifications$#',            'notification_index'],
