@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 function user_index(): void {
     Auth::requireRole('admin');
-    $users = db()->query("SELECT * FROM users WHERE deleted_at IS NULL ORDER BY role, name")->fetchAll();
+    $users = db()->query("SELECT * FROM users WHERE deleted_at IS NULL ORDER BY updated_at DESC, id DESC")->fetchAll();
     layout('main', 'users/index', ['title' => 'Manajemen User', 'users' => $users, 'currentPath' => '/users']);
 }
 
@@ -133,7 +133,7 @@ function category_index(): void {
                          LEFT JOIN users cu ON cu.id = c.created_by
                          LEFT JOIN users uu ON uu.id = c.updated_by
                          LEFT JOIN users ru ON ru.id = c.restored_by
-                         WHERE c.deleted_at IS NULL GROUP BY c.id ORDER BY c.name")->fetchAll();
+                         WHERE c.deleted_at IS NULL GROUP BY c.id ORDER BY c.updated_at DESC, c.id DESC")->fetchAll();
     layout('main', 'inventory/categories', ['title' => 'Kategori Alat', 'cats' => $cats, 'currentPath' => '/categories']);
 }
 
