@@ -1,5 +1,5 @@
-# SIMASSTA BMN
-**Sistem Informasi Manajemen Aset Streaming — Diskominfo Kabupaten Tangerang**
+# SIMANTAP BMN
+**Sistem Informasi Manajemen Aset Terpadu — Diskominfo Kabupaten Tangerang**
 
 Stack: **PHP 8.1+ native · Bootstrap 5.3 · MySQL/MariaDB · Vanilla JS + html5-qrcode**
 
