@@ -147,8 +147,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     background: linear-gradient(135deg, var(--sb-navy), var(--sb-navy-2)); color: #fff; font-weight: 700; font-size: 13px;
     display: grid; place-items: center;
 }
-.topbar .user-chip .who { font-size: 13px; font-weight: 600; }
+.topbar .user-chip .who { font-size: 13px; font-weight: 600; text-align: left; }
 .topbar .user-chip .who .role { font-size: 10.5px; color: var(--sb-slate); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+.topbar button.user-chip { font-family: inherit; color: inherit; }
+.topbar .user-chip-caret { font-size: 11px; color: var(--sb-slate); margin-left: 2px; transition: transform 150ms var(--ease); }
+.topbar .user-chip[aria-expanded="true"] .user-chip-caret { transform: rotate(180deg); }
+.topbar .dropdown-menu { min-width: 220px; border-radius: 12px; border: 1px solid var(--sb-line); padding: 6px; }
+.topbar .dropdown-menu .dropdown-item { font-size: 13.5px; padding: 8px 12px; border-radius: 8px; }
 
 .page-body { padding: 28px; max-width: 1440px; margin: 0 auto; width: 100%; }
 .page-header { display: flex; align-items: end; justify-content: space-between; margin-bottom: 22px; gap: 20px; flex-wrap: wrap; }
