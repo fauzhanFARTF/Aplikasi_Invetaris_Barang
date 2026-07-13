@@ -9,6 +9,14 @@ function auth_login_get(): void {
 
 function auth_login_post(): void {
     Auth::verifyCsrf();
+
+    // Verifikasi Turnstile (anti-bot) bila diaktifkan lewat .env.
+    if (turnstile_enabled() && !turnstile_verify((string)($_POST['cf-turnstile-response'] ?? ''))) {
+        flash('error', 'Verifikasi anti-bot gagal. Silakan coba lagi.');
+        $_SESSION['_old']['email'] = trim($_POST['email'] ?? '');
+        redirect('/login');
+    }
+
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     if (Auth::attempt($email, $password)) {
