@@ -67,3 +67,53 @@ function trash_restore(string $type, string $id): void {
     flash('success', 'Data berhasil dipulihkan.');
     redirect('/trash');
 }
+
+/**
+ * Hapus PERMANEN satu baris dari Riwayat Terhapus (hard delete, tak bisa dipulihkan).
+ * Hanya boleh untuk baris yang memang sudah di-soft-delete. Jika baris masih
+ * direferensikan data lain (FK RESTRICT — mis. aset yang pernah dipinjam, user yang
+ * punya riwayat), DELETE gagal dan ditangkap dengan pesan ramah — datanya tetap aman
+ * di Riwayat Terhapus.
+ */
+function trash_purge(string $type, string $id): void {
+    Auth::requireRole('admin');
+    Auth::verifyCsrf();
+    $entities = _trash_entities();
+    if (!isset($entities[$type])) {
+        flash('error', 'Jenis data tidak valid.');
+        redirect('/trash');
+    }
+    $id = (int) $id;
+    $pdo = db();
+
+    // Guard: hanya baris yang benar-benar ada di Riwayat Terhapus yang boleh di-purge.
+    $chk = $pdo->prepare("SELECT COUNT(*) FROM $type WHERE id = ? AND deleted_at IS NOT NULL");
+    $chk->execute([$id]);
+    if (!(int) $chk->fetchColumn()) {
+        flash('error', 'Data tidak ditemukan di Riwayat Terhapus.');
+        redirect('/trash');
+    }
+
+    // Untuk assets/users, ambil nama file foto agar bisa dibersihkan dari disk setelah
+    // baris benar-benar terhapus.
+    $photoDir = $type === 'assets' ? 'assets' : ($type === 'users' ? 'users' : null);
+    $photo = null;
+    if ($photoDir) {
+        $st = $pdo->prepare("SELECT photo FROM $type WHERE id = ?");
+        $st->execute([$id]);
+        $photo = $st->fetchColumn() ?: null;
+    }
+
+    try {
+        $pdo->prepare("DELETE FROM $type WHERE id = ?")->execute([$id]);
+    } catch (Throwable $e) {
+        // Umumnya pelanggaran foreign key (SQLSTATE 23000).
+        flash('error', 'Tidak bisa dihapus permanen karena data ini masih direferensikan oleh data lain (mis. peminjaman / perbaikan). Data tetap aman di Riwayat Terhapus.');
+        redirect('/trash');
+    }
+
+    if ($photoDir && $photo) { delete_photo($photo, $photoDir); }
+    log_audit('trash.purge', $type, $id);
+    flash('success', 'Data berhasil dihapus permanen.');
+    redirect('/trash');
+}
