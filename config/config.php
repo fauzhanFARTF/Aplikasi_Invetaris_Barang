@@ -40,7 +40,7 @@ function env(string $key, $default = null) {
 }
 
 // App settings
-define('APP_NAME', env('APP_NAME', 'SIMASSTA BMN — Diskominfo Kab. Tangerang'));
+define('APP_NAME', env('APP_NAME', 'SIMANTAP BMN — Diskominfo Kab. Tangerang'));
 define('APP_URL', env('APP_URL', 'http://localhost:3000'));
 define('APP_ENV', env('APP_ENV', 'production'));
 define('JWT_SECRET', env('JWT_SECRET', 'change-me-in-production-simasstabmn-2026'));

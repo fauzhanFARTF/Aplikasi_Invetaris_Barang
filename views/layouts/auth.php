@@ -18,7 +18,7 @@
     <div class="auth-side no-print">
         <div class="side-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
         <h2>Kelola semua aset dinas dengan tenang, semua tercatat rapi.</h2>
-        <p>SIMASSTA BMN membantu tim Diskominfo Kabupaten Tangerang meminjam, memeriksa, dan merawat berbagai barang milik negara — dari peralatan streaming, perangkat jaringan, hingga kendaraan dinas (mobil &amp; motor) — tanpa ribet, cukup beberapa klik.</p>
+        <p>SIMANTAP BMN membantu tim Diskominfo Kabupaten Tangerang meminjam, memeriksa, dan merawat berbagai barang milik negara — dari peralatan streaming, perangkat jaringan, hingga kendaraan dinas (mobil &amp; motor) — tanpa ribet, cukup beberapa klik.</p>
         <div class="side-feats">
             <div class="feat"><i class="fa-solid fa-qrcode"></i> Penyerahan / pengembalian alat cukup pindai barcode</div>
             <div class="feat"><i class="fa-solid fa-bell"></i> Notifikasi otomatis untuk setiap persetujuan</div>

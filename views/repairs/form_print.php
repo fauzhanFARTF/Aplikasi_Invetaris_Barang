@@ -16,7 +16,7 @@
     <div class="header">
         <div class="sub">PEMERINTAH KABUPATEN TANGERANG</div>
         <h1>DINAS KOMUNIKASI DAN INFORMATIKA</h1>
-        <h2>Formulir Perbaikan Alat (SPK) — Aset Streaming BMN</h2>
+        <h2>Formulir Perbaikan Alat (SPK) — Aset BMN</h2>
         <div class="sub">Smart Building — Diskominfo Kabupaten Tangerang</div>
     </div>
 

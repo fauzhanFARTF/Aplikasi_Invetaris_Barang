@@ -14,7 +14,7 @@ class Notification {
             if ($user) {
                 $absLink = $link ? (APP_URL . $link) : APP_URL;
                 $html = self::htmlTemplate($title, $body, $absLink);
-                Mailer::send($user['email'], $user['name'], "[SIMASSTA BMN] " . $title, $html);
+                Mailer::send($user['email'], $user['name'], "[SIMANTAP BMN] " . $title, $html);
             }
         }
     }
@@ -39,14 +39,14 @@ class Notification {
         return <<<HTML
 <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;">
 <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;">
-    <div style="font-size:12px;letter-spacing:.15em;color:#f59e0b;font-weight:700;">SIMASSTA BMN</div>
+    <div style="font-size:12px;letter-spacing:.15em;color:#f59e0b;font-weight:700;">SIMANTAP BMN</div>
     <h2 style="color:#0f172a;margin:8px 0 16px;">$t</h2>
     <div style="color:#334155;line-height:1.6;font-size:14px;">$b</div>
     <div style="margin-top:24px;">
         <a href="$link" style="display:inline-block;background:#0f172a;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-size:14px;">Buka Sistem</a>
     </div>
     <hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0;">
-    <div style="color:#64748b;font-size:12px;">Sistem Informasi Manajemen Aset Streaming (SIMASSTA BMN)<br>Diskominfo Kabupaten Tangerang — Smart Building.</div>
+    <div style="color:#64748b;font-size:12px;">Sistem Informasi Manajemen Aset Terpadu (SIMANTAP BMN)<br>Diskominfo Kabupaten Tangerang — Smart Building.</div>
 </div></body></html>
 HTML;
     }
