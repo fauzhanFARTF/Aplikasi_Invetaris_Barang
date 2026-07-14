@@ -11,11 +11,7 @@
         <div class="card-sb">
             <div class="card-title">Informasi Akun</div>
             <div class="d-flex align-items-center gap-3 mb-3">
-                <?php if ($profilePhotoUrl): ?>
-                    <img src="<?= e($profilePhotoUrl) ?>" alt="Foto profil" style="width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid #E2E8F0;">
-                <?php else: ?>
-                    <div class="d-flex align-items-center justify-content-center text-slate" style="width:72px;height:72px;border-radius:50%;background:#F1F5F9;font-size:26px;"><i class="fa-solid fa-user"></i></div>
-                <?php endif; ?>
+                <img src="<?= e(user_avatar_url($user['photo'] ?? null)) ?>" alt="Foto profil" style="width:72px;height:72px;object-fit:cover;border-radius:50%;border:1px solid #E2E8F0;background:#fff;">
                 <div class="min-w-0">
                     <div class="fw-semibold" style="word-break:break-word;"><?= e($user['name']) ?></div>
                     <div class="text-slate small"><?= e(role_label($user['role'])) ?></div>
