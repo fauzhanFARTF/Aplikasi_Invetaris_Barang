@@ -127,6 +127,7 @@ $routes = [
     // Profile
     ['GET',  '#^/profile$#',                  'profile_get'],
     ['POST', '#^/profile$#',                  'profile_post'],
+    ['POST', '#^/profile/photo$#',            'profile_photo_post'],
 
     // AJAX/API endpoints — served under /ajax to avoid conflict with reserved /api ingress path
     ['GET',  '#^/ajax/availability$#',         'api_availability'],
