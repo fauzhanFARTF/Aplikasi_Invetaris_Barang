@@ -6,7 +6,7 @@
     </div>
     <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-navy" id="btnPrintSelected" disabled data-testid="btn-print-selected"><i class="fa-solid fa-barcode"></i> Cetak Barcode Terpilih (<span id="selCount">0</span>)</button>
+            <button type="button" class="btn btn-outline-navy" id="btnPrintSelected" disabled data-testid="btn-print-selected"><i class="fa-solid fa-qrcode"></i> Cetak QR Code Terpilih (<span id="selCount">0</span>)</button>
             <a href="<?= BASE_PATH ?>/inventory/create" class="btn btn-amber" data-testid="btn-new-asset"><i class="fa-solid fa-plus"></i> Tambah Alat</a>
         </div>
     <?php endif; ?>
@@ -16,7 +16,7 @@
     <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
     <div class="hint-box">
         <i class="fa-solid fa-circle-info"></i>
-        <div>Setiap alat punya barcode unik. Centang alat lalu klik <strong>"Cetak Barcode Terpilih"</strong> untuk mencetak stiker berisi barcode + QR yang bisa ditempel di alat. Stiker ini bisa dipindai memakai <strong>kamera HP</strong> maupun <strong>alat pemindai barcode (scanner genggam)</strong> saat penyerahan/pengembalian alat.</div>
+        <div>Setiap alat punya QR code unik. Centang alat lalu klik <strong>"Cetak QR Code Terpilih"</strong> untuk mencetak stiker QR yang bisa ditempel di alat. Stiker ini bisa dipindai memakai <strong>kamera HP</strong> maupun <strong>alat pemindai QR (2D scanner USB/Bluetooth)</strong> saat penyerahan/pengembalian alat.</div>
     </div>
     <?php endif; ?>
     <div data-livetable>
@@ -44,7 +44,7 @@
         <table class="table table-sb align-middle" data-testid="assets-table">
             <thead><tr>
                 <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?><th style="width:32px;"><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua"></th><?php endif; ?>
-                <th>Foto</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Brand/Model</th><th>No. BMN</th><th>Barcode</th><th>Harga Dulu</th><th>Nilai Sekarang</th><th>Status</th><th></th></tr></thead>
+                <th>Foto</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Brand/Model</th><th>No. BMN</th><th>Kode QR</th><th>Harga Dulu</th><th>Nilai Sekarang</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($assets as $a): ?>
                 <tr class="asset-row" data-ls-row
@@ -77,7 +77,7 @@
                     <td><?= status_badge($a['status']) ?></td>
                     <td class="text-nowrap">
                         <?php if (in_array($user['role'], ['admin_gudang','admin','supervisor'])): ?>
-                            <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/barcode" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak Barcode" data-testid="btn-barcode-<?= (int)$a['id'] ?>"><i class="fa-solid fa-barcode"></i></a>
+                            <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/barcode" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak QR Code" data-testid="btn-barcode-<?= (int)$a['id'] ?>"><i class="fa-solid fa-qrcode"></i></a>
                         <?php endif; ?>
                         <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
                             <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
