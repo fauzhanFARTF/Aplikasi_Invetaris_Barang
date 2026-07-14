@@ -49,7 +49,7 @@
                     <option value="">— Pilih —</option>
                     <?php
                         // Role 'superadmin' hanya bisa diberikan oleh superadmin.
-                        $assignableRoles = ['admin','pemohon','supervisor','admin_gudang'];
+                        $assignableRoles = ['admin','pemohon','supervisor','admin_gudang','inventory_staff'];
                         if (Auth::role() === 'superadmin') array_unshift($assignableRoles, 'superadmin');
                     ?>
                     <?php foreach ($assignableRoles as $r): ?>
