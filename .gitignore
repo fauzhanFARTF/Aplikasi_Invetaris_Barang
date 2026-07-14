@@ -11,6 +11,11 @@ public/uploads/assets/asset_*
 # Runtime-uploaded user photos
 public/uploads/users/user_*
 
+# Dokumen catatan/pribadi di docs/ — tidak ikut ter-commit
+# (DESAIN_SISTEM.md tetap dilacak seperti biasa)
+docs/*
+!docs/DESAIN_SISTEM.md
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
