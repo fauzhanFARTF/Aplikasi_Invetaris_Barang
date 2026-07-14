@@ -14,7 +14,10 @@ function inventory_index(): void {
     if ($q) { $where[] = "(a.name LIKE ? OR a.bmn_number LIKE ? OR a.asset_code LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
     if ($status) { $where[] = "a.status = ?"; $params[] = $status; }
     if ($categoryId) { $where[] = "a.category_id = ?"; $params[] = $categoryId; }
-    $sql = "SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE " . implode(' AND ', $where) . " ORDER BY a.updated_at DESC, a.id DESC";
+    $sql = "SELECT a.*, c.name AS category_name,
+                   EXISTS(SELECT 1 FROM loan_items li WHERE li.asset_id = a.id) AS has_loan
+            FROM assets a LEFT JOIN categories c ON c.id = a.category_id
+            WHERE " . implode(' AND ', $where) . " ORDER BY a.updated_at DESC, a.id DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $assets = $stmt->fetchAll();
@@ -31,8 +34,26 @@ function inventory_index(): void {
     ]);
 }
 
+/**
+ * Ambil created_by alat lalu pastikan user login berwenang mengelolanya.
+ * inventory_staff hanya boleh alat miliknya; jika tidak → 403 dan berhenti.
+ * Mengembalikan baris alat (photo, created_by, status) untuk dipakai handler.
+ */
+function _inventory_require_manage(int $id): array {
+    $stmt = db()->prepare("SELECT id, photo, created_by, status FROM assets WHERE id = ? AND deleted_at IS NULL");
+    $stmt->execute([$id]);
+    $asset = $stmt->fetch();
+    if (!$asset) { flash('error', 'Alat tidak ditemukan.'); redirect('/inventory'); }
+    if (!inventory_can_manage($asset['created_by'])) {
+        http_response_code(403);
+        include APP_ROOT . '/views/errors/403.php';
+        exit;
+    }
+    return $asset;
+}
+
 function inventory_create_get(): void {
-    Auth::requireRole('admin_gudang', 'admin');
+    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
     $pdo = db();
     $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     layout('main', 'inventory/form', [
@@ -44,7 +65,7 @@ function inventory_create_get(): void {
 }
 
 function inventory_create_post(): void {
-    Auth::requireRole('admin_gudang', 'admin');
+    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
     Auth::verifyCsrf();
     $data = _inventory_capture();
     if (!$data['asset_code'] || !$data['bmn_number'] || !$data['name']) {
@@ -54,6 +75,10 @@ function inventory_create_post(): void {
     $upload = handle_photo_upload('photo');
     if ($upload['error']) {
         flash('error', $upload['error']);
+        redirect('/inventory/create');
+    }
+    if (!$upload['filename']) {
+        flash('error', 'Foto alat wajib diunggah saat menambah alat baru.');
         redirect('/inventory/create');
     }
     try {
@@ -71,7 +96,8 @@ function inventory_create_post(): void {
 }
 
 function inventory_edit_get(string $id): void {
-    Auth::requireRole('admin_gudang', 'admin');
+    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
+    _inventory_require_manage((int)$id);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT a.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM assets a
@@ -87,15 +113,12 @@ function inventory_edit_get(string $id): void {
 }
 
 function inventory_edit_post(string $id): void {
-    Auth::requireRole('admin_gudang', 'admin');
+    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
     Auth::verifyCsrf();
     $data = _inventory_capture();
 
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT photo FROM assets WHERE id = ?");
-    $stmt->execute([(int)$id]);
-    $existing = $stmt->fetch();
-    if (!$existing) { flash('error', 'Alat tidak ditemukan.'); redirect('/inventory'); }
+    $existing = _inventory_require_manage((int)$id);
     $oldPhoto = $existing['photo'];
 
     $upload = handle_photo_upload('photo', $oldPhoto);
@@ -145,9 +168,19 @@ function inventory_unretire(string $id): void {
 }
 
 function inventory_delete(string $id): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'inventory_staff');
     Auth::verifyCsrf();
-    soft_delete('assets', (int)$id);
+    $id = (int) $id;
+    _inventory_require_manage($id); // gate kepemilikan (inventory_staff hanya alat sendiri)
+
+    // Alat yang pernah dipinjam hanya boleh dihapus oleh superadmin — menjaga
+    // integritas riwayat peminjaman.
+    if (Auth::role() !== 'superadmin' && asset_has_loan_history($id)) {
+        flash('error', 'Alat ini pernah dipinjam sehingga tidak dapat dihapus. Hubungi Super Admin bila benar-benar perlu dihapus.');
+        redirect('/inventory');
+    }
+
+    soft_delete('assets', $id);
     log_audit('asset.delete', 'asset', $id);
     flash('success', 'Alat dihapus (bisa dipulihkan lewat Riwayat Terhapus).');
     redirect('/inventory');

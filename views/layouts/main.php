@@ -46,11 +46,13 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
             <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i> Perbaikan</a>
         <?php endif; ?>
 
-        <?php if (role_is('admin_gudang','admin','supervisor')): ?>
+        <?php if (role_is('admin_gudang','admin','supervisor','inventory_staff')): ?>
             <div class="nav-section">Master Data</div>
             <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Alat / Aset</a>
-            <a href="<?= BASE_PATH ?>/packages" class="nav-item <?= active('/packages', $currentPath) ?>" data-testid="nav-packages"><i class="fa-solid fa-cubes"></i> Paket Alat</a>
-            <a href="<?= BASE_PATH ?>/categories" class="nav-item <?= active('/categories', $currentPath) ?>" data-testid="nav-categories"><i class="fa-solid fa-tags"></i> Kategori</a>
+            <?php if (role_is('admin_gudang','admin','supervisor')): ?>
+                <a href="<?= BASE_PATH ?>/packages" class="nav-item <?= active('/packages', $currentPath) ?>" data-testid="nav-packages"><i class="fa-solid fa-cubes"></i> Paket Alat</a>
+                <a href="<?= BASE_PATH ?>/categories" class="nav-item <?= active('/categories', $currentPath) ?>" data-testid="nav-categories"><i class="fa-solid fa-tags"></i> Kategori</a>
+            <?php endif; ?>
         <?php endif; ?>
 
         <?php if (role_is('admin')): ?>
