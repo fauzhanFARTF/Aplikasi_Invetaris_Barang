@@ -283,6 +283,34 @@ function profile_get(): void {
     Auth::requireLogin();
     layout('main', 'users/profile', ['title' => 'Profil Saya', 'user' => Auth::user(), 'currentPath' => '/profile']);
 }
+function profile_photo_post(): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    $id = Auth::id();
+
+    $stmt = db()->prepare("SELECT photo FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    $oldPhoto = $stmt->fetchColumn() ?: null;
+
+    // Hapus foto saat ini.
+    if (!empty($_POST['remove_photo'])) {
+        delete_photo($oldPhoto, 'users');
+        db()->prepare("UPDATE users SET photo=NULL, updated_by=? WHERE id=?")->execute([$id, $id]);
+        log_audit('user.photo_remove', 'user', $id);
+        flash('success', 'Foto profil dihapus.');
+        redirect('/profile');
+    }
+
+    $upload = handle_photo_upload('photo', $oldPhoto, 'users', 'user');
+    if ($upload['error']) { flash('error', $upload['error']); redirect('/profile'); }
+    if (!$upload['filename']) { flash('error', 'Tidak ada foto yang dipilih.'); redirect('/profile'); }
+
+    db()->prepare("UPDATE users SET photo=?, updated_by=? WHERE id=?")->execute([$upload['filename'], $id, $id]);
+    log_audit('user.photo_update', 'user', $id);
+    flash('success', 'Foto profil diperbarui.');
+    redirect('/profile');
+}
+
 function profile_post(): void {
     Auth::requireLogin();
     Auth::verifyCsrf();
