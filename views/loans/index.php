@@ -5,15 +5,16 @@
         <p class="subtitle">Daftar pengajuan peminjaman alat streaming.</p>
     </div>
     <div class="d-flex gap-2">
-        <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+        <?php if (role_is('admin_gudang','admin')): ?>
             <!-- <form method="POST" action="<?= BASE_PATH ?>/loans/delete-all" data-confirm="Hapus SEMUA riwayat peminjaman yang sudah Selesai/Ditolak/Dibatalkan/Dikembalikan? Tindakan ini tidak dapat dibatalkan.">
                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                 <button type="submit" class="btn btn-outline-navy text-danger" data-testid="btn-delete-all-loans"><i class="fa-solid fa-trash"></i> Hapus Semua Riwayat</button>
             </form> -->
         <?php endif; ?>
-        <?php if (in_array($user['role'], ['pemohon','admin'])): ?>
+        <?php if (role_is('pemohon','admin')): ?>
             <a href="<?= BASE_PATH ?>/loans/create" class="btn btn-amber" data-testid="btn-new-loan"><i class="fa-solid fa-plus"></i> Ajukan Peminjaman</a>
         <?php endif; ?>
+        <?= reset_button('loans', 'Reset Peminjaman', 'RESET SEMUA peminjaman/acara? Seluruh data peminjaman dihapus PERMANEN dan status alat yang dipinjam/dipesan dikembalikan ke Tersedia. Tindakan ini TIDAK BISA dibatalkan.') ?>
     </div>
 </div>
 
@@ -42,7 +43,7 @@
                     <td><?= status_badge($l['status']) ?></td>
                     <td class="d-flex gap-1">
                         <a href="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>" class="btn btn-sm btn-outline-navy" data-testid="btn-view-loan-<?= (int)$l['id'] ?>"><i class="fa-regular fa-eye"></i></a>
-                        <?php if (in_array($user['role'], ['admin_gudang','admin']) && in_array($l['status'], $finalStatuses, true)): ?>
+                        <?php if (role_is('admin_gudang','admin') && in_array($l['status'], $finalStatuses, true)): ?>
                             <!-- <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>/delete" data-confirm="Hapus riwayat peminjaman <?= e($l['loan_code']) ?>? Tindakan ini tidak dapat dibatalkan.">
                                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-navy text-danger" title="Hapus riwayat" data-testid="btn-delete-loan-<?= (int)$l['id'] ?>"><i class="fa-solid fa-trash"></i></button>

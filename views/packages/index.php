@@ -4,9 +4,12 @@
         <h1>Paket Alat</h1>
         <p class="subtitle">Bundling alat untuk skenario liputan yang umum, memudahkan pengajuan peminjaman.</p>
     </div>
-    <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
-        <a href="<?= BASE_PATH ?>/packages/create" class="btn btn-amber" data-testid="btn-new-package"><i class="fa-solid fa-plus"></i> Tambah Paket</a>
-    <?php endif; ?>
+    <div class="d-flex gap-2">
+        <?php if (role_is('admin_gudang','admin')): ?>
+            <a href="<?= BASE_PATH ?>/packages/create" class="btn btn-amber" data-testid="btn-new-package"><i class="fa-solid fa-plus"></i> Tambah Paket</a>
+        <?php endif; ?>
+        <?= reset_button('packages', 'Reset Paket', 'RESET SEMUA paket alat? Seluruh paket dihapus PERMANEN. Tindakan ini TIDAK BISA dibatalkan.') ?>
+    </div>
 </div>
 
 <div class="card-sb" data-livetable>
@@ -23,7 +26,7 @@
                     <td class="small text-slate"><?= e($p['description'] ?: '—') ?></td>
                     <td><span class="badge bg-info text-dark"><?= (int)$p['item_count'] ?> alat</span></td>
                     <td class="text-nowrap">
-                        <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+                        <?php if (role_is('admin_gudang','admin')): ?>
                             <a href="<?= BASE_PATH ?>/packages/<?= (int)$p['id'] ?>/edit" class="btn btn-sm btn-outline-navy"><i class="fa-regular fa-pen-to-square"></i></a>
                             <form method="POST" action="<?= BASE_PATH ?>/packages/<?= (int)$p['id'] ?>/delete" data-confirm="Hapus paket ini?" style="display:inline;">
                                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">

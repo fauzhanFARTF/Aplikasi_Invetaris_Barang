@@ -76,6 +76,7 @@ $routes = [
     ['GET',  '#^/inventory/(\d+)/edit$#',     'inventory_edit_get'],
     ['POST', '#^/inventory/(\d+)/edit$#',     'inventory_edit_post'],
     ['POST', '#^/inventory/(\d+)/retire$#',   'inventory_retire'],
+    ['POST', '#^/inventory/(\d+)/unretire$#', 'inventory_unretire'],
     ['POST', '#^/inventory/(\d+)/delete$#',   'inventory_delete'],
 
     // Packages
@@ -102,6 +103,14 @@ $routes = [
     ['POST', '#^/users/(\d+)/edit$#',         'user_edit_post'],
     ['POST', '#^/users/(\d+)/toggle$#',       'user_toggle'],
     ['POST', '#^/users/(\d+)/delete$#',       'user_delete'],
+
+    // Reset data per-manajemen (KHUSUS superadmin)
+    ['POST', '#^/reset/loans$#',      'reset_loans'],
+    ['POST', '#^/reset/users$#',      'reset_users'],
+    ['POST', '#^/reset/assets$#',     'reset_assets'],
+    ['POST', '#^/reset/categories$#', 'reset_categories'],
+    ['POST', '#^/reset/packages$#',   'reset_packages'],
+    ['POST', '#^/reset/repairs$#',    'reset_repairs'],
 
     // Riwayat Terhapus / Trash (admin)
     ['GET',  '#^/trash$#',                            'trash_index'],

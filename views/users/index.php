@@ -3,7 +3,10 @@
         <h1>Manajemen User</h1>
         <p class="subtitle">Kelola akun pengguna sistem beserta hak akses (role).</p>
     </div>
-    <a href="<?= BASE_PATH ?>/users/create" class="btn btn-amber" data-testid="btn-new-user"><i class="fa-solid fa-user-plus"></i> Tambah User</a>
+    <div class="d-flex gap-2">
+        <a href="<?= BASE_PATH ?>/users/create" class="btn btn-amber" data-testid="btn-new-user"><i class="fa-solid fa-user-plus"></i> Tambah User</a>
+        <?= reset_button('users', 'Reset User', 'RESET SEMUA user? Semua akun dihapus PERMANEN kecuali Super Admin. Peminjaman & notifikasi terkait ikut terhapus. Tindakan ini TIDAK BISA dibatalkan.') ?>
+    </div>
 </div>
 
 <div class="card-sb" data-livetable>
@@ -12,7 +15,7 @@
         <div class="col-md-4">
             <select class="form-select" data-ls-filter="role">
                 <option value="">— Semua Role —</option>
-                <?php foreach (['admin','admin_gudang','supervisor','pemohon'] as $r): ?>
+                <?php foreach (['superadmin','admin','admin_gudang','supervisor','pemohon'] as $r): ?>
                     <option value="<?= $r ?>"><?= e(role_label($r)) ?></option>
                 <?php endforeach; ?>
             </select>
@@ -54,16 +57,21 @@
                         <?php endif; ?>
                     </td>
                     <td class="text-nowrap">
-                        <a href="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-user-<?= (int)$u['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
-                        <form method="POST" action="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/toggle" style="display:inline;">
-                            <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
-                            <button class="btn btn-sm btn-outline-danger" data-confirm="Ubah status user ini?"><i class="fa-solid fa-power-off"></i></button>
-                        </form>
-                        <?php if ((int)$u['id'] !== Auth::id()): ?>
-                            <form method="POST" action="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/delete" style="display:inline;">
+                        <?php $canManage = $u['role'] !== 'superadmin' || Auth::role() === 'superadmin'; ?>
+                        <?php if ($canManage): ?>
+                            <a href="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-user-<?= (int)$u['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
+                            <form method="POST" action="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/toggle" style="display:inline;">
                                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
-                                <button class="btn btn-sm btn-outline-danger" data-confirm="Hapus user ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" data-testid="btn-delete-user-<?= (int)$u['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" data-confirm="Ubah status user ini?"><i class="fa-solid fa-power-off"></i></button>
                             </form>
+                            <?php if ((int)$u['id'] !== Auth::id()): ?>
+                                <form method="POST" action="<?= BASE_PATH ?>/users/<?= (int)$u['id'] ?>/delete" style="display:inline;">
+                                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                    <button class="btn btn-sm btn-outline-danger" data-confirm="Hapus user ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" data-testid="btn-delete-user-<?= (int)$u['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
+                                </form>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span class="text-slate small"><i class="fa-solid fa-lock"></i></span>
                         <?php endif; ?>
                     </td>
                 </tr>

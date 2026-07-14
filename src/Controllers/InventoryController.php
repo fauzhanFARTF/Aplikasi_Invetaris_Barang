@@ -135,6 +135,15 @@ function inventory_retire(string $id): void {
     redirect('/inventory');
 }
 
+function inventory_unretire(string $id): void {
+    Auth::requireRole('admin', 'admin_gudang');
+    Auth::verifyCsrf();
+    db()->prepare("UPDATE assets SET status='Available', updated_by=? WHERE id=? AND status='Retired'")->execute([Auth::id(), (int)$id]);
+    log_audit('asset.unretire', 'asset', $id);
+    flash('success', 'Alat diaktifkan kembali (Tersedia).');
+    redirect('/inventory');
+}
+
 function inventory_delete(string $id): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();

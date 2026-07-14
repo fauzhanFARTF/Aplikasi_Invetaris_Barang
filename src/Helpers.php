@@ -184,11 +184,22 @@ function status_badge(string $status): string {
 
 function role_label(string $role): string {
     return [
+        'superadmin' => 'Super Admin',
         'admin' => 'Administrator',
         'pemohon' => 'Pemohon',
         'supervisor' => 'Kepala Bagian / Supervisor',
         'admin_gudang' => 'Admin Gudang',
     ][$role] ?? $role;
+}
+
+/**
+ * Cek role user login untuk tampilan (menu/tombol). Superadmin otomatis lolos
+ * SEMUA pengecekan role — konsisten dengan Auth::requireRole di sisi controller.
+ */
+function role_is(string ...$roles): bool {
+    $r = Auth::role();
+    if ($r === null) return false;
+    return $r === 'superadmin' || in_array($r, $roles, true);
 }
 
 function json_response($data, int $code = 200): void {
