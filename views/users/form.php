@@ -7,7 +7,7 @@
     <a href="<?= BASE_PATH ?>/users" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>
 
-<form method="POST" action="<?= $isEdit ? '/users/'.(int)$user['id'].'/edit' : '/users/create' ?>" enctype="multipart/form-data" data-testid="user-form">
+<form method="POST" action="<?= $isEdit ? '/users/'.e($user['uuid']).'/edit' : '/users/create' ?>" enctype="multipart/form-data" data-testid="user-form">
     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
     <div class="card-sb">
         <div class="row g-3">
