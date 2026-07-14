@@ -18,7 +18,11 @@ function loan_index(): void {
         $where[] = 'l.requester_id = ?';
         $params[] = $uid;
     }
-    $sql = "SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE " . implode(' AND ', $where) . " ORDER BY l.created_at DESC";
+    // asset_names: gabungan nama alat per peminjaman, agar bisa dicari by alat di daftar.
+    $sql = "SELECT l.*, u.name AS requester_name,
+                   (SELECT GROUP_CONCAT(a2.name SEPARATOR ' ') FROM loan_items li2 JOIN assets a2 ON a2.id = li2.asset_id WHERE li2.loan_id = l.id) AS asset_names
+            FROM loans l JOIN users u ON u.id = l.requester_id
+            WHERE " . implode(' AND ', $where) . " ORDER BY l.created_at DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $loans = $stmt->fetchAll();
@@ -156,7 +160,7 @@ function loan_show(string $id): void {
         http_response_code(403); include APP_ROOT . '/views/errors/403.php'; return;
     }
 
-    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.purchase_price, a.current_value, p.name AS package_name
+    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.photo, a.purchase_price, a.current_value, p.name AS package_name
                             FROM loan_items li JOIN assets a ON a.id = li.asset_id
                             LEFT JOIN packages p ON p.id = li.package_id
                             WHERE li.loan_id = ? ORDER BY li.id");
