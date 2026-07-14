@@ -4,16 +4,17 @@
         <h1>Manajemen Alat / Aset</h1>
         <p class="subtitle">Inventaris aset streaming BMN — total <?= count($assets) ?> item ditampilkan.</p>
     </div>
-    <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+    <?php if (role_is('admin_gudang','admin')): ?>
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-outline-navy" id="btnPrintSelected" disabled data-testid="btn-print-selected"><i class="fa-solid fa-qrcode"></i> Cetak QR Code Terpilih (<span id="selCount">0</span>)</button>
             <a href="<?= BASE_PATH ?>/inventory/create" class="btn btn-amber" data-testid="btn-new-asset"><i class="fa-solid fa-plus"></i> Tambah Alat</a>
+            <?= reset_button('assets', 'Reset Alat', 'RESET SEMUA alat? Seluruh alat dihapus PERMANEN, termasuk peminjaman & perbaikan yang terkait. Tindakan ini TIDAK BISA dibatalkan.') ?>
         </div>
     <?php endif; ?>
 </div>
 
 <div class="card-sb">
-    <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+    <?php if (role_is('admin_gudang','admin')): ?>
     <div class="hint-box">
         <i class="fa-solid fa-circle-info"></i>
         <div>Setiap alat punya QR code unik. Centang alat lalu klik <strong>"Cetak QR Code Terpilih"</strong> untuk mencetak stiker QR yang bisa ditempel di alat. Stiker ini bisa dipindai memakai <strong>kamera HP</strong> maupun <strong>alat pemindai QR (2D scanner USB/Bluetooth)</strong> saat penyerahan/pengembalian alat.</div>
@@ -43,7 +44,7 @@
     <div class="table-responsive">
         <table class="table table-sb align-middle" data-testid="assets-table">
             <thead><tr>
-                <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?><th style="width:32px;"><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua"></th><?php endif; ?>
+                <?php if (role_is('admin_gudang','admin')): ?><th style="width:32px;"><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua"></th><?php endif; ?>
                 <th>Foto</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Brand/Model</th><th>No. BMN</th><th>Kode QR</th><th>Harga Dulu</th><th>Nilai Sekarang</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($assets as $a): ?>
@@ -51,7 +52,7 @@
                     data-ls-text="<?= e(strtolower($a['name'].' '.$a['bmn_number'].' '.$a['asset_code'].' '.($a['category_name'] ?? '').' '.($a['brand'] ?? '').' '.($a['model'] ?? '').' '.($a['barcode'] ?? ''))) ?>"
                     data-ls-category="<?= (int)($a['category_id'] ?? 0) ?>"
                     data-ls-status="<?= e($a['status']) ?>">
-                    <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+                    <?php if (role_is('admin_gudang','admin')): ?>
                         <td><input type="checkbox" class="form-check-input asset-check" value="<?= (int)$a['id'] ?>" data-testid="check-<?= (int)$a['id'] ?>"></td>
                     <?php endif; ?>
                     <td>
@@ -76,15 +77,20 @@
                     <td class="text-mono small"><?= fmt_rupiah($a['current_value'] ?? null) ?></td>
                     <td><?= status_badge($a['status']) ?></td>
                     <td class="text-nowrap">
-                        <?php if (in_array($user['role'], ['admin_gudang','admin','supervisor'])): ?>
+                        <?php if (role_is('admin_gudang','admin','supervisor')): ?>
                             <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/barcode" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak QR Code" data-testid="btn-barcode-<?= (int)$a['id'] ?>"><i class="fa-solid fa-qrcode"></i></a>
                         <?php endif; ?>
-                        <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+                        <?php if (role_is('admin_gudang','admin')): ?>
                             <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
                             <?php if (in_array($a['status'], ['Available','Damaged'])): ?>
                                 <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/retire" data-confirm="Nonaktifkan (retire) alat ini?" style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                     <button class="btn btn-sm btn-outline-danger" title="Retire" data-testid="btn-retire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-archive"></i></button>
+                                </form>
+                            <?php elseif ($a['status'] === 'Retired'): ?>
+                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/unretire" data-confirm="Aktifkan kembali alat ini? Status akan menjadi Tersedia." style="display:inline;">
+                                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                    <button class="btn btn-sm btn-outline-navy" title="Aktifkan kembali" data-testid="btn-unretire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-open"></i></button>
                                 </form>
                             <?php endif; ?>
                             <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/delete" data-confirm="Hapus alat ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
@@ -104,7 +110,7 @@
     </div>
 </div>
 
-<?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+<?php if (role_is('admin_gudang','admin')): ?>
 <script>
     const selectAll = document.getElementById('selectAll');
     const checks = () => Array.from(document.querySelectorAll('.asset-check'));

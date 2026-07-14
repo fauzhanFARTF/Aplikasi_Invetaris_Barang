@@ -3,6 +3,7 @@
         <h1>Perbaikan Alat</h1>
         <p class="subtitle">Alat rusak yang sedang / telah ditangani teknisi berdasarkan Formulir Perbaikan (SPK) fisik.</p>
     </div>
+    <?= reset_button('repairs', 'Reset Perbaikan', 'RESET SEMUA catatan perbaikan? Seluruh riwayat perbaikan dihapus PERMANEN. Tindakan ini TIDAK BISA dibatalkan.') ?>
 </div>
 
 <div class="card-sb" data-livetable>

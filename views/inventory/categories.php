@@ -3,7 +3,10 @@
         <h1>Kategori Alat</h1>
         <p class="subtitle">Grouping alat berdasarkan jenis untuk memudahkan pencarian — total <?= count($cats) ?> kategori.</p>
     </div>
-    <a href="<?= BASE_PATH ?>/categories/create" class="btn btn-amber" data-testid="btn-new-category"><i class="fa-solid fa-plus"></i> Tambah Kategori</a>
+    <div class="d-flex gap-2">
+        <a href="<?= BASE_PATH ?>/categories/create" class="btn btn-amber" data-testid="btn-new-category"><i class="fa-solid fa-plus"></i> Tambah Kategori</a>
+        <?= reset_button('categories', 'Reset Kategori', 'RESET SEMUA kategori? Seluruh kategori dihapus PERMANEN (alat menjadi tanpa kategori). Tindakan ini TIDAK BISA dibatalkan.') ?>
+    </div>
 </div>
 
 <div class="card-sb" data-livetable>

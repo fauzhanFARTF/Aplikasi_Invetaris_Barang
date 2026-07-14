@@ -8,23 +8,23 @@
     <div class="d-flex gap-2">
         <a href="<?= BASE_PATH ?>/loans" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 
-        <?php if ($loan['status'] === 'Pending' && in_array($user['role'], ['supervisor','admin'])): ?>
+        <?php if ($loan['status'] === 'Pending' && role_is('supervisor','admin')): ?>
             <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal" data-testid="btn-approve"><i class="fa-solid fa-check"></i> Setujui</button>
             <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal" data-testid="btn-reject"><i class="fa-solid fa-xmark"></i> Tolak</button>
         <?php endif; ?>
 
-        <?php if (in_array($loan['status'], ['Pending','Approved']) && (Auth::role() === 'admin' || (int)$loan['requester_id'] === Auth::id())): ?>
+        <?php if (in_array($loan['status'], ['Pending','Approved']) && (role_is('admin') || (int)$loan['requester_id'] === Auth::id())): ?>
             <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$loan['id'] ?>/cancel" data-confirm="Batalkan peminjaman ini?">
                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                 <button class="btn btn-outline-navy" data-testid="btn-cancel-loan"><i class="fa-solid fa-ban"></i> Batalkan</button>
             </form>
         <?php endif; ?>
 
-        <?php if ($loan['status'] === 'Approved' && in_array($user['role'], ['admin_gudang','admin'])): ?>
+        <?php if ($loan['status'] === 'Approved' && role_is('admin_gudang','admin')): ?>
             <a href="<?= BASE_PATH ?>/checkout/<?= (int)$loan['id'] ?>" class="btn btn-amber" data-testid="btn-goto-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Penyerahan Sekarang</a>
         <?php endif; ?>
 
-        <?php if ($loan['status'] === 'CheckedOut' && in_array($user['role'], ['admin_gudang','admin'])): ?>
+        <?php if ($loan['status'] === 'CheckedOut' && role_is('admin_gudang','admin')): ?>
             <a href="<?= BASE_PATH ?>/checkin/<?= (int)$loan['id'] ?>" class="btn btn-amber" data-testid="btn-goto-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i> Pengembalian Sekarang</a>
         <?php endif; ?>
     </div>
@@ -99,7 +99,7 @@
 </div>
 
 <!-- Modals -->
-<?php if ($loan['status'] === 'Pending' && in_array($user['role'], ['supervisor','admin'])): ?>
+<?php if ($loan['status'] === 'Pending' && role_is('supervisor','admin')): ?>
 <div class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$loan['id'] ?>/approve" data-testid="approve-form">

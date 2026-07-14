@@ -20,6 +20,9 @@ function user_create_post(): void {
     if (!$d['name'] || !$d['email'] || !$d['role'] || empty($_POST['password'])) {
         flash('error', 'Nama, email, role, dan password wajib.'); redirect('/users/create');
     }
+    if (!_user_role_assignable($d['role'])) {
+        flash('error', 'Role tidak valid / tidak berwenang memberikan role tersebut.'); redirect('/users/create');
+    }
     $upload = handle_photo_upload('photo', null, 'users', 'user');
     if ($upload['error']) {
         flash('error', $upload['error']);
@@ -40,6 +43,7 @@ function user_create_post(): void {
 
 function user_edit_get(string $id): void {
     Auth::requireRole('admin');
+    _user_guard_target((int)$id);
     $stmt = db()->prepare("SELECT u.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM users u
                            LEFT JOIN users cu ON cu.id = u.created_by
@@ -55,7 +59,12 @@ function user_edit_get(string $id): void {
 function user_edit_post(string $id): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
+    _user_guard_target((int)$id);
     $d = _user_capture();
+    if (!_user_role_assignable($d['role'])) {
+        flash('error', 'Role tidak valid / tidak berwenang memberikan role tersebut.');
+        redirect('/users/' . (int)$id . '/edit');
+    }
 
     $stmt = db()->prepare("SELECT photo FROM users WHERE id = ?");
     $stmt->execute([(int)$id]);
@@ -93,6 +102,7 @@ function user_edit_post(string $id): void {
 function user_toggle(string $id): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
+    _user_guard_target((int)$id);
     db()->prepare("UPDATE users SET is_active = 1 - is_active, updated_by = ? WHERE id = ?")->execute([Auth::id(), (int)$id]);
     log_audit('user.toggle', 'user', $id);
     flash('success', 'Status user diubah.');
@@ -107,6 +117,7 @@ function user_delete(string $id): void {
         flash('error', 'Tidak bisa menghapus akun Anda sendiri.');
         redirect('/users');
     }
+    _user_guard_target($id);
     soft_delete('users', $id);
     log_audit('user.delete', 'user', $id);
     flash('success', 'User dihapus (bisa dipulihkan lewat Riwayat Terhapus).');
@@ -121,6 +132,32 @@ function _user_capture(): array {
         'phone' => trim($_POST['phone'] ?? '') ?: null,
         'unit_kerja' => trim($_POST['unit_kerja'] ?? '') ?: null,
     ];
+}
+
+/**
+ * Validasi role yang boleh di-assign: whitelist + role 'superadmin' hanya boleh
+ * diberikan oleh superadmin (admin biasa tidak bisa membuat/menaikkan superadmin).
+ */
+function _user_role_assignable(string $role): bool {
+    $valid = ['superadmin', 'admin', 'pemohon', 'supervisor', 'admin_gudang'];
+    if (!in_array($role, $valid, true)) return false;
+    if ($role === 'superadmin' && Auth::role() !== 'superadmin') return false;
+    return true;
+}
+
+/**
+ * Guard target: akun superadmin hanya boleh diubah/dihapus/di-toggle oleh
+ * sesama superadmin. Mengembalikan role target, atau redirect kalau dilanggar.
+ */
+function _user_guard_target(int $id): ?string {
+    $stmt = db()->prepare("SELECT role FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    $targetRole = $stmt->fetchColumn() ?: null;
+    if ($targetRole === 'superadmin' && Auth::role() !== 'superadmin') {
+        flash('error', 'Akun Super Admin hanya dapat dikelola oleh Super Admin.');
+        redirect('/users');
+    }
+    return $targetRole;
 }
 
 // ================ Category ================
