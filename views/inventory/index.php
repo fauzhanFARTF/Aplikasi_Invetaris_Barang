@@ -4,9 +4,11 @@
         <h1>Manajemen Alat / Aset</h1>
         <p class="subtitle">Inventaris aset streaming BMN — total <?= count($assets) ?> item ditampilkan.</p>
     </div>
-    <?php if (role_is('admin_gudang','admin')): ?>
+    <?php if (role_is('admin_gudang','admin','inventory_staff')): ?>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-navy" id="btnPrintSelected" disabled data-testid="btn-print-selected"><i class="fa-solid fa-qrcode"></i> Cetak QR Code Terpilih (<span id="selCount">0</span>)</button>
+            <?php if (role_is('admin_gudang','admin')): ?>
+                <button type="button" class="btn btn-outline-navy" id="btnPrintSelected" disabled data-testid="btn-print-selected"><i class="fa-solid fa-qrcode"></i> Cetak QR Code Terpilih (<span id="selCount">0</span>)</button>
+            <?php endif; ?>
             <a href="<?= BASE_PATH ?>/inventory/create" class="btn btn-amber" data-testid="btn-new-asset"><i class="fa-solid fa-plus"></i> Tambah Alat</a>
             <?= reset_button('assets', 'Reset Alat', 'RESET SEMUA alat? Seluruh alat dihapus PERMANEN, termasuk peminjaman & perbaikan yang terkait. Tindakan ini TIDAK BISA dibatalkan.') ?>
         </div>
@@ -80,8 +82,11 @@
                         <?php if (role_is('admin_gudang','admin','supervisor')): ?>
                             <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/barcode" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak QR Code" data-testid="btn-barcode-<?= (int)$a['id'] ?>"><i class="fa-solid fa-qrcode"></i></a>
                         <?php endif; ?>
+                        <?php $canManageThis = inventory_can_manage($a['created_by'] ?? null); ?>
+                        <?php if ($canManageThis): ?>
+                            <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/edit" class="btn btn-sm btn-outline-navy" title="Ubah" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
+                        <?php endif; ?>
                         <?php if (role_is('admin_gudang','admin')): ?>
-                            <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
                             <?php if (in_array($a['status'], ['Available','Damaged'])): ?>
                                 <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/retire" data-confirm="Nonaktifkan (retire) alat ini?" style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
@@ -93,10 +98,17 @@
                                     <button class="btn btn-sm btn-outline-navy" title="Aktifkan kembali" data-testid="btn-unretire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-open"></i></button>
                                 </form>
                             <?php endif; ?>
-                            <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/delete" data-confirm="Hapus alat ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
-                                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
-                                <button class="btn btn-sm btn-outline-danger" title="Hapus" data-testid="btn-delete-<?= (int)$a['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
-                            </form>
+                        <?php endif; ?>
+                        <?php if ($canManageThis): ?>
+                            <?php $lockDelete = (Auth::role() !== 'superadmin' && !empty($a['has_loan'])); ?>
+                            <?php if ($lockDelete): ?>
+                                <button class="btn btn-sm btn-outline-danger" title="Pernah dipinjam — hanya Super Admin yang dapat menghapus" disabled data-testid="btn-delete-locked-<?= (int)$a['id'] ?>"><i class="fa-solid fa-lock"></i></button>
+                            <?php else: ?>
+                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/delete" data-confirm="Hapus alat ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
+                                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                    <button class="btn btn-sm btn-outline-danger" title="Hapus" data-testid="btn-delete-<?= (int)$a['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
+                                </form>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </td>
                 </tr>

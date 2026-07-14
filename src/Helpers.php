@@ -198,6 +198,7 @@ function role_label(string $role): string {
         'pemohon' => 'Pemohon',
         'supervisor' => 'Kepala Bagian / Supervisor',
         'admin_gudang' => 'Admin Gudang',
+        'inventory_staff' => 'Inventory Staff',
     ][$role] ?? $role;
 }
 
@@ -209,6 +210,27 @@ function role_is(string ...$roles): bool {
     $r = Auth::role();
     if ($r === null) return false;
     return $r === 'superadmin' || in_array($r, $roles, true);
+}
+
+/**
+ * Bolehkah user login mengedit/menghapus alat tertentu?
+ * - superadmin / admin / admin_gudang: penuh (semua alat).
+ * - inventory_staff: HANYA alat yang dia tambahkan sendiri (created_by).
+ * - selain itu: tidak.
+ * $createdBy = nilai kolom assets.created_by (boleh null).
+ */
+function inventory_can_manage($createdBy): bool {
+    $r = Auth::role();
+    if (in_array($r, ['superadmin', 'admin', 'admin_gudang'], true)) return true;
+    if ($r === 'inventory_staff') return $createdBy !== null && (int)$createdBy === Auth::id();
+    return false;
+}
+
+/** Apakah alat pernah/masih dipinjam (punya baris di loan_items)? */
+function asset_has_loan_history(int $assetId): bool {
+    $stmt = db()->prepare("SELECT 1 FROM loan_items WHERE asset_id = ? LIMIT 1");
+    $stmt->execute([$assetId]);
+    return (bool) $stmt->fetchColumn();
 }
 
 function json_response($data, int $code = 200): void {

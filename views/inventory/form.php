@@ -13,7 +13,7 @@
     <div class="card-sb">
         <div class="row g-3">
             <div class="col-md-12">
-                <label class="form-label">Foto Alat</label>
+                <label class="form-label">Foto Alat <?= $isEdit ? '' : '*' ?></label>
                 <div class="d-flex align-items-start gap-3 flex-wrap">
                     <?php $currentPhotoUrl = photo_url($asset['photo'] ?? null); ?>
                     <div id="photoPreviewWrap" style="<?= $currentPhotoUrl ? '' : 'display:none;' ?>">
@@ -21,10 +21,10 @@
                     </div>
                     <div class="flex-grow-1" style="min-width:220px;">
                         <div class="d-flex gap-2 flex-wrap">
-                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo" style="max-width:280px;">
+                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo" style="max-width:280px;" <?= $isEdit ? '' : 'required' ?>>
                             <button type="button" class="btn btn-outline-navy" id="btnOpenCamera" data-testid="btn-open-camera"><i class="fa-solid fa-camera"></i> Ambil dari Kamera</button>
                         </div>
-                        <div class="form-text">JPG, PNG, atau WEBP. Maksimal 3MB.</div>
+                        <div class="form-text">JPG, PNG, atau WEBP. Maksimal 3MB.<?= $isEdit ? '' : ' <span class="text-danger">Wajib diisi.</span>' ?></div>
                         <?php if ($isEdit && $currentPhotoUrl): ?>
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" name="remove_photo" value="1" id="removePhotoCheck" data-testid="input-remove-photo">

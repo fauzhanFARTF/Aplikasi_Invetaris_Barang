@@ -23,7 +23,7 @@ CREATE TABLE users (
     name VARCHAR(120) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang') NOT NULL,
+    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff') NOT NULL,
     phone VARCHAR(30) NULL,
     unit_kerja VARCHAR(150) NULL,
     photo VARCHAR(255) NULL,
