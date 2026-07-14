@@ -91,6 +91,15 @@ function photo_url(?string $photo, string $dir = 'assets'): ?string {
 }
 
 /**
+ * URL avatar user untuk ditampilkan. Jika user belum mengunggah foto,
+ * pakai logo Diskominfo sebagai foto default (tidak pernah mengembalikan null).
+ */
+function user_avatar_url(?string $photo): string {
+    $prefix = defined('ASSET_PREFIX') ? ASSET_PREFIX : '';
+    return photo_url($photo, 'users') ?? ($prefix . '/assets/img/logo-kominfo-icon.png');
+}
+
+/**
  * Tangani upload foto dari $_FILES[$field] ke public/uploads/{$dir}/. Mengembalikan array:
  *  ['filename' => string|null, 'error' => string|null]
  * 'filename' adalah null jika tidak ada file baru yang diupload (bukan error).
