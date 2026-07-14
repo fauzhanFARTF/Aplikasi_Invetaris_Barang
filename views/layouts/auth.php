@@ -20,7 +20,7 @@
         <h2>Kelola semua aset dinas dengan tenang, semua tercatat rapi.</h2>
         <p>SIMANTAP BMN membantu tim Diskominfo Kabupaten Tangerang meminjam, memeriksa, dan merawat berbagai barang milik negara — dari peralatan streaming, perangkat jaringan, hingga kendaraan dinas (mobil &amp; motor) — tanpa ribet, cukup beberapa klik.</p>
         <div class="side-feats">
-            <div class="feat"><i class="fa-solid fa-qrcode"></i> Penyerahan / pengembalian alat cukup pindai barcode</div>
+            <div class="feat"><i class="fa-solid fa-qrcode"></i> Penyerahan / pengembalian alat cukup pindai QR code</div>
             <div class="feat"><i class="fa-solid fa-bell"></i> Notifikasi otomatis untuk setiap persetujuan</div>
             <div class="feat"><i class="fa-solid fa-shield-halved"></i> Riwayat & laporan aset selalu tersimpan aman</div>
         </div>

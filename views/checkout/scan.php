@@ -19,14 +19,14 @@
             <div>
                 <div class="hint-box no-print" style="margin-bottom:12px;">
                     <i class="fa-solid fa-mobile-screen-button"></i>
-                    <div>Buka halaman ini di <strong>HP</strong> untuk pindai pakai kamera, atau hubungkan <strong>alat pemindai barcode (USB/Bluetooth)</strong> ke komputer — cukup arahkan kursor ke kolom di bawah lalu tembak barcode-nya.</div>
+                    <div>Buka halaman ini di <strong>HP</strong> untuk pindai pakai kamera, atau hubungkan <strong>alat pemindai QR (2D scanner USB/Bluetooth)</strong> ke komputer — cukup arahkan kursor ke kolom di bawah lalu tembak QR-nya.</div>
                 </div>
                 <div class="d-flex gap-2 mb-3">
-                    <input type="text" id="manualBarcode" class="form-control" autofocus placeholder="Ketik atau tembak barcode di sini..." data-testid="input-manual-barcode">
+                    <input type="text" id="manualBarcode" class="form-control" autofocus placeholder="Ketik atau tembak QR di sini..." data-testid="input-manual-barcode">
                     <button class="btn btn-amber" id="btnManualScan" type="button" data-testid="btn-manual-scan"><i class="fa-solid fa-check"></i></button>
                 </div>
                 <div class="scanner-log" id="scannerLog" data-testid="scanner-log">
-                    <div class="line info">Arahkan kamera ke barcode / QR pada alat. Sistem otomatis memproses penyerahan setiap alat yang terdaftar dalam peminjaman ini.</div>
+                    <div class="line info">Arahkan kamera ke QR code pada alat. Sistem otomatis memproses penyerahan setiap alat yang terdaftar dalam peminjaman ini.</div>
                 </div>
             </div>
         </div>
