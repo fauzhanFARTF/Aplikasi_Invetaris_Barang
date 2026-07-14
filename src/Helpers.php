@@ -191,6 +191,17 @@ function status_badge(string $status): string {
     return '<span class="badge ' . $cls . '">' . e($label) . '</span>';
 }
 
+/** Daftar Bidang/Unit Kerja di Diskominfo Kab. Tangerang (untuk dropdown). */
+function unit_kerja_options(): array {
+    return [
+        'Bidang Pengelolaan Aplikasi Informatika',
+        'Bidang Informasi dan Komunikasi Publik (IKP)',
+        'Bidang Statistik Sektoral',
+        'Bidang Penyelenggaraan Persandian untuk Keamanan Informasi',
+        'Sekretariat',
+    ];
+}
+
 function role_label(string $role): string {
     return [
         'superadmin' => 'Super Admin',
