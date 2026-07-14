@@ -29,8 +29,8 @@ function user_create_post(): void {
         redirect('/users/create');
     }
     try {
-        db()->prepare("INSERT INTO users (name,email,password_hash,role,phone,unit_kerja,photo,is_active,created_by) VALUES (?,?,?,?,?,?,?,1,?)")
-            ->execute([$d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja'], $upload['filename'], Auth::id()]);
+        db()->prepare("INSERT INTO users (uuid,name,email,password_hash,role,phone,unit_kerja,photo,is_active,created_by) VALUES (?,?,?,?,?,?,?,?,1,?)")
+            ->execute([generate_uuid(), $d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja'], $upload['filename'], Auth::id()]);
         log_audit('user.create', 'user', db()->lastInsertId(), ['email' => $d['email']]);
         flash('success', 'User dibuat.');
         redirect('/users');
@@ -41,8 +41,9 @@ function user_create_post(): void {
     }
 }
 
-function user_edit_get(string $id): void {
+function user_edit_get(string $uuid): void {
     Auth::requireRole('admin');
+    $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
     $stmt = db()->prepare("SELECT u.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM users u
@@ -56,14 +57,15 @@ function user_edit_get(string $id): void {
     layout('main', 'users/form', ['title' => 'Ubah User', 'user' => $user, 'currentPath' => '/users']);
 }
 
-function user_edit_post(string $id): void {
+function user_edit_post(string $uuid): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
     $d = _user_capture();
     if (!_user_role_assignable($d['role'])) {
         flash('error', 'Role tidak valid / tidak berwenang memberikan role tersebut.');
-        redirect('/users/' . (int)$id . '/edit');
+        redirect('/users/' . $uuid . '/edit');
     }
 
     $stmt = db()->prepare("SELECT photo FROM users WHERE id = ?");
@@ -75,7 +77,7 @@ function user_edit_post(string $id): void {
     $upload = handle_photo_upload('photo', $oldPhoto, 'users', 'user');
     if ($upload['error']) {
         flash('error', $upload['error']);
-        redirect('/users/' . (int)$id . '/edit');
+        redirect('/users/' . $uuid . '/edit');
     }
 
     if ($upload['filename']) {
@@ -99,9 +101,10 @@ function user_edit_post(string $id): void {
     redirect('/users');
 }
 
-function user_toggle(string $id): void {
+function user_toggle(string $uuid): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
     db()->prepare("UPDATE users SET is_active = 1 - is_active, updated_by = ? WHERE id = ?")->execute([Auth::id(), (int)$id]);
     log_audit('user.toggle', 'user', $id);
@@ -109,10 +112,10 @@ function user_toggle(string $id): void {
     redirect('/users');
 }
 
-function user_delete(string $id): void {
+function user_delete(string $uuid): void {
     Auth::requireRole('admin');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('users', $uuid);
     if ($id === Auth::id()) {
         flash('error', 'Tidak bisa menghapus akun Anda sendiri.');
         redirect('/users');
@@ -124,13 +127,22 @@ function user_delete(string $id): void {
     redirect('/users');
 }
 
+/** Nilai unit kerja: pakai isian bebas jika memilih "Lainnya", jika tidak pakai pilihan. */
+function _capture_unit_kerja(): ?string {
+    $sel = trim($_POST['unit_kerja'] ?? '');
+    if ($sel === '__other__') {
+        return trim($_POST['unit_kerja_other'] ?? '') ?: null;
+    }
+    return $sel ?: null;
+}
+
 function _user_capture(): array {
     return [
         'name' => trim($_POST['name'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
         'role' => $_POST['role'] ?? '',
         'phone' => trim($_POST['phone'] ?? '') ?: null,
-        'unit_kerja' => trim($_POST['unit_kerja'] ?? '') ?: null,
+        'unit_kerja' => _capture_unit_kerja(),
     ];
 }
 
@@ -185,7 +197,7 @@ function category_create_post(): void {
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
     if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/create'); }
     try {
-        db()->prepare("INSERT INTO categories (name, description, created_by) VALUES (?,?,?)")->execute([$name, $desc, Auth::id()]);
+        db()->prepare("INSERT INTO categories (uuid, name, description, created_by) VALUES (?,?,?,?)")->execute([generate_uuid(), $name, $desc, Auth::id()]);
         flash('success', 'Kategori ditambahkan.');
         redirect('/categories');
     } catch (Throwable $e) {
@@ -194,8 +206,9 @@ function category_create_post(): void {
     }
 }
 
-function category_edit_get(string $id): void {
+function category_edit_get(string $uuid): void {
     Auth::requireRole('admin', 'admin_gudang');
+    $id = uuid_to_id_or_404('categories', $uuid);
     $stmt = db()->prepare("SELECT c.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM categories c
                            LEFT JOIN users cu ON cu.id = c.created_by
@@ -208,24 +221,26 @@ function category_edit_get(string $id): void {
     layout('main', 'inventory/category_form', ['title' => 'Ubah Kategori', 'category' => $category, 'currentPath' => '/categories']);
 }
 
-function category_edit_post(string $id): void {
+function category_edit_post(string $uuid): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('categories', $uuid);
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
-    if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/' . (int)$id . '/edit'); }
+    if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/' . $uuid . '/edit'); }
     try {
         db()->prepare("UPDATE categories SET name=?, description=?, updated_by=? WHERE id=?")->execute([$name, $desc, Auth::id(), (int)$id]);
         flash('success', 'Kategori diperbarui.');
         redirect('/categories');
     } catch (Throwable $e) {
         flash('error', 'Gagal memperbarui kategori (nama mungkin sudah dipakai): ' . $e->getMessage());
-        redirect('/categories/' . (int)$id . '/edit');
+        redirect('/categories/' . $uuid . '/edit');
     }
 }
 
-function category_delete(string $id): void {
+function category_delete(string $uuid): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('categories', $uuid);
     try { soft_delete('categories', (int)$id); flash('success','Kategori dihapus (bisa dipulihkan lewat Riwayat Terhapus).'); }
     catch (Throwable $e) { flash('error', $e->getMessage()); }
     redirect('/categories');

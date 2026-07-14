@@ -24,8 +24,8 @@
                     <td><?= status_badge($r['status']) ?></td>
                     <td class="small text-slate"><?= fmt_datetime($r['created_at']) ?></td>
                     <td class="text-nowrap">
-                        <a href="<?= BASE_PATH ?>/repairs/<?= (int)$r['id'] ?>" class="btn btn-sm btn-outline-navy" data-testid="btn-view-repair-<?= (int)$r['id'] ?>"><i class="fa-regular fa-eye"></i></a>
-                        <a href="<?= BASE_PATH ?>/repairs/<?= (int)$r['id'] ?>/print" target="_blank" class="btn btn-sm btn-amber" data-testid="btn-print-repair-<?= (int)$r['id'] ?>"><i class="fa-solid fa-print"></i> SPK</a>
+                        <a href="<?= BASE_PATH ?>/repairs/<?= e($r["uuid"]) ?>" class="btn btn-sm btn-outline-navy" data-testid="btn-view-repair-<?= (int)$r['id'] ?>"><i class="fa-regular fa-eye"></i></a>
+                        <a href="<?= BASE_PATH ?>/repairs/<?= e($r["uuid"]) ?>/print" target="_blank" class="btn btn-sm btn-amber" data-testid="btn-print-repair-<?= (int)$r['id'] ?>"><i class="fa-solid fa-print"></i> SPK</a>
                     </td>
                 </tr>
             <?php endforeach; if (empty($active)): ?>
@@ -54,13 +54,13 @@
             <tbody>
             <?php foreach ($done as $r): ?>
                 <tr data-ls-row data-ls-text="<?= e(strtolower($r['repair_code'].' '.$r['asset_name'].' '.($r['technician_name'] ?? '').' '.($r['completed_by_name'] ?? ''))) ?>">
-                    <td class="code"><a href="<?= BASE_PATH ?>/repairs/<?= (int)$r['id'] ?>"><?= e($r['repair_code']) ?></a></td>
+                    <td class="code"><a href="<?= BASE_PATH ?>/repairs/<?= e($r["uuid"]) ?>"><?= e($r['repair_code']) ?></a></td>
                     <td><?= e($r['asset_name']) ?></td>
                     <td class="small"><?= e($r['technician_name']) ?></td>
                     <td class="small text-slate"><?= fmt_datetime($r['completed_at']) ?></td>
                     <td class="small"><?= e($r['completed_by_name']) ?></td>
                     <td>
-                        <form method="POST" action="<?= BASE_PATH ?>/repairs/<?= (int)$r['id'] ?>/delete" data-confirm="Hapus riwayat perbaikan <?= e($r['repair_code']) ?>? Tindakan ini tidak dapat dibatalkan.">
+                        <form method="POST" action="<?= BASE_PATH ?>/repairs/<?= e($r["uuid"]) ?>/delete" data-confirm="Hapus riwayat perbaikan <?= e($r['repair_code']) ?>? Tindakan ini tidak dapat dibatalkan.">
                             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                             <!-- <button type="submit" class="btn btn-sm btn-outline-navy text-danger" title="Hapus riwayat" data-testid="btn-delete-repair-<?= (int)$r['id'] ?>"><i class="fa-solid fa-trash"></i></button> -->
                         </form>

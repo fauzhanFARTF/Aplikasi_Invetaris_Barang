@@ -5,7 +5,7 @@
     </div>
     <div class="d-flex gap-2">
         <a href="<?= BASE_PATH ?>/checkin" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
-        <form method="POST" action="<?= BASE_PATH ?>/checkin/<?= (int)$loan['id'] ?>/finalize" data-confirm="Selesaikan pengembalian?">
+        <form method="POST" action="<?= BASE_PATH ?>/checkin/<?= e($loan["uuid"]) ?>/finalize" data-confirm="Selesaikan pengembalian?">
             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
             <button class="btn btn-primary" data-testid="btn-finalize-checkin"><i class="fa-solid fa-flag-checkered"></i> Selesai Pengembalian</button>
         </form>

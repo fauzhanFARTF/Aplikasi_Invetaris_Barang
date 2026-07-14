@@ -84,6 +84,38 @@ function generate_code(string $prefix, string $table, string $col = 'loan_code')
  * Bangun URL publik untuk foto (aset atau user) di public/uploads/{$dir}/.
  * Mengembalikan null kalau tidak ada foto.
  */
+/** UUID v4 acak (RFC 4122) untuk identitas publik entitas di URL. */
+function generate_uuid(): string {
+    $b = random_bytes(16);
+    $b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
+    $b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
+}
+
+/**
+ * Terjemahkan uuid publik menjadi id integer internal untuk $table (whitelist).
+ * Mengembalikan id, atau null jika tidak ditemukan / tabel tak dikenal.
+ */
+function uuid_to_id(string $table, string $uuid): ?int {
+    $allowed = ['users', 'categories', 'assets', 'packages', 'loans', 'repairs'];
+    if (!in_array($table, $allowed, true)) return null;
+    $stmt = db()->prepare("SELECT id FROM $table WHERE uuid = ?");
+    $stmt->execute([$uuid]);
+    $id = $stmt->fetchColumn();
+    return $id === false ? null : (int) $id;
+}
+
+/** Resolusi uuid->id atau hentikan dengan 404 bila tidak ada. */
+function uuid_to_id_or_404(string $table, string $uuid): int {
+    $id = uuid_to_id($table, $uuid);
+    if ($id === null) {
+        http_response_code(404);
+        include APP_ROOT . '/views/errors/404.php';
+        exit;
+    }
+    return $id;
+}
+
 function photo_url(?string $photo, string $dir = 'assets'): ?string {
     if (!$photo) return null;
     $prefix = defined('ASSET_PREFIX') ? ASSET_PREFIX : '';
@@ -189,6 +221,17 @@ function status_badge(string $status): string {
     ];
     [$cls, $label] = $map[$status] ?? ['bg-secondary', $status];
     return '<span class="badge ' . $cls . '">' . e($label) . '</span>';
+}
+
+/** Daftar Bidang/Unit Kerja di Diskominfo Kab. Tangerang (untuk dropdown). */
+function unit_kerja_options(): array {
+    return [
+        'Bidang Pengelolaan Aplikasi Informatika',
+        'Bidang Informasi dan Komunikasi Publik (IKP)',
+        'Bidang Statistik Sektoral',
+        'Bidang Penyelenggaraan Persandian untuk Keamanan Informasi',
+        'Sekretariat',
+    ];
 }
 
 function role_label(string $role): string {
