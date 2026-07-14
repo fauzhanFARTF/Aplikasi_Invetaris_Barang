@@ -24,7 +24,7 @@
         .qr-label .lbl-name { font-size: 15px; font-weight: 800; color: #0F172A; margin: 4px 0 2px; line-height: 1.25; min-height: 38px; }
         .qr-label .lbl-bmn { font-size: 12px; color: #475569; font-family: 'JetBrains Mono', monospace; margin-bottom: 10px; }
         .qr-label .lbl-qr { display: flex; justify-content: center; margin: 6px 0; }
-        .qr-label .lbl-qr canvas { width: 160px !important; height: 160px !important; }
+        .qr-label .lbl-qr canvas, .qr-label .lbl-qr img { width: 160px !important; height: 160px !important; }
         .qr-label .lbl-code-text { font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 0.04em; color: #0F172A; margin: 8px 0 4px; }
         .qr-label .lbl-foot { font-size: 9.5px; color: #94A3B8; margin-top: 6px; }
 
@@ -49,18 +49,24 @@
             <div class="lbl-org"><?= e(APP_NAME) ?></div>
             <div class="lbl-name"><?= e($a['name']) ?></div>
             <div class="lbl-bmn">BMN: <?= e($a['bmn_number']) ?> · <?= e($a['asset_code']) ?></div>
-            <div class="lbl-qr"><canvas data-code="<?= e($code) ?>"></canvas></div>
+            <div class="lbl-qr" data-code="<?= e($code) ?>"></div>
             <div class="lbl-code-text"><?= e($code) ?></div>
             <div class="lbl-foot">Pindai QR dengan kamera HP atau alat pemindai QR</div>
         </div>
     <?php endforeach; ?>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="<?= ASSET_PREFIX ?>/assets/js/qrcode.min.js"></script>
 <script>
     // Render QR code untuk tiap alat (dipindai kamera HP atau alat pemindai QR 2D).
-    document.querySelectorAll('canvas[data-code]').forEach(canvas => {
-        QRCode.toCanvas(canvas, canvas.dataset.code, { width: 160, margin: 0 }, err => { if (err) console.error(err); });
+    // Library qrcodejs disimpan lokal (bukan CDN) agar tak rentan CDN berubah/rusak.
+    document.querySelectorAll('.lbl-qr[data-code]').forEach(el => {
+        new QRCode(el, {
+            text: el.dataset.code,
+            width: 160,
+            height: 160,
+            correctLevel: QRCode.CorrectLevel.M,
+        });
     });
 </script>
 </body>
