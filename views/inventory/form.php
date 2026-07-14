@@ -52,7 +52,7 @@
                 <input type="text" name="bmn_number" class="form-control" required value="<?= e($asset['bmn_number'] ?? '') ?>" placeholder="mis. BMN-2024-KMR-004" data-testid="input-bmn">
             </div>
             <div class="col-md-4">
-                <label class="form-label">Barcode / QR Value</label>
+                <label class="form-label">Nilai QR Code</label>
                 <input type="text" name="barcode" class="form-control" value="<?= e($asset['barcode'] ?? '') ?>" placeholder="Kosongkan → sama dengan No. BMN" data-testid="input-barcode">
             </div>
             <div class="col-md-8">
