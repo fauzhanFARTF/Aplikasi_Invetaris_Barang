@@ -8,7 +8,7 @@
     <a href="<?= BASE_PATH ?>/packages" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>
 
-<form method="POST" action="<?= $isEdit ? '/packages/'.(int)$package['id'].'/edit' : '/packages/create' ?>" data-testid="package-form">
+<form method="POST" action="<?= $isEdit ? '/packages/'.e($package['uuid']).'/edit' : '/packages/create' ?>" data-testid="package-form">
     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
     <div class="row g-3">
         <div class="col-lg-5">

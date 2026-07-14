@@ -8,7 +8,7 @@
     <a href="<?= BASE_PATH ?>/inventory" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>
 
-<form method="POST" action="<?= $isEdit ? '/inventory/'.(int)$asset['id'].'/edit' : '/inventory/create' ?>" enctype="multipart/form-data" data-testid="asset-form">
+<form method="POST" action="<?= $isEdit ? '/inventory/'.e($asset['uuid']).'/edit' : '/inventory/create' ?>" enctype="multipart/form-data" data-testid="asset-form">
     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
     <div class="card-sb">
         <div class="row g-3">
