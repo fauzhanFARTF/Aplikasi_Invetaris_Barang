@@ -73,7 +73,7 @@
                         <tbody>
                         <?php foreach ($myLoans as $l): ?>
                             <tr>
-                                <td class="code"><a href="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>"><?= e($l['loan_code']) ?></a></td>
+                                <td class="code"><a href="<?= BASE_PATH ?>/loans/<?= e($l["uuid"]) ?>"><?= e($l['loan_code']) ?></a></td>
                                 <td>
                                     <div class="fw-semibold"><?= e($l['event_name']) ?></div>
                                     <?php if (!empty($l['requester_name'])): ?><div class="text-slate small"><?= e($l['requester_name']) ?></div><?php endif; ?>

@@ -23,8 +23,8 @@
                     <td class="small text-slate"><?= e($c['description'] ?: '—') ?></td>
                     <td><span class="badge bg-info text-dark"><?= (int)$c['asset_count'] ?></span></td>
                     <td class="text-nowrap">
-                        <a href="<?= BASE_PATH ?>/categories/<?= (int)$c['id'] ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-category-<?= (int)$c['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
-                        <form method="POST" action="<?= BASE_PATH ?>/categories/<?= (int)$c['id'] ?>/delete" data-confirm="Hapus kategori &quot;<?= e($c['name']) ?>&quot;? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
+                        <a href="<?= BASE_PATH ?>/categories/<?= e($c["uuid"]) ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-category-<?= (int)$c['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
+                        <form method="POST" action="<?= BASE_PATH ?>/categories/<?= e($c["uuid"]) ?>/delete" data-confirm="Hapus kategori &quot;<?= e($c['name']) ?>&quot;? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
                             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                             <button class="btn btn-sm btn-outline-danger" data-testid="btn-delete-category-<?= (int)$c['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
                         </form>

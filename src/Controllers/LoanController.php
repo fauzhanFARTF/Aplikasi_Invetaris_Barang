@@ -111,8 +111,9 @@ function loan_create_post(): void {
         if ($bad) throw new RuntimeException('Alat tidak dapat dipinjam (rusak / dihapus): ' . implode(', ', array_column($bad,'name')));
 
         $code = generate_code('LN', 'loans', 'loan_code');
-        $ins = $pdo->prepare("INSERT INTO loans (loan_code, requester_id, event_name, event_location, start_date, end_date, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,'Pending',?)");
-        $ins->execute([$code, Auth::id(), $eventName, $location, $start, $end, $purpose, Auth::id()]);
+        $loanUuid = generate_uuid();
+        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,?,'Pending',?)");
+        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $purpose, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
         $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status) VALUES (?,?,?, 'Reserved')");
@@ -128,10 +129,10 @@ function loan_create_post(): void {
         // Notify supervisors
         Notification::pushToRole('supervisor', 'Pengajuan Peminjaman Baru',
             "Pengajuan $code untuk acara \"$eventName\" ($start s/d $end) menunggu persetujuan Anda.",
-            "/loans/$loanId");
+            "/loans/$loanUuid");
 
         flash('success', "Peminjaman $code berhasil diajukan. Menunggu persetujuan atasan.");
-        redirect("/loans/$loanId");
+        redirect("/loans/$loanUuid");
     } catch (Throwable $e) {
         $pdo->rollBack();
         flash('error', $e->getMessage());
@@ -139,10 +140,10 @@ function loan_create_post(): void {
     }
 }
 
-function loan_show(string $id): void {
+function loan_show(string $uuid): void {
     Auth::requireLogin();
     $pdo = db();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('loans', $uuid);
     $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit, s.name AS supervisor_name,
                            cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM loans l JOIN users u ON u.id = l.requester_id
@@ -175,10 +176,10 @@ function loan_show(string $id): void {
     ]);
 }
 
-function loan_cancel(string $id): void {
+function loan_cancel(string $uuid): void {
     Auth::requireLogin();
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('loans', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT * FROM loans WHERE id = ?");
     $stmt->execute([$id]);
@@ -189,7 +190,7 @@ function loan_cancel(string $id): void {
     }
     if (!in_array($loan['status'], ['Pending','Approved'])) {
         flash('error', 'Hanya peminjaman berstatus Pending/Approved yang dapat dibatalkan.');
-        redirect("/loans/$id");
+        redirect("/loans/$uuid");
     }
 
     $pdo->beginTransaction();
@@ -199,19 +200,19 @@ function loan_cancel(string $id): void {
         $pdo->prepare("UPDATE assets SET status = 'Available' WHERE id IN (SELECT asset_id FROM loan_items WHERE loan_id = ? AND item_status IN ('Reserved'))")->execute([$id]);
         $pdo->commit();
         log_audit('loan.cancel', 'loan', $id);
-        Notification::pushToRole('supervisor', 'Peminjaman Dibatalkan', "Peminjaman {$loan['loan_code']} dibatalkan oleh pemohon.", "/loans/$id");
+        Notification::pushToRole('supervisor', 'Peminjaman Dibatalkan', "Peminjaman {$loan['loan_code']} dibatalkan oleh pemohon.", "/loans/$uuid");
         flash('success', 'Peminjaman berhasil dibatalkan.');
     } catch (Throwable $e) {
         $pdo->rollBack();
         flash('error', 'Gagal membatalkan: ' . $e->getMessage());
     }
-    redirect("/loans/$id");
+    redirect("/loans/$uuid");
 }
 
-function loan_delete(string $id): void {
+function loan_delete(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('loans', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT * FROM loans WHERE id = ?");
     $stmt->execute([$id]);
@@ -224,7 +225,7 @@ function loan_delete(string $id): void {
     $finalStatuses = ['Completed', 'Rejected', 'Cancelled', 'Returned'];
     if (!in_array($loan['status'], $finalStatuses, true)) {
         flash('error', 'Hanya riwayat peminjaman yang sudah selesai/ditolak/dibatalkan yang dapat dihapus.');
-        redirect("/loans/$id");
+        redirect("/loans/$uuid");
     }
 
     try {
@@ -288,15 +289,15 @@ function approval_index(): void {
     ]);
 }
 
-function loan_approve(string $id): void {
+function loan_approve(string $uuid): void {
     Auth::requireRole('supervisor', 'admin');
     Auth::verifyCsrf();
-    _loan_decide((int)$id, 'Approved');
+    _loan_decide(uuid_to_id_or_404('loans', $uuid), 'Approved');
 }
-function loan_reject(string $id): void {
+function loan_reject(string $uuid): void {
     Auth::requireRole('supervisor', 'admin');
     Auth::verifyCsrf();
-    _loan_decide((int)$id, 'Rejected');
+    _loan_decide(uuid_to_id_or_404('loans', $uuid), 'Rejected');
 }
 function _loan_decide(int $id, string $decision): void {
     $pdo = db();
@@ -305,7 +306,7 @@ function _loan_decide(int $id, string $decision): void {
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { flash('error', 'Peminjaman tidak ditemukan.'); redirect('/approvals'); }
-    if ($loan['status'] !== 'Pending') { flash('error', 'Peminjaman sudah tidak dalam status Pending.'); redirect("/loans/$id"); }
+    if ($loan['status'] !== 'Pending') { flash('error', 'Peminjaman sudah tidak dalam status Pending.'); redirect("/loans/{$loan['uuid']}"); }
 
     $pdo->beginTransaction();
     try {
@@ -323,16 +324,16 @@ function _loan_decide(int $id, string $decision): void {
         Notification::push((int)$loan['requester_id'],
             $decision === 'Approved' ? 'Peminjaman Anda Disetujui' : 'Peminjaman Anda Ditolak',
             "Peminjaman {$loan['loan_code']} telah $decision oleh Kepala Bagian." . ($note ? "\nCatatan: $note" : ''),
-            "/loans/$id");
+            "/loans/{$loan['uuid']}");
         if ($decision === 'Approved') {
             Notification::pushToRole('admin_gudang', 'Peminjaman Siap Diserahkan',
                 "Peminjaman {$loan['loan_code']} ({$loan['event_name']}) sudah disetujui. Siapkan alat untuk diserahkan.",
-                "/checkout/$id");
+                "/checkout/{$loan['uuid']}");
         }
         flash('success', "Peminjaman $decision.");
     } catch (Throwable $e) {
         $pdo->rollBack();
         flash('error', 'Gagal: ' . $e->getMessage());
     }
-    redirect("/loans/$id");
+    redirect("/loans/{$loan['uuid']}");
 }

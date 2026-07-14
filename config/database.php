@@ -94,6 +94,17 @@ function run_pending_migrations(PDO $pdo): void {
         if ($roleCol && (strpos($roleCol['Type'], 'superadmin') === false || strpos($roleCol['Type'], 'inventory_staff') === false)) {
             $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff') NOT NULL");
         }
+
+        // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
+        // Tambah kolom bila belum ada, lalu backfill baris yang uuid-nya NULL —
+        // sekaligus jadi jaring pengaman kalau ada insert yang terlewat mengisi uuid.
+        foreach (['users', 'categories', 'assets', 'packages', 'loans', 'repairs'] as $table) {
+            $has = $pdo->query("SHOW COLUMNS FROM $table LIKE 'uuid'")->fetch();
+            if (!$has) {
+                $pdo->exec("ALTER TABLE $table ADD COLUMN uuid CHAR(36) NULL UNIQUE");
+            }
+            $pdo->exec("UPDATE $table SET uuid = UUID() WHERE uuid IS NULL");
+        }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
         // just log it so an admin can still apply database/migration_add_asset_price.sql /

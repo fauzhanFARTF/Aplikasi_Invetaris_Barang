@@ -83,8 +83,8 @@ function inventory_create_post(): void {
     }
     try {
         $pdo = db();
-        $stmt = $pdo->prepare("INSERT INTO assets (asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
-        $stmt->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id()]);
+        $stmt = $pdo->prepare("INSERT INTO assets (uuid, asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
+        $stmt->execute([generate_uuid(), $data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id()]);
         log_audit('asset.create', 'asset', $pdo->lastInsertId(), $data);
         flash('success', 'Alat berhasil ditambahkan.');
         redirect('/inventory');
@@ -95,8 +95,9 @@ function inventory_create_post(): void {
     }
 }
 
-function inventory_edit_get(string $id): void {
+function inventory_edit_get(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
+    $id = uuid_to_id_or_404("assets", $uuid);
     _inventory_require_manage((int)$id);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT a.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
@@ -112,9 +113,10 @@ function inventory_edit_get(string $id): void {
     layout('main', 'inventory/form', ['title' => 'Ubah Alat', 'asset' => $asset, 'categories' => $categories, 'currentPath' => '/inventory']);
 }
 
-function inventory_edit_post(string $id): void {
+function inventory_edit_post(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('assets', $uuid);
     $data = _inventory_capture();
 
     $pdo = db();
@@ -124,7 +126,7 @@ function inventory_edit_post(string $id): void {
     $upload = handle_photo_upload('photo', $oldPhoto);
     if ($upload['error']) {
         flash('error', $upload['error']);
-        redirect('/inventory/' . (int)$id . '/edit');
+        redirect('/inventory/' . $uuid . '/edit');
     }
 
     // Tentukan nilai kolom photo final:
@@ -149,28 +151,30 @@ function inventory_edit_post(string $id): void {
     redirect('/inventory');
 }
 
-function inventory_retire(string $id): void {
+function inventory_retire(string $uuid): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('assets', $uuid);
     db()->prepare("UPDATE assets SET status='Retired', updated_by=? WHERE id=? AND status IN ('Available','Damaged')")->execute([Auth::id(), (int)$id]);
     log_audit('asset.retire', 'asset', $id);
     flash('success', 'Alat dinonaktifkan (Retired).');
     redirect('/inventory');
 }
 
-function inventory_unretire(string $id): void {
+function inventory_unretire(string $uuid): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('assets', $uuid);
     db()->prepare("UPDATE assets SET status='Available', updated_by=? WHERE id=? AND status='Retired'")->execute([Auth::id(), (int)$id]);
     log_audit('asset.unretire', 'asset', $id);
     flash('success', 'Alat diaktifkan kembali (Tersedia).');
     redirect('/inventory');
 }
 
-function inventory_delete(string $id): void {
+function inventory_delete(string $uuid): void {
     Auth::requireRole('admin', 'admin_gudang', 'inventory_staff');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('assets', $uuid);
     _inventory_require_manage($id); // gate kepemilikan (inventory_staff hanya alat sendiri)
 
     // Alat yang pernah dipinjam hanya boleh dihapus oleh superadmin — menjaga
@@ -186,8 +190,9 @@ function inventory_delete(string $id): void {
     redirect('/inventory');
 }
 
-function inventory_barcode_single(string $id): void {
+function inventory_barcode_single(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin', 'supervisor');
+    $id = uuid_to_id_or_404('assets', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.id = ?");
     $stmt->execute([(int)$id]);
@@ -199,21 +204,22 @@ function inventory_barcode_single(string $id): void {
 
 function inventory_barcode_bulk(): void {
     Auth::requireRole('admin_gudang', 'admin', 'supervisor');
-    $ids = array_values(array_unique(array_filter(array_map('intval', explode(',', $_GET['ids'] ?? '')))));
-    if (empty($ids)) {
+    // Terima daftar UUID (bukan id) dari query string agar id tidak terekspos.
+    $uuids = array_values(array_unique(array_filter(array_map('trim', explode(',', $_GET['ids'] ?? '')))));
+    if (empty($uuids)) {
         flash('error', 'Pilih minimal satu alat untuk dicetak barcode-nya.');
         redirect('/inventory');
     }
-    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $placeholders = implode(',', array_fill(0, count($uuids), '?'));
     $pdo = db();
-    $stmt = $pdo->prepare("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.id IN ($placeholders)");
-    $stmt->execute($ids);
+    $stmt = $pdo->prepare("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.uuid IN ($placeholders)");
+    $stmt->execute($uuids);
     $rows = $stmt->fetchAll();
     // Pertahankan urutan sesuai yang dipilih pengguna (agar sesuai urutan centang di tabel)
-    $byId = [];
-    foreach ($rows as $r) { $byId[(int)$r['id']] = $r; }
+    $byUuid = [];
+    foreach ($rows as $r) { $byUuid[$r['uuid']] = $r; }
     $assets = [];
-    foreach ($ids as $i) { if (isset($byId[$i])) $assets[] = $byId[$i]; }
+    foreach ($uuids as $u) { if (isset($byUuid[$u])) $assets[] = $byUuid[$u]; }
     if (empty($assets)) { flash('error', 'Alat tidak ditemukan.'); redirect('/inventory'); }
     include APP_ROOT . '/views/inventory/barcode_print.php';
 }

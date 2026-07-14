@@ -20,9 +20,9 @@ function repair_index(): void {
     ]);
 }
 
-function repair_show(string $id): void {
+function repair_show(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('repairs', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT r.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.brand, a.model, a.serial_number,
                             u.name AS completed_by_name, l.loan_code, req.name AS requester_name,
@@ -46,9 +46,9 @@ function repair_show(string $id): void {
     ]);
 }
 
-function repair_print(string $id): void {
+function repair_print(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('repairs', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT r.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.brand, a.model, a.serial_number,
                             l.loan_code, req.name AS requester_name, req.unit_kerja AS requester_unit
@@ -73,10 +73,10 @@ function repair_print(string $id): void {
     include APP_ROOT . '/views/repairs/form_print.php';
 }
 
-function repair_delete(string $id): void {
+function repair_delete(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('repairs', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT * FROM repairs WHERE id = ?");
     $stmt->execute([$id]);
@@ -87,7 +87,7 @@ function repair_delete(string $id): void {
     // stay so the asset's repair trail isn't silently lost mid-process.
     if ($repair['status'] !== 'Completed') {
         flash('error', 'Hanya riwayat perbaikan yang sudah Selesai yang dapat dihapus.');
-        redirect("/repairs/$id");
+        redirect("/repairs/$uuid");
     }
 
     try {
@@ -119,22 +119,22 @@ function repair_delete_all(): void {
     }
     redirect('/repairs');
 }
-function repair_complete(string $id): void {
+function repair_complete(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('repairs', $uuid);
     $techName = trim($_POST['technician_name'] ?? '');
     $action = trim($_POST['action_taken'] ?? '');
     if (!$techName || !$action) {
         flash('error', 'Nama teknisi dan tindakan perbaikan wajib diisi.');
-        redirect("/repairs/$id");
+        redirect("/repairs/$uuid");
     }
     $pdo = db();
     $stmt = $pdo->prepare("SELECT * FROM repairs WHERE id = ? AND deleted_at IS NULL");
     $stmt->execute([$id]);
     $repair = $stmt->fetch();
     if (!$repair) { flash('error', 'Perbaikan tidak ditemukan.'); redirect('/repairs'); }
-    if ($repair['status'] === 'Completed') { flash('error', 'Perbaikan sudah selesai.'); redirect("/repairs/$id"); }
+    if ($repair['status'] === 'Completed') { flash('error', 'Perbaikan sudah selesai.'); redirect("/repairs/$uuid"); }
 
     $pdo->beginTransaction();
     try {
@@ -162,5 +162,5 @@ function repair_complete(string $id): void {
         $pdo->rollBack();
         flash('error', 'Gagal: ' . $e->getMessage());
     }
-    redirect("/repairs/$id");
+    redirect("/repairs/$uuid");
 }

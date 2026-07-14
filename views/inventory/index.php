@@ -55,7 +55,7 @@
                     data-ls-category="<?= (int)($a['category_id'] ?? 0) ?>"
                     data-ls-status="<?= e($a['status']) ?>">
                     <?php if (role_is('admin_gudang','admin')): ?>
-                        <td><input type="checkbox" class="form-check-input asset-check" value="<?= (int)$a['id'] ?>" data-testid="check-<?= (int)$a['id'] ?>"></td>
+                        <td><input type="checkbox" class="form-check-input asset-check" value="<?= e($a['uuid']) ?>" data-testid="check-<?= (int)$a['id'] ?>"></td>
                     <?php endif; ?>
                     <td>
                         <?php $photoUrl = photo_url($a['photo'] ?? null); ?>
@@ -80,20 +80,20 @@
                     <td><?= status_badge($a['status']) ?></td>
                     <td class="text-nowrap">
                         <?php if (role_is('admin_gudang','admin','supervisor')): ?>
-                            <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/barcode" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak QR Code" data-testid="btn-barcode-<?= (int)$a['id'] ?>"><i class="fa-solid fa-qrcode"></i></a>
+                            <a href="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/barcode" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak QR Code" data-testid="btn-barcode-<?= (int)$a['id'] ?>"><i class="fa-solid fa-qrcode"></i></a>
                         <?php endif; ?>
                         <?php $canManageThis = inventory_can_manage($a['created_by'] ?? null); ?>
                         <?php if ($canManageThis): ?>
-                            <a href="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/edit" class="btn btn-sm btn-outline-navy" title="Ubah" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
+                            <a href="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/edit" class="btn btn-sm btn-outline-navy" title="Ubah" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
                         <?php endif; ?>
                         <?php if (role_is('admin_gudang','admin')): ?>
                             <?php if (in_array($a['status'], ['Available','Damaged'])): ?>
-                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/retire" data-confirm="Nonaktifkan (retire) alat ini?" style="display:inline;">
+                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/retire" data-confirm="Nonaktifkan (retire) alat ini?" style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                     <button class="btn btn-sm btn-outline-danger" title="Retire" data-testid="btn-retire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-archive"></i></button>
                                 </form>
                             <?php elseif ($a['status'] === 'Retired'): ?>
-                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/unretire" data-confirm="Aktifkan kembali alat ini? Status akan menjadi Tersedia." style="display:inline;">
+                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/unretire" data-confirm="Aktifkan kembali alat ini? Status akan menjadi Tersedia." style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                     <button class="btn btn-sm btn-outline-navy" title="Aktifkan kembali" data-testid="btn-unretire-<?= (int)$a['id'] ?>"><i class="fa-solid fa-box-open"></i></button>
                                 </form>
@@ -104,7 +104,7 @@
                             <?php if ($lockDelete): ?>
                                 <button class="btn btn-sm btn-outline-danger" title="Pernah dipinjam — hanya Super Admin yang dapat menghapus" disabled data-testid="btn-delete-locked-<?= (int)$a['id'] ?>"><i class="fa-solid fa-lock"></i></button>
                             <?php else: ?>
-                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= (int)$a['id'] ?>/delete" data-confirm="Hapus alat ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
+                                <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/delete" data-confirm="Hapus alat ini? (masih bisa dipulihkan lewat Riwayat Terhapus)" style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                     <button class="btn btn-sm btn-outline-danger" title="Hapus" data-testid="btn-delete-<?= (int)$a['id'] ?>"><i class="fa-regular fa-trash-can"></i></button>
                                 </form>
