@@ -88,10 +88,11 @@ function run_pending_migrations(PDO $pdo): void {
                         ADD COLUMN restored_at DATETIME NULL");
         }
 
-        // Role 'superadmin' (akses penuh + reset data per-manajemen).
+        // Role 'superadmin' (akses penuh + reset data) & 'inventory_staff'
+        // (kelola alat miliknya sendiri). Perluas enum bila salah satu belum ada.
         $roleCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'")->fetch();
-        if ($roleCol && strpos($roleCol['Type'], 'superadmin') === false) {
-            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang') NOT NULL");
+        if ($roleCol && (strpos($roleCol['Type'], 'superadmin') === false || strpos($roleCol['Type'], 'inventory_staff') === false)) {
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff') NOT NULL");
         }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
