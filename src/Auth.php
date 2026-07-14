@@ -72,7 +72,12 @@ class Auth {
 
     public static function requireRole(string ...$roles): void {
         self::requireLogin();
-        if (!in_array(self::role(), $roles, true)) {
+        $role = self::role();
+        // Superadmin punya akses penuh ke semua halaman — KECUALI halaman yang
+        // secara eksplisit hanya untuk 'superadmin' (mis. endpoint reset) yang
+        // memang sudah lolos lewat in_array di bawah.
+        if ($role === 'superadmin') return;
+        if (!in_array($role, $roles, true)) {
             http_response_code(403);
             include APP_ROOT . '/views/errors/403.php';
             exit;
