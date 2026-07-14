@@ -124,13 +124,22 @@ function user_delete(string $id): void {
     redirect('/users');
 }
 
+/** Nilai unit kerja: pakai isian bebas jika memilih "Lainnya", jika tidak pakai pilihan. */
+function _capture_unit_kerja(): ?string {
+    $sel = trim($_POST['unit_kerja'] ?? '');
+    if ($sel === '__other__') {
+        return trim($_POST['unit_kerja_other'] ?? '') ?: null;
+    }
+    return $sel ?: null;
+}
+
 function _user_capture(): array {
     return [
         'name' => trim($_POST['name'] ?? ''),
         'email' => trim($_POST['email'] ?? ''),
         'role' => $_POST['role'] ?? '',
         'phone' => trim($_POST['phone'] ?? '') ?: null,
-        'unit_kerja' => trim($_POST['unit_kerja'] ?? '') ?: null,
+        'unit_kerja' => _capture_unit_kerja(),
     ];
 }
 

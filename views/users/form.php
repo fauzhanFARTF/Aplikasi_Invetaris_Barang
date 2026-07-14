@@ -58,7 +58,24 @@
                 </select>
             </div>
             <div class="col-md-4"><label class="form-label">Telepon</label><input type="text" name="phone" class="form-control" value="<?= e($user['phone'] ?? '') ?>"></div>
-            <div class="col-md-4"><label class="form-label">Unit Kerja</label><input type="text" name="unit_kerja" class="form-control" value="<?= e($user['unit_kerja'] ?? '') ?>"></div>
+            <div class="col-md-4">
+                <label class="form-label">Unit Kerja</label>
+                <?php
+                    $ukOptions = unit_kerja_options();
+                    $ukCurrent = $user['unit_kerja'] ?? '';
+                    $ukIsOther = $ukCurrent !== '' && !in_array($ukCurrent, $ukOptions, true);
+                ?>
+                <select name="unit_kerja" id="unitKerjaSelect" class="form-select" data-testid="input-unit-kerja">
+                    <option value="">— Pilih —</option>
+                    <?php foreach ($ukOptions as $uk): ?>
+                        <option value="<?= e($uk) ?>" <?= $ukCurrent === $uk ? 'selected' : '' ?>><?= e($uk) ?></option>
+                    <?php endforeach; ?>
+                    <option value="__other__" <?= $ukIsOther ? 'selected' : '' ?>>Lainnya…</option>
+                </select>
+                <input type="text" name="unit_kerja_other" id="unitKerjaOther" class="form-control mt-2"
+                       placeholder="Tulis unit kerja" value="<?= e($ukIsOther ? $ukCurrent : '') ?>"
+                       style="<?= $ukIsOther ? '' : 'display:none;' ?>" data-testid="input-unit-kerja-other">
+            </div>
             <div class="col-md-6">
                 <label class="form-label">Password <?= $isEdit ? '(kosongkan jika tidak diubah)' : '*' ?></label>
                 <input type="password" name="password" class="form-control" <?= $isEdit ? '' : 'required' ?> data-testid="input-password">
@@ -76,4 +93,19 @@
         closeBtnId: 'btnCloseCamera', panelId: 'cameraPanel', videoId: 'cameraVideo',
         facingMode: 'user', // foto orang -> kamera depan
     });
+
+    // Unit kerja: tampilkan isian kosong saat memilih "Lainnya".
+    (function () {
+        var sel = document.getElementById('unitKerjaSelect');
+        var other = document.getElementById('unitKerjaOther');
+        if (!sel || !other) return;
+        function sync() {
+            var isOther = sel.value === '__other__';
+            other.style.display = isOther ? '' : 'none';
+            other.required = isOther;
+            if (!isOther) other.value = '';
+        }
+        sel.addEventListener('change', sync);
+        sync();
+    })();
 </script>
