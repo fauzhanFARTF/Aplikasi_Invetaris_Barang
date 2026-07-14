@@ -19,7 +19,7 @@
 
 <div class="card-sb" data-livetable>
     <div class="row g-2 mb-3">
-        <div class="col-md-6"><input type="search" data-ls-search class="form-control" placeholder="Cari kode, pemohon, atau nama acara... (langsung tampil)" data-testid="search-input" autocomplete="off"></div>
+        <div class="col-md-6"><input type="search" data-ls-search class="form-control" placeholder="Cari kode, pemohon, acara, atau nama alat... (langsung tampil)" data-testid="search-input" autocomplete="off"></div>
         <div class="col-md-6 d-flex flex-wrap gap-2 align-items-center">
             <button type="button" class="btn btn-sm <?= $currentStatus === '' ? 'btn-primary' : 'btn-outline-navy' ?>" data-ls-filter="status" data-ls-value="">Semua</button>
             <?php foreach (['Pending','Approved','CheckedOut','Returned','Completed','Rejected','Cancelled'] as $s): ?>
@@ -34,7 +34,7 @@
             <?php $finalStatuses = ['Completed','Rejected','Cancelled','Returned']; ?>
             <?php foreach ($loans as $l): ?>
                 <tr data-ls-row data-ls-status="<?= e($l['status']) ?>"
-                    data-ls-text="<?= e(strtolower($l['loan_code'].' '.$l['requester_name'].' '.$l['event_name'])) ?>">
+                    data-ls-text="<?= e(strtolower($l['loan_code'].' '.$l['requester_name'].' '.$l['event_name'].' '.($l['asset_names'] ?? ''))) ?>">
                     <td class="code"><?= e($l['loan_code']) ?></td>
                     <td><?= e($l['requester_name']) ?></td>
                     <td><?= e($l['event_name']) ?></td>
