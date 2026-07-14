@@ -35,7 +35,7 @@ function checkout_scan_page(string $id): void {
         flash('error', 'Peminjaman tidak dalam status yang bisa diserahkan.');
         redirect('/checkout');
     }
-    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode FROM loan_items li JOIN assets a ON a.id = li.asset_id WHERE li.loan_id = ? ORDER BY li.id");
+    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.photo FROM loan_items li JOIN assets a ON a.id = li.asset_id WHERE li.loan_id = ? ORDER BY li.id");
     $items->execute([$id]);
     $items = $items->fetchAll();
 
@@ -68,12 +68,12 @@ function checkout_scan_submit(): void {
     try {
         $pdo->prepare("UPDATE loan_items SET item_status='CheckedOut', checkout_by=?, checkout_at=NOW() WHERE id = ?")->execute([Auth::id(), $item['id']]);
         $pdo->prepare("UPDATE assets SET status='CheckedOut' WHERE id = ?")->execute([$item['asset_id']]);
-        // If first checkout for this loan, set loan.status = CheckedOut
-        $stmt2 = $pdo->prepare("SELECT status FROM loans WHERE id = ?");
-        $stmt2->execute([$loanId]);
-        $loanStatus = $stmt2->fetchColumn();
-        if ($loanStatus === 'Approved') {
-            $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at=NOW(), updated_by=? WHERE id = ?")->execute([Auth::id(), $loanId]);
+        // Loan baru jadi 'CheckedOut' (Dipinjam) kalau SEMUA item sudah diserahkan.
+        // Kalau masih sebagian (mis. 2/3), status peminjaman tetap 'Approved' (Disetujui).
+        $remaining = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status != 'CheckedOut'");
+        $remaining->execute([$loanId]);
+        if ((int) $remaining->fetchColumn() === 0) {
+            $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at=NOW(), updated_by=? WHERE id = ? AND status='Approved'")->execute([Auth::id(), $loanId]);
         }
         $pdo->commit();
     } catch (Throwable $e) {
