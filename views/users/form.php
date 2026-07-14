@@ -47,7 +47,12 @@
                 <label class="form-label">Role *</label>
                 <select name="role" class="form-select" required data-testid="input-role">
                     <option value="">— Pilih —</option>
-                    <?php foreach (['admin','pemohon','supervisor','admin_gudang'] as $r): ?>
+                    <?php
+                        // Role 'superadmin' hanya bisa diberikan oleh superadmin.
+                        $assignableRoles = ['admin','pemohon','supervisor','admin_gudang'];
+                        if (Auth::role() === 'superadmin') array_unshift($assignableRoles, 'superadmin');
+                    ?>
+                    <?php foreach ($assignableRoles as $r): ?>
                         <option value="<?= $r ?>" <?= ($user['role'] ?? '') === $r ? 'selected' : '' ?>><?= e(role_label($r)) ?></option>
                     <?php endforeach; ?>
                 </select>

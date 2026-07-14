@@ -87,6 +87,12 @@ function run_pending_migrations(PDO $pdo): void {
                         ADD COLUMN restored_by BIGINT UNSIGNED NULL,
                         ADD COLUMN restored_at DATETIME NULL");
         }
+
+        // Role 'superadmin' (akses penuh + reset data per-manajemen).
+        $roleCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'")->fetch();
+        if ($roleCol && strpos($roleCol['Type'], 'superadmin') === false) {
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang') NOT NULL");
+        }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
         // just log it so an admin can still apply database/migration_add_asset_price.sql /

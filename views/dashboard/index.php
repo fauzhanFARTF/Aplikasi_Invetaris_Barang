@@ -10,7 +10,7 @@
         <h1>Selamat datang, <?= e(explode(' ', $user['name'])[0]) ?> 👋</h1>
         <p class="subtitle">Ringkasan aset streaming & aktivitas peminjaman.</p>
     </div>
-    <?php if (in_array($user['role'], ['pemohon','admin'])): ?>
+    <?php if (role_is('pemohon','admin')): ?>
         <a href="<?= BASE_PATH ?>/loans/create" class="btn btn-amber" data-testid="btn-create-loan"><i class="fa-solid fa-plus"></i> Ajukan Peminjaman</a>
     <?php endif; ?>
 </div>
@@ -62,7 +62,7 @@
                     <div class="empty-icon"><i class="fa-regular fa-clipboard"></i></div>
                     <h4>Belum ada peminjaman</h4>
                     <p>Riwayat peminjaman Anda akan muncul di sini.</p>
-                    <?php if (in_array($user['role'], ['pemohon','admin'])): ?>
+                    <?php if (role_is('pemohon','admin')): ?>
                         <a href="<?= BASE_PATH ?>/loans/create" class="btn btn-sm btn-amber"><i class="fa-solid fa-plus"></i> Ajukan Sekarang</a>
                     <?php endif; ?>
                 </div>
@@ -106,7 +106,7 @@
         <div class="card-sb mt-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="card-title mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-slate"></i>Perbaikan Aktif</div>
-                <?php if (in_array($user['role'], ['admin_gudang','admin'])): ?>
+                <?php if (role_is('admin_gudang','admin')): ?>
                     <a href="<?= BASE_PATH ?>/repairs" class="btn btn-sm btn-outline-navy">Kelola</a>
                 <?php endif; ?>
             </div>
