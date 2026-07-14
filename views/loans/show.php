@@ -61,7 +61,7 @@
             <div class="card-title">Daftar Alat (<?= count($items) ?>)</div>
             <div class="table-responsive">
                 <table class="table table-sb align-middle" data-testid="loan-items-table">
-                    <thead><tr><th>#</th><th>Alat</th><th>BMN</th><th>Barcode</th><th>Paket</th><th>Status Item</th><th>Kondisi Kembali</th></tr></thead>
+                    <thead><tr><th>#</th><th>Alat</th><th>BMN</th><th>Kode QR</th><th>Paket</th><th>Status Item</th><th>Kondisi Kembali</th></tr></thead>
                     <tbody>
                     <?php foreach ($items as $i => $it): ?>
                         <tr>

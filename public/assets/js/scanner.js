@@ -1,4 +1,4 @@
-// Barcode/QR scanner wrapper using html5-qrcode CDN
+// QR scanner wrapper using html5-qrcode CDN. Hanya QR code (bukan barcode 1D).
 // Loaded on-demand in scanner pages.
 class BarcodeScanner {
     constructor(elementId, onScan) {
@@ -12,12 +12,6 @@ class BarcodeScanner {
         this.scanner = new Html5Qrcode(this.elementId, {
             formatsToSupport: window.Html5QrcodeSupportedFormats ? [
                 Html5QrcodeSupportedFormats.QR_CODE,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
             ] : undefined,
             verbose: false,
         });
