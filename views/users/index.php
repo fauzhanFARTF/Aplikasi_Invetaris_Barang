@@ -32,7 +32,7 @@
         <table class="table table-sb align-middle" data-testid="users-table">
             <thead><tr><th></th><th>Nama</th><th>Email</th><th>Role</th><th>Unit Kerja</th><th>Telepon</th><th>Status</th><th></th></tr></thead>
             <tbody>
-            <?php foreach ($users as $u): $photoUrl = photo_url($u['photo'] ?? null, 'users'); ?>
+            <?php foreach ($users as $u): $photoUrl = user_avatar_url($u['photo'] ?? null); ?>
                 <tr data-ls-row data-ls-role="<?= e($u['role']) ?>" data-ls-active="<?= $u['is_active'] ? '1' : '0' ?>"
                     data-ls-text="<?= e(strtolower($u['name'].' '.$u['email'].' '.($u['unit_kerja'] ?? '').' '.($u['phone'] ?? ''))) ?>">
                     <td>
