@@ -8,7 +8,7 @@
     <a href="<?= BASE_PATH ?>/categories" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>
 
-<form method="POST" action="<?= $isEdit ? '/categories/'.(int)$category['id'].'/edit' : '/categories/create' ?>" data-testid="category-form">
+<form method="POST" action="<?= $isEdit ? '/categories/'.e($category['uuid']).'/edit' : '/categories/create' ?>" data-testid="category-form">
     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
     <div class="card-sb">
         <div class="row g-3">
