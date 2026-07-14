@@ -37,34 +37,34 @@ $routes = [
     ['GET',  '#^/loans$#',                    'loan_index'],
     ['GET',  '#^/loans/create$#',             'loan_create_get'],
     ['POST', '#^/loans/create$#',             'loan_create_post'],
-    ['GET',  '#^/loans/(\d+)$#',              'loan_show'],
-    ['POST', '#^/loans/(\d+)/cancel$#',       'loan_cancel'],
-    ['POST', '#^/loans/(\d+)/delete$#',       'loan_delete'],
+    ['GET',  '#^/loans/([0-9a-f-]{36})$#',              'loan_show'],
+    ['POST', '#^/loans/([0-9a-f-]{36})/cancel$#',       'loan_cancel'],
+    ['POST', '#^/loans/([0-9a-f-]{36})/delete$#',       'loan_delete'],
     ['POST', '#^/loans/delete-all$#',         'loan_delete_all'],
 
     // Approvals
     ['GET',  '#^/approvals$#',                'approval_index'],
-    ['POST', '#^/loans/(\d+)/approve$#',      'loan_approve'],
-    ['POST', '#^/loans/(\d+)/reject$#',       'loan_reject'],
+    ['POST', '#^/loans/([0-9a-f-]{36})/approve$#',      'loan_approve'],
+    ['POST', '#^/loans/([0-9a-f-]{36})/reject$#',       'loan_reject'],
 
     // Penyerahan (checkout)
     ['GET',  '#^/checkout$#',                 'checkout_index'],
-    ['GET',  '#^/checkout/(\d+)$#',           'checkout_scan_page'],
+    ['GET',  '#^/checkout/([0-9a-f-]{36})$#',           'checkout_scan_page'],
     ['POST', '#^/checkout/scan$#',            'checkout_scan_submit'],
-    ['POST', '#^/checkout/(\d+)/finalize$#',  'checkout_finalize'],
+    ['POST', '#^/checkout/([0-9a-f-]{36})/finalize$#',  'checkout_finalize'],
 
     // Pengembalian (checkin)
     ['GET',  '#^/checkin$#',                  'checkin_index'],
-    ['GET',  '#^/checkin/(\d+)$#',            'checkin_scan_page'],
+    ['GET',  '#^/checkin/([0-9a-f-]{36})$#',            'checkin_scan_page'],
     ['POST', '#^/checkin/scan$#',             'checkin_scan_submit'],
-    ['POST', '#^/checkin/(\d+)/finalize$#',   'checkin_finalize'],
+    ['POST', '#^/checkin/([0-9a-f-]{36})/finalize$#',   'checkin_finalize'],
 
     // Repairs
     ['GET',  '#^/repairs$#',                  'repair_index'],
-    ['GET',  '#^/repairs/(\d+)$#',            'repair_show'],
-    ['GET',  '#^/repairs/(\d+)/print$#',      'repair_print'],
-    ['POST', '#^/repairs/(\d+)/complete$#',   'repair_complete'],
-    ['POST', '#^/repairs/(\d+)/delete$#',     'repair_delete'],
+    ['GET',  '#^/repairs/([0-9a-f-]{36})$#',            'repair_show'],
+    ['GET',  '#^/repairs/([0-9a-f-]{36})/print$#',      'repair_print'],
+    ['POST', '#^/repairs/([0-9a-f-]{36})/complete$#',   'repair_complete'],
+    ['POST', '#^/repairs/([0-9a-f-]{36})/delete$#',     'repair_delete'],
     ['POST', '#^/repairs/delete-all$#',       'repair_delete_all'],
 
     // Inventory
@@ -72,37 +72,37 @@ $routes = [
     ['GET',  '#^/inventory/create$#',         'inventory_create_get'],
     ['POST', '#^/inventory/create$#',         'inventory_create_post'],
     ['GET',  '#^/inventory/barcode/print$#',  'inventory_barcode_bulk'],
-    ['GET',  '#^/inventory/(\d+)/barcode$#',  'inventory_barcode_single'],
-    ['GET',  '#^/inventory/(\d+)/edit$#',     'inventory_edit_get'],
-    ['POST', '#^/inventory/(\d+)/edit$#',     'inventory_edit_post'],
-    ['POST', '#^/inventory/(\d+)/retire$#',   'inventory_retire'],
-    ['POST', '#^/inventory/(\d+)/unretire$#', 'inventory_unretire'],
-    ['POST', '#^/inventory/(\d+)/delete$#',   'inventory_delete'],
+    ['GET',  '#^/inventory/([0-9a-f-]{36})/barcode$#',  'inventory_barcode_single'],
+    ['GET',  '#^/inventory/([0-9a-f-]{36})/edit$#',     'inventory_edit_get'],
+    ['POST', '#^/inventory/([0-9a-f-]{36})/edit$#',     'inventory_edit_post'],
+    ['POST', '#^/inventory/([0-9a-f-]{36})/retire$#',   'inventory_retire'],
+    ['POST', '#^/inventory/([0-9a-f-]{36})/unretire$#', 'inventory_unretire'],
+    ['POST', '#^/inventory/([0-9a-f-]{36})/delete$#',   'inventory_delete'],
 
     // Packages
     ['GET',  '#^/packages$#',                 'package_index'],
     ['GET',  '#^/packages/create$#',          'package_create_get'],
     ['POST', '#^/packages/create$#',          'package_create_post'],
-    ['GET',  '#^/packages/(\d+)/edit$#',      'package_edit_get'],
-    ['POST', '#^/packages/(\d+)/edit$#',      'package_edit_post'],
-    ['POST', '#^/packages/(\d+)/delete$#',    'package_delete'],
+    ['GET',  '#^/packages/([0-9a-f-]{36})/edit$#',      'package_edit_get'],
+    ['POST', '#^/packages/([0-9a-f-]{36})/edit$#',      'package_edit_post'],
+    ['POST', '#^/packages/([0-9a-f-]{36})/delete$#',    'package_delete'],
 
     // Categories (admin)
     ['GET',  '#^/categories$#',               'category_index'],
     ['GET',  '#^/categories/create$#',        'category_create_get'],
     ['POST', '#^/categories/create$#',        'category_create_post'],
-    ['GET',  '#^/categories/(\d+)/edit$#',    'category_edit_get'],
-    ['POST', '#^/categories/(\d+)/edit$#',    'category_edit_post'],
-    ['POST', '#^/categories/(\d+)/delete$#',  'category_delete'],
+    ['GET',  '#^/categories/([0-9a-f-]{36})/edit$#',    'category_edit_get'],
+    ['POST', '#^/categories/([0-9a-f-]{36})/edit$#',    'category_edit_post'],
+    ['POST', '#^/categories/([0-9a-f-]{36})/delete$#',  'category_delete'],
 
     // Users (admin)
     ['GET',  '#^/users$#',                    'user_index'],
     ['GET',  '#^/users/create$#',             'user_create_get'],
     ['POST', '#^/users/create$#',             'user_create_post'],
-    ['GET',  '#^/users/(\d+)/edit$#',         'user_edit_get'],
-    ['POST', '#^/users/(\d+)/edit$#',         'user_edit_post'],
-    ['POST', '#^/users/(\d+)/toggle$#',       'user_toggle'],
-    ['POST', '#^/users/(\d+)/delete$#',       'user_delete'],
+    ['GET',  '#^/users/([0-9a-f-]{36})/edit$#',         'user_edit_get'],
+    ['POST', '#^/users/([0-9a-f-]{36})/edit$#',         'user_edit_post'],
+    ['POST', '#^/users/([0-9a-f-]{36})/toggle$#',       'user_toggle'],
+    ['POST', '#^/users/([0-9a-f-]{36})/delete$#',       'user_delete'],
 
     // Reset data per-manajemen (KHUSUS superadmin)
     ['POST', '#^/reset/loans$#',      'reset_loans'],

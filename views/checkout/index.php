@@ -21,7 +21,7 @@
                     <td class="small"><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></td>
                     <td class="small"><span class="fw-bold"><?= (int)$l['out_items'] ?></span> / <?= (int)$l['total_items'] ?> alat</td>
                     <td><?= status_badge($l['status']) ?></td>
-                    <td><a href="<?= BASE_PATH ?>/checkout/<?= (int)$l['id'] ?>" class="btn btn-sm btn-amber" data-testid="btn-scan-<?= (int)$l['id'] ?>"><i class="fa-solid fa-barcode"></i> Scan</a></td>
+                    <td><a href="<?= BASE_PATH ?>/checkout/<?= e($l["uuid"]) ?>" class="btn btn-sm btn-amber" data-testid="btn-scan-<?= (int)$l['id'] ?>"><i class="fa-solid fa-barcode"></i> Scan</a></td>
                 </tr>
             <?php endforeach; if (empty($loans)): ?>
                 <tr><td colspan="7" class="text-center text-slate py-4">Tidak ada peminjaman yang menunggu penyerahan hari ini.</td></tr>

@@ -23,10 +23,10 @@ function checkout_index(): void {
     ]);
 }
 
-function checkout_scan_page(string $id): void {
+function checkout_scan_page(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     $pdo = db();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('loans', $uuid);
     $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.id = ? AND l.deleted_at IS NULL");
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
@@ -85,16 +85,16 @@ function checkout_scan_submit(): void {
     json_response(['ok' => true, 'message' => "Berhasil diserahkan: {$item['asset_name']}", 'asset_name' => $item['asset_name'], 'bmn' => $item['bmn_number']]);
 }
 
-function checkout_finalize(string $id): void {
+function checkout_finalize(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('loans', $uuid);
     $pdo = db();
     $notOut = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status != 'CheckedOut'");
     $notOut->execute([$id]);
     if ((int)$notOut->fetchColumn() > 0) {
         flash('error', 'Masih ada alat yang belum di-scan untuk penyerahan.');
-        redirect("/checkout/$id");
+        redirect("/checkout/$uuid");
     }
     $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at = COALESCE(checkout_at, NOW()), updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
     log_audit('loan.checkout_finalize', 'loan', $id);
@@ -103,8 +103,8 @@ function checkout_finalize(string $id): void {
     $r->execute([$id]);
     $row = $r->fetch();
     if ($row) {
-        Notification::push((int)$row['requester_id'], 'Alat Telah Diserahkan', "Semua alat pada peminjaman {$row['loan_code']} telah diserahkan kepada Anda. Mohon dijaga & dikembalikan tepat waktu.", "/loans/$id");
+        Notification::push((int)$row['requester_id'], 'Alat Telah Diserahkan', "Semua alat pada peminjaman {$row['loan_code']} telah diserahkan kepada Anda. Mohon dijaga & dikembalikan tepat waktu.", "/loans/$uuid");
     }
     flash('success', 'Penyerahan selesai.');
-    redirect("/loans/$id");
+    redirect("/loans/$uuid");
 }

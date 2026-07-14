@@ -21,7 +21,7 @@
                     <td><?= e($l['event_name']) ?></td>
                     <td class="small"><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></td>
                     <td class="small text-slate"><?= fmt_datetime($l['created_at']) ?></td>
-                    <td><a href="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>" class="btn btn-sm btn-primary" data-testid="btn-review-<?= (int)$l['id'] ?>">Tinjau</a></td>
+                    <td><a href="<?= BASE_PATH ?>/loans/<?= e($l["uuid"]) ?>" class="btn btn-sm btn-primary" data-testid="btn-review-<?= (int)$l['id'] ?>">Tinjau</a></td>
                 </tr>
             <?php endforeach; if (empty($pending)): ?>
                 <tr><td colspan="6" class="text-center text-slate py-4">Tidak ada pengajuan menunggu.</td></tr>
@@ -43,7 +43,7 @@
             <tbody>
             <?php foreach ($decided as $l): ?>
                 <tr data-ls-row data-ls-status="<?= e($l['status']) ?>" data-ls-text="<?= e(strtolower($l['loan_code'].' '.$l['requester_name'].' '.$l['event_name'])) ?>">
-                    <td class="code"><a href="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>"><?= e($l['loan_code']) ?></a></td>
+                    <td class="code"><a href="<?= BASE_PATH ?>/loans/<?= e($l["uuid"]) ?>"><?= e($l['loan_code']) ?></a></td>
                     <td><?= e($l['requester_name']) ?></td>
                     <td><?= e($l['event_name']) ?></td>
                     <td><?= status_badge($l['status']) ?></td>

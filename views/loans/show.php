@@ -14,18 +14,18 @@
         <?php endif; ?>
 
         <?php if (in_array($loan['status'], ['Pending','Approved']) && (role_is('admin') || (int)$loan['requester_id'] === Auth::id())): ?>
-            <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$loan['id'] ?>/cancel" data-confirm="Batalkan peminjaman ini?">
+            <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($loan["uuid"]) ?>/cancel" data-confirm="Batalkan peminjaman ini?">
                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                 <button class="btn btn-outline-navy" data-testid="btn-cancel-loan"><i class="fa-solid fa-ban"></i> Batalkan</button>
             </form>
         <?php endif; ?>
 
         <?php if ($loan['status'] === 'Approved' && role_is('admin_gudang','admin')): ?>
-            <a href="<?= BASE_PATH ?>/checkout/<?= (int)$loan['id'] ?>" class="btn btn-amber" data-testid="btn-goto-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Penyerahan Sekarang</a>
+            <a href="<?= BASE_PATH ?>/checkout/<?= e($loan["uuid"]) ?>" class="btn btn-amber" data-testid="btn-goto-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Penyerahan Sekarang</a>
         <?php endif; ?>
 
         <?php if ($loan['status'] === 'CheckedOut' && role_is('admin_gudang','admin')): ?>
-            <a href="<?= BASE_PATH ?>/checkin/<?= (int)$loan['id'] ?>" class="btn btn-amber" data-testid="btn-goto-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i> Pengembalian Sekarang</a>
+            <a href="<?= BASE_PATH ?>/checkin/<?= e($loan["uuid"]) ?>" class="btn btn-amber" data-testid="btn-goto-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i> Pengembalian Sekarang</a>
         <?php endif; ?>
     </div>
 </div>
@@ -102,7 +102,7 @@
 <?php if ($loan['status'] === 'Pending' && role_is('supervisor','admin')): ?>
 <div class="modal fade" id="approveModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$loan['id'] ?>/approve" data-testid="approve-form">
+        <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($loan["uuid"]) ?>/approve" data-testid="approve-form">
             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Setujui Peminjaman</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -121,7 +121,7 @@
 </div>
 <div class="modal fade" id="rejectModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$loan['id'] ?>/reject" data-testid="reject-form">
+        <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($loan["uuid"]) ?>/reject" data-testid="reject-form">
             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
             <div class="modal-content">
                 <div class="modal-header"><h5 class="modal-title">Tolak Peminjaman</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>

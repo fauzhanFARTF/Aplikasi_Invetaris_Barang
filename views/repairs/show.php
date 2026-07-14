@@ -6,7 +6,7 @@
     </div>
     <div class="d-flex gap-2">
         <a href="<?= BASE_PATH ?>/repairs" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
-        <a href="<?= BASE_PATH ?>/repairs/<?= (int)$repair['id'] ?>/print" target="_blank" class="btn btn-amber" data-testid="btn-print-spk"><i class="fa-solid fa-print"></i> Cetak SPK</a>
+        <a href="<?= BASE_PATH ?>/repairs/<?= e($repair["uuid"]) ?>/print" target="_blank" class="btn btn-amber" data-testid="btn-print-spk"><i class="fa-solid fa-print"></i> Cetak SPK</a>
     </div>
 </div>
 
@@ -46,7 +46,7 @@
             <div class="card-sb">
                 <div class="card-title">Tutup Perbaikan</div>
                 <p class="text-slate small">Isi form ini setelah menerima kembali alat + Formulir Perbaikan (kertas) yang telah ditandatangani teknisi. Status aset akan otomatis kembali ke <strong>Tersedia</strong>.</p>
-                <form method="POST" action="<?= BASE_PATH ?>/repairs/<?= (int)$repair['id'] ?>/complete" data-testid="repair-complete-form">
+                <form method="POST" action="<?= BASE_PATH ?>/repairs/<?= e($repair["uuid"]) ?>/complete" data-testid="repair-complete-form">
                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                     <div class="mb-3">
                         <label class="form-label">Nama Teknisi *</label>
