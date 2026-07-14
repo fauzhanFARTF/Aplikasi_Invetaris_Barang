@@ -42,9 +42,9 @@
                     <td class="small"><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></td>
                     <td><?= status_badge($l['status']) ?></td>
                     <td class="d-flex gap-1">
-                        <a href="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>" class="btn btn-sm btn-outline-navy" data-testid="btn-view-loan-<?= (int)$l['id'] ?>"><i class="fa-regular fa-eye"></i></a>
+                        <a href="<?= BASE_PATH ?>/loans/<?= e($l["uuid"]) ?>" class="btn btn-sm btn-outline-navy" data-testid="btn-view-loan-<?= (int)$l['id'] ?>"><i class="fa-regular fa-eye"></i></a>
                         <?php if (role_is('admin_gudang','admin') && in_array($l['status'], $finalStatuses, true)): ?>
-                            <!-- <form method="POST" action="<?= BASE_PATH ?>/loans/<?= (int)$l['id'] ?>/delete" data-confirm="Hapus riwayat peminjaman <?= e($l['loan_code']) ?>? Tindakan ini tidak dapat dibatalkan.">
+                            <!-- <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($l["uuid"]) ?>/delete" data-confirm="Hapus riwayat peminjaman <?= e($l['loan_code']) ?>? Tindakan ini tidak dapat dibatalkan.">
                                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-navy text-danger" title="Hapus riwayat" data-testid="btn-delete-loan-<?= (int)$l['id'] ?>"><i class="fa-solid fa-trash"></i></button>
                             </form> -->

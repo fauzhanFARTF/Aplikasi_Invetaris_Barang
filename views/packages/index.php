@@ -27,8 +27,8 @@
                     <td><span class="badge bg-info text-dark"><?= (int)$p['item_count'] ?> alat</span></td>
                     <td class="text-nowrap">
                         <?php if (role_is('admin_gudang','admin')): ?>
-                            <a href="<?= BASE_PATH ?>/packages/<?= (int)$p['id'] ?>/edit" class="btn btn-sm btn-outline-navy"><i class="fa-regular fa-pen-to-square"></i></a>
-                            <form method="POST" action="<?= BASE_PATH ?>/packages/<?= (int)$p['id'] ?>/delete" data-confirm="Hapus paket ini?" style="display:inline;">
+                            <a href="<?= BASE_PATH ?>/packages/<?= e($p["uuid"]) ?>/edit" class="btn btn-sm btn-outline-navy"><i class="fa-regular fa-pen-to-square"></i></a>
+                            <form method="POST" action="<?= BASE_PATH ?>/packages/<?= e($p["uuid"]) ?>/delete" data-confirm="Hapus paket ini?" style="display:inline;">
                                 <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
                                 <button class="btn btn-sm btn-outline-danger"><i class="fa-regular fa-trash-can"></i></button>
                             </form>

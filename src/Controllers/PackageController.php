@@ -27,7 +27,7 @@ function package_create_post(): void {
     $pdo = db();
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("INSERT INTO packages (name, description, created_by) VALUES (?,?,?)")->execute([$name, $desc, Auth::id()]);
+        $pdo->prepare("INSERT INTO packages (uuid, name, description, created_by) VALUES (?,?,?,?)")->execute([generate_uuid(), $name, $desc, Auth::id()]);
         $pid = (int) $pdo->lastInsertId();
         $ins = $pdo->prepare("INSERT IGNORE INTO package_items (package_id, asset_id) VALUES (?,?)");
         foreach ($ids as $aid) { $ins->execute([$pid, $aid]); }
@@ -38,9 +38,9 @@ function package_create_post(): void {
     redirect('/packages');
 }
 
-function package_edit_get(string $id): void {
+function package_edit_get(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('packages', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT p.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM packages p
@@ -58,10 +58,10 @@ function package_edit_get(string $id): void {
     layout('main', 'packages/form', ['title' => 'Ubah Paket', 'package' => $package, 'assets' => $assets, 'categories' => $categories, 'selectedIds' => $selectedIds, 'currentPath' => '/packages']);
 }
 
-function package_edit_post(string $id): void {
+function package_edit_post(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
-    $id = (int) $id;
+    $id = uuid_to_id_or_404('packages', $uuid);
     $name = trim($_POST['name'] ?? '');
     $desc = trim($_POST['description'] ?? '');
     $ids  = array_map('intval', $_POST['asset_ids'] ?? []);
@@ -79,9 +79,10 @@ function package_edit_post(string $id): void {
     redirect('/packages');
 }
 
-function package_delete(string $id): void {
+function package_delete(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('packages', $uuid);
     soft_delete('packages', (int)$id);
     log_audit('package.delete', 'package', $id);
     flash('success', 'Paket dihapus (bisa dipulihkan lewat Riwayat Terhapus).');
