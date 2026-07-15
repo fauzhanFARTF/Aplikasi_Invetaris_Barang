@@ -14,7 +14,7 @@ function loan_index(): void {
     $status = $_GET['status'] ?? '';
     $params = [];
     $where = ['l.deleted_at IS NULL'];
-    if ($role === 'pemohon') {
+    if (in_array($role, ['pemohon', 'inventory_staff'], true)) {
         $where[] = 'l.requester_id = ?';
         $params[] = $uid;
     }
@@ -36,7 +36,7 @@ function loan_index(): void {
 }
 
 function loan_create_get(): void {
-    Auth::requireRole('pemohon', 'admin');
+    Auth::requireRole('pemohon', 'inventory_staff', 'admin');
     $pdo = db();
     $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
@@ -52,7 +52,7 @@ function loan_create_get(): void {
 }
 
 function loan_create_post(): void {
-    Auth::requireRole('pemohon', 'admin');
+    Auth::requireRole('pemohon', 'inventory_staff', 'admin');
     Auth::verifyCsrf();
 
     $eventName = trim($_POST['event_name'] ?? '');
@@ -156,8 +156,8 @@ function loan_show(string $uuid): void {
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT . '/views/errors/404.php'; return; }
 
-    // Role authorization: pemohon can only see own loans
-    if (Auth::role() === 'pemohon' && (int)$loan['requester_id'] !== Auth::id()) {
+    // Role authorization: pemohon & IT Staff hanya bisa melihat peminjaman miliknya
+    if (role_is_requester() && (int)$loan['requester_id'] !== Auth::id()) {
         http_response_code(403); include APP_ROOT . '/views/errors/403.php'; return;
     }
 

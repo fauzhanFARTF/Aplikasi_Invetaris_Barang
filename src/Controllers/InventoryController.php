@@ -35,9 +35,8 @@ function inventory_index(): void {
 }
 
 /**
- * Ambil created_by alat lalu pastikan user login berwenang mengelolanya.
- * inventory_staff hanya boleh alat miliknya; jika tidak → 403 dan berhenti.
- * Mengembalikan baris alat (photo, created_by, status) untuk dipakai handler.
+ * Pastikan user login berwenang mengelola alat (lihat inventory_can_manage);
+ * jika tidak → 403 dan berhenti. Mengembalikan baris alat untuk dipakai handler.
  */
 function _inventory_require_manage(int $id): array {
     $stmt = db()->prepare("SELECT id, photo, created_by, status FROM assets WHERE id = ? AND deleted_at IS NULL");
@@ -53,7 +52,7 @@ function _inventory_require_manage(int $id): array {
 }
 
 function inventory_create_get(): void {
-    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
+    Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
     $pdo = db();
     $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     layout('main', 'inventory/form', [
@@ -65,7 +64,7 @@ function inventory_create_get(): void {
 }
 
 function inventory_create_post(): void {
-    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
+    Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
     Auth::verifyCsrf();
     $data = _inventory_capture();
     if (!$data['asset_code'] || !$data['bmn_number'] || !$data['name']) {
@@ -96,7 +95,7 @@ function inventory_create_post(): void {
 }
 
 function inventory_edit_get(string $uuid): void {
-    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
+    Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
     $id = uuid_to_id_or_404("assets", $uuid);
     _inventory_require_manage((int)$id);
     $pdo = db();
@@ -114,7 +113,7 @@ function inventory_edit_get(string $uuid): void {
 }
 
 function inventory_edit_post(string $uuid): void {
-    Auth::requireRole('admin_gudang', 'admin', 'inventory_staff');
+    Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('assets', $uuid);
     $data = _inventory_capture();
@@ -152,7 +151,7 @@ function inventory_edit_post(string $uuid): void {
 }
 
 function inventory_retire(string $uuid): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'it_staff_pembantu');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('assets', $uuid);
     db()->prepare("UPDATE assets SET status='Retired', updated_by=? WHERE id=? AND status IN ('Available','Damaged')")->execute([Auth::id(), (int)$id]);
@@ -162,7 +161,7 @@ function inventory_retire(string $uuid): void {
 }
 
 function inventory_unretire(string $uuid): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'it_staff_pembantu');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('assets', $uuid);
     db()->prepare("UPDATE assets SET status='Available', updated_by=? WHERE id=? AND status='Retired'")->execute([Auth::id(), (int)$id]);
@@ -172,10 +171,10 @@ function inventory_unretire(string $uuid): void {
 }
 
 function inventory_delete(string $uuid): void {
-    Auth::requireRole('admin', 'admin_gudang', 'inventory_staff');
+    Auth::requireRole('admin', 'admin_gudang', 'it_staff_pembantu');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('assets', $uuid);
-    _inventory_require_manage($id); // gate kepemilikan (inventory_staff hanya alat sendiri)
+    _inventory_require_manage($id); // pastikan berwenang mengelola alat
 
     // Alat yang pernah dipinjam hanya boleh dihapus oleh superadmin — menjaga
     // integritas riwayat peminjaman.
@@ -191,7 +190,7 @@ function inventory_delete(string $uuid): void {
 }
 
 function inventory_barcode_single(string $uuid): void {
-    Auth::requireRole('admin_gudang', 'admin', 'supervisor');
+    Auth::requireRole('admin_gudang', 'admin', 'supervisor', 'it_staff_pembantu');
     $id = uuid_to_id_or_404('assets', $uuid);
     $pdo = db();
     $stmt = $pdo->prepare("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.id = ?");
@@ -203,7 +202,7 @@ function inventory_barcode_single(string $uuid): void {
 }
 
 function inventory_barcode_bulk(): void {
-    Auth::requireRole('admin_gudang', 'admin', 'supervisor');
+    Auth::requireRole('admin_gudang', 'admin', 'supervisor', 'it_staff_pembantu');
     // Terima daftar UUID (bukan id) dari query string agar id tidak terekspos.
     $uuids = array_values(array_unique(array_filter(array_map('trim', explode(',', $_GET['ids'] ?? '')))));
     if (empty($uuids)) {

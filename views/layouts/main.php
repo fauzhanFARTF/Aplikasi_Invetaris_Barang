@@ -46,7 +46,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
             <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i> Perbaikan</a>
         <?php endif; ?>
 
-        <?php if (role_is('admin_gudang','admin','supervisor','inventory_staff')): ?>
+        <?php if (role_is('admin_gudang','admin','supervisor','it_staff_pembantu','pimpinan')): ?>
             <div class="nav-section">Master Data</div>
             <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Alat / Aset</a>
             <?php if (role_is('admin_gudang','admin','supervisor')): ?>
