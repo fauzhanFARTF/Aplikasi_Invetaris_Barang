@@ -48,6 +48,22 @@
             <div class="text-slate small">Menunggu teknisi</div>
         </div>
     </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift tone-navy">
+            <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="label">Barang Menunggu Approval</div>
+            <div class="value" data-testid="stat-items-pending"><?= $stats['items_pending'] ?></div>
+            <div class="text-slate small">Pada peminjaman berstatus Pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift tone-success">
+            <div class="stat-icon"><i class="fa-solid fa-clipboard-check"></i></div>
+            <div class="label">Barang Disetujui</div>
+            <div class="value" data-testid="stat-items-approved"><?= $stats['items_approved'] ?></div>
+            <div class="text-slate small">Siap diserahkan</div>
+        </div>
+    </div>
 </div>
 
 <div class="row g-3">

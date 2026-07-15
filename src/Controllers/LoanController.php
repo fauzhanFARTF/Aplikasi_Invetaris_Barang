@@ -44,12 +44,34 @@ function loan_create_get(): void {
     // Personel yang dapat dilibatkan hanya user ber-role IT Staff.
     $itStaff = $pdo->query("SELECT id, name, unit_kerja FROM users WHERE role = 'inventory_staff' AND is_active = 1 AND deleted_at IS NULL ORDER BY name")->fetchAll();
 
+    // Penanggungjawab (pemohon) & pengikut (personel) untuk alat yang sedang dipesan/dipinjam.
+    $active = "l.status IN ('Pending','Approved','CheckedOut') AND li.item_status IN ('Reserved','CheckedOut')";
+    $holders = [];
+    foreach ($pdo->query("SELECT li.asset_id, GROUP_CONCAT(DISTINCT u.name ORDER BY u.name SEPARATOR ', ') AS names
+                          FROM loan_items li
+                          JOIN loans l ON l.id = li.loan_id AND l.deleted_at IS NULL
+                          JOIN users u ON u.id = l.requester_id
+                          WHERE $active GROUP BY li.asset_id") as $row) {
+        $holders[(int)$row['asset_id']] = $row['names'];
+    }
+    $followers = [];
+    foreach ($pdo->query("SELECT li.asset_id, GROUP_CONCAT(DISTINCT pu.name ORDER BY pu.name SEPARATOR ', ') AS names
+                          FROM loan_items li
+                          JOIN loans l ON l.id = li.loan_id AND l.deleted_at IS NULL
+                          JOIN loan_participants lp ON lp.loan_id = l.id
+                          JOIN users pu ON pu.id = lp.user_id
+                          WHERE $active GROUP BY li.asset_id") as $row) {
+        $followers[(int)$row['asset_id']] = $row['names'];
+    }
+
     layout('main', 'loans/create', [
         'title' => 'Ajukan Peminjaman',
         'categories' => $categories,
         'assets' => $assets,
         'packages' => $packages,
         'itStaff' => $itStaff,
+        'holders' => $holders,
+        'followers' => $followers,
         'currentPath' => '/loans',
     ]);
 }
