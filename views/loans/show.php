@@ -83,7 +83,12 @@
                             <td>
                                 <a href="<?= e($itPhoto) ?>" target="_blank" title="Lihat foto"><img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;background:#fff;"></a>
                             </td>
-                            <td><strong><?= e($it['asset_name']) ?></strong><div class="text-slate small text-mono"><?= e($it['asset_code']) ?></div></td>
+                            <td>
+                                <div class="fw-semibold"><?= e($it['asset_name']) ?></div>
+                                <?php if (!empty($it['category_name'])): ?><div class="text-slate small"><?= e($it['category_name']) ?></div><?php endif; ?>
+                                <?php $bm = trim(($it['brand'] ?? '') . ' ' . ($it['model'] ?? '')); ?>
+                                <?php if ($bm !== ''): ?><div class="text-slate small"><?= e($bm) ?></div><?php endif; ?>
+                            </td>
                             <td><?= status_badge($it['item_status']) ?></td>
                             <?php if ($canEditItems): ?>
                             <td class="text-nowrap">
