@@ -43,30 +43,37 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Kode Aset *</label>
-                <input type="text" name="asset_code" class="form-control" required value="<?= e($asset['asset_code'] ?? '') ?>" placeholder="mis. CAM-004" data-testid="input-code">
-                <div class="form-text">Kode internal, unik.</div>
+                <label class="form-label">Kategori <?= $isEdit ? '' : '*' ?></label>
+                <select name="category_id" id="categorySelect" class="form-select" <?= $isEdit ? '' : 'required' ?> data-testid="input-category">
+                    <option value="">— Pilih —</option>
+                    <?php foreach ($categories as $c): ?>
+                        <option value="<?= (int)$c['id'] ?>" data-prefix="<?= e($c['code_prefix'] ?? '') ?>" <?= ($asset['category_id'] ?? 0) == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?><?= !empty($c['code_prefix']) ? ' ('.e($c['code_prefix']).')' : '' ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (!$isEdit): ?><div class="form-text">Kode Aset & No. BMN dibuat otomatis dari kode singkatan kategori.</div><?php endif; ?>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Nomor BMN *</label>
-                <input type="text" name="bmn_number" class="form-control" required value="<?= e($asset['bmn_number'] ?? '') ?>" placeholder="mis. BMN-2024-KMR-004" data-testid="input-bmn">
+                <label class="form-label">Kode Aset <?= $isEdit ? '*' : '' ?></label>
+                <input type="text" name="asset_code" id="assetCodeField" class="form-control<?= $isEdit ? '' : ' bg-light' ?>"
+                       <?= $isEdit ? 'required' : 'readonly' ?> value="<?= e($asset['asset_code'] ?? '') ?>"
+                       placeholder="<?= $isEdit ? 'mis. CAM-004' : 'otomatis dari kategori' ?>" data-testid="input-code">
+                <div class="form-text"><?= $isEdit ? 'Kode internal, unik.' : 'Dibuat otomatis, tidak perlu diisi.' ?></div>
             </div>
+            <div class="col-md-4">
+                <label class="form-label">Nomor BMN <?= $isEdit ? '*' : '' ?></label>
+                <input type="text" name="bmn_number" id="bmnField" class="form-control<?= $isEdit ? '' : ' bg-light' ?>"
+                       <?= $isEdit ? 'required' : 'readonly' ?> value="<?= e($asset['bmn_number'] ?? '') ?>"
+                       placeholder="<?= $isEdit ? 'mis. BMN-2024-KMR-004' : 'otomatis dari kategori' ?>" data-testid="input-bmn">
+            </div>
+            <?php if ($isEdit): ?>
             <div class="col-md-4">
                 <label class="form-label">Nilai QR Code</label>
                 <input type="text" name="barcode" class="form-control" value="<?= e($asset['barcode'] ?? '') ?>" placeholder="Kosongkan → sama dengan No. BMN" data-testid="input-barcode">
             </div>
-            <div class="col-md-8">
+            <?php endif; ?>
+            <div class="col-md-<?= $isEdit ? '8' : '12' ?>">
                 <label class="form-label">Nama Alat *</label>
                 <input type="text" name="name" class="form-control" required value="<?= e($asset['name'] ?? '') ?>" data-testid="input-name">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Kategori</label>
-                <select name="category_id" class="form-select" data-testid="input-category">
-                    <option value="">— Pilih —</option>
-                    <?php foreach ($categories as $c): ?>
-                        <option value="<?= (int)$c['id'] ?>" <?= ($asset['category_id'] ?? 0) == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Brand</label>
@@ -126,3 +133,28 @@
         facingMode: 'environment', // foto alat -> kamera belakang
     });
 </script>
+<?php if (!$isEdit): ?>
+<script>
+    // Isi otomatis Kode Aset & No. BMN dari kode singkatan kategori terpilih.
+    (function () {
+        var sel = document.getElementById('categorySelect');
+        var codeF = document.getElementById('assetCodeField');
+        var bmnF = document.getElementById('bmnField');
+        if (!sel || !codeF || !bmnF) return;
+        function refresh() {
+            var cid = sel.value;
+            if (!cid) { codeF.value = ''; bmnF.value = ''; return; }
+            codeF.value = 'memuat…'; bmnF.value = 'memuat…';
+            fetch('<?= BASE_PATH ?>/ajax/next-asset-code?category_id=' + encodeURIComponent(cid), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.ok) { codeF.value = d.asset_code; bmnF.value = d.bmn_number; }
+                    else { codeF.value = ''; bmnF.value = ''; alert(d && d.message ? d.message : 'Gagal membuat kode aset.'); }
+                })
+                .catch(function () { codeF.value = ''; bmnF.value = ''; });
+        }
+        sel.addEventListener('change', refresh);
+        if (sel.value) refresh();
+    })();
+</script>
+<?php endif; ?>

@@ -67,8 +67,17 @@ function inventory_create_post(): void {
     Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
     Auth::verifyCsrf();
     $data = _inventory_capture();
-    if (!$data['asset_code'] || !$data['bmn_number'] || !$data['name']) {
-        flash('error', 'Kode Aset, No. BMN, dan Nama wajib diisi.');
+    if (!$data['name']) {
+        flash('error', 'Nama alat wajib diisi.');
+        redirect('/inventory/create');
+    }
+    // Kode Aset & No. BMN dibuat otomatis dari kode singkatan kategori.
+    if (!$data['category_id']) {
+        flash('error', 'Kategori wajib dipilih (Kode Aset & No. BMN dibuat dari kode singkatan kategori).');
+        redirect('/inventory/create');
+    }
+    if (!next_asset_code((int)$data['category_id'])) {
+        flash('error', 'Kategori terpilih belum punya kode singkatan. Lengkapi dulu di menu Kategori.');
         redirect('/inventory/create');
     }
     $upload = handle_photo_upload('photo');
@@ -80,17 +89,22 @@ function inventory_create_post(): void {
         flash('error', 'Foto alat wajib diunggah saat menambah alat baru.');
         redirect('/inventory/create');
     }
-    try {
-        $pdo = db();
-        $stmt = $pdo->prepare("INSERT INTO assets (uuid, asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
-        $stmt->execute([generate_uuid(), $data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id()]);
-        log_audit('asset.create', 'asset', $pdo->lastInsertId(), $data);
-        flash('success', 'Alat berhasil ditambahkan.');
-        redirect('/inventory');
-    } catch (Throwable $e) {
-        delete_photo($upload['filename']); // rollback file kalau insert gagal
-        flash('error', 'Gagal: ' . $e->getMessage());
-        redirect('/inventory/create');
+    $pdo = db();
+    // Coba beberapa kali untuk mengatasi tabrakan nomor urut bila ada input bersamaan.
+    for ($attempt = 0; $attempt < 5; $attempt++) {
+        $gen = next_asset_code((int)$data['category_id']);
+        try {
+            $stmt = $pdo->prepare("INSERT INTO assets (uuid, asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
+            $stmt->execute([generate_uuid(), $gen['asset_code'], $gen['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $gen['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id()]);
+            log_audit('asset.create', 'asset', $pdo->lastInsertId(), ['asset_code' => $gen['asset_code']] + $data);
+            flash('success', "Alat berhasil ditambahkan dengan Kode {$gen['asset_code']} (BMN {$gen['bmn_number']}).");
+            redirect('/inventory');
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000' && $attempt < 4) continue; // tabrakan unik -> hitung ulang nomor
+            delete_photo($upload['filename']); // rollback file kalau insert gagal
+            flash('error', 'Gagal: ' . $e->getMessage());
+            redirect('/inventory/create');
+        }
     }
 }
 

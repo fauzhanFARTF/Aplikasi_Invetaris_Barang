@@ -84,6 +84,38 @@ function generate_code(string $prefix, string $table, string $col = 'loan_code')
  * Bangun URL publik untuk foto (aset atau user) di public/uploads/{$dir}/.
  * Mengembalikan null kalau tidak ada foto.
  */
+/**
+ * Buat Kode Aset & No. BMN otomatis dari kode singkatan kategori.
+ * Contoh: prefix CAMVIDEO -> asset_code "CAMVIDEO-001", bmn "BMN-2026-CAMVIDEO-001".
+ * Nomor urut = angka tertinggi yang sudah ada untuk prefix tsb + 1 (menghindari
+ * tabrakan meski ada aset yang terhapus). Mengembalikan null jika kategori tidak
+ * punya kode singkatan.
+ */
+function next_asset_code(int $categoryId): ?array {
+    $stmt = db()->prepare("SELECT code_prefix FROM categories WHERE id = ?");
+    $stmt->execute([$categoryId]);
+    $prefix = strtoupper(trim((string) ($stmt->fetchColumn() ?: '')));
+    if ($prefix === '') return null;
+
+    $q = db()->prepare("SELECT asset_code FROM assets WHERE asset_code LIKE ?");
+    $q->execute([$prefix . '-%']);
+    $max = 0;
+    foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $code) {
+        if (preg_match('/-(\d+)$/', (string) $code, $m)) {
+            $n = (int) $m[1];
+            if ($n > $max) $max = $n;
+        }
+    }
+    $seq = $max + 1;
+    $pad = str_pad((string) $seq, 3, '0', STR_PAD_LEFT);
+    return [
+        'prefix'     => $prefix,
+        'seq'        => $seq,
+        'asset_code' => "$prefix-$pad",
+        'bmn_number' => 'BMN-' . date('Y') . "-$prefix-$pad",
+    ];
+}
+
 /** UUID v4 acak (RFC 4122) untuk identitas publik entitas di URL. */
 function generate_uuid(): string {
     $b = random_bytes(16);
