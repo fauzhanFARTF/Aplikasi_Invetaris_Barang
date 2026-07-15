@@ -21,10 +21,14 @@
                     </div>
                     <div class="flex-grow-1" style="min-width:220px;">
                         <div class="d-flex gap-2 flex-wrap">
-                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo" style="max-width:280px;" <?= $isEdit ? '' : 'required' ?>>
+                            <input type="file" name="photo" id="photoInput" class="form-control" accept="image/jpeg,image/png,image/webp" data-testid="input-photo" style="max-width:280px;">
                             <button type="button" class="btn btn-outline-navy" id="btnOpenCamera" data-testid="btn-open-camera"><i class="fa-solid fa-camera"></i> Ambil dari Kamera</button>
                         </div>
-                        <div class="form-text">JPG, PNG, atau WEBP. Maksimal 3MB.<?= $isEdit ? '' : ' <span class="text-danger">Wajib diisi.</span>' ?></div>
+                        <div class="input-group mt-2" style="max-width:420px;">
+                            <span class="input-group-text"><i class="fa-solid fa-link"></i></span>
+                            <input type="url" name="photo_url" id="photoUrl" class="form-control" placeholder="atau tempel link foto / Google Drive" data-testid="input-photo-url">
+                        </div>
+                        <div class="form-text">JPG, PNG, atau WEBP, maks 3MB. Bisa unggah file, ambil dari kamera, <strong>atau</strong> tempel link foto (mis. Google Drive yang dibagikan publik). Opsional — jika kosong, dipakai logo Diskominfo.</div>
                         <?php if ($isEdit && $currentPhotoUrl): ?>
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" name="remove_photo" value="1" id="removePhotoCheck" data-testid="input-remove-photo">
@@ -86,10 +90,6 @@
             <div class="col-md-4">
                 <label class="form-label">Serial Number</label>
                 <input type="text" name="serial_number" class="form-control" value="<?= e($asset['serial_number'] ?? '') ?>" data-testid="input-serial">
-            </div>
-            <div class="col-12">
-                <label class="form-label">Catatan Kondisi</label>
-                <textarea name="condition_note" class="form-control" rows="3" data-testid="input-note"><?= e($asset['condition_note'] ?? '') ?></textarea>
             </div>
         </div>
     </div>
