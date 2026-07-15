@@ -11,7 +11,7 @@
                 <button type="submit" class="btn btn-outline-navy text-danger" data-testid="btn-delete-all-loans"><i class="fa-solid fa-trash"></i> Hapus Semua Riwayat</button>
             </form> -->
         <?php endif; ?>
-        <?php if (role_is('pemohon','admin')): ?>
+        <?php if (role_is('pemohon','inventory_staff','admin')): ?>
             <a href="<?= BASE_PATH ?>/loans/create" class="btn btn-amber" data-testid="btn-new-loan"><i class="fa-solid fa-plus"></i> Ajukan Peminjaman</a>
         <?php endif; ?>
         <?= reset_button('loans', 'Reset Peminjaman', 'RESET SEMUA peminjaman/acara? Seluruh data peminjaman dihapus PERMANEN dan status alat yang dipinjam/dipesan dikembalikan ke Tersedia. Tindakan ini TIDAK BISA dibatalkan.') ?>

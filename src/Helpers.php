@@ -239,9 +239,11 @@ function role_label(string $role): string {
         'superadmin' => 'Super Admin',
         'admin' => 'Administrator',
         'pemohon' => 'Pemohon',
-        'supervisor' => 'Kepala Bagian / Supervisor',
+        'supervisor' => 'Staff Approval',
         'admin_gudang' => 'Admin Gudang',
-        'inventory_staff' => 'Inventory Staff',
+        'inventory_staff' => 'IT Staff',
+        'it_staff_pembantu' => 'IT Staff Pembantu',
+        'pimpinan' => 'Pimpinan',
     ][$role] ?? $role;
 }
 
@@ -256,17 +258,18 @@ function role_is(string ...$roles): bool {
 }
 
 /**
- * Bolehkah user login mengedit/menghapus alat tertentu?
- * - superadmin / admin / admin_gudang: penuh (semua alat).
- * - inventory_staff: HANYA alat yang dia tambahkan sendiri (created_by).
- * - selain itu: tidak.
- * $createdBy = nilai kolom assets.created_by (boleh null).
+ * Bolehkah user login mengelola (tambah/edit/hapus) alat?
+ * Pengelola alat: superadmin, admin, admin_gudang, it_staff_pembantu.
+ * (IT Staff & pemohon TIDAK bisa mengelola alat — hanya melihat.)
+ * $createdBy dipertahankan di signature untuk kompatibilitas pemanggil.
  */
-function inventory_can_manage($createdBy): bool {
-    $r = Auth::role();
-    if (in_array($r, ['superadmin', 'admin', 'admin_gudang'], true)) return true;
-    if ($r === 'inventory_staff') return $createdBy !== null && (int)$createdBy === Auth::id();
-    return false;
+function inventory_can_manage($createdBy = null): bool {
+    return in_array(Auth::role(), ['superadmin', 'admin', 'admin_gudang', 'it_staff_pembantu'], true);
+}
+
+/** Role bertipe "pemohon" (mengajukan peminjaman, lihat miliknya sendiri): pemohon & IT Staff. */
+function role_is_requester(): bool {
+    return in_array(Auth::role(), ['pemohon', 'inventory_staff'], true);
 }
 
 /** Apakah alat pernah/masih dipinjam (punya baris di loan_items)? */
