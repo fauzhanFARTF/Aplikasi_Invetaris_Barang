@@ -134,6 +134,8 @@ CREATE TABLE loans (
     event_location VARCHAR(200) NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
+    start_time TIME NULL,
+    end_time TIME NULL,
     purpose TEXT NULL,
     status ENUM('Pending','Approved','Rejected','CheckedOut','Returned','Completed','Cancelled') NOT NULL DEFAULT 'Pending',
     supervisor_id BIGINT UNSIGNED NULL,

@@ -38,6 +38,9 @@
                 <tr><td class="text-slate">Status</td><td><?= status_badge($loan['status']) ?></td></tr>
                 <tr><td class="text-slate">Pemohon</td><td><?= e($loan['requester_name']) ?><br><span class="small text-slate"><?= e($loan['requester_unit']) ?></span></td></tr>
                 <tr><td class="text-slate">Tanggal</td><td><?= fmt_date($loan['start_date']) ?> — <?= fmt_date($loan['end_date']) ?></td></tr>
+                <?php if (!empty($loan['start_time'])): ?>
+                    <tr><td class="text-slate">Jam Acara</td><td><?= e(substr((string)$loan['start_time'], 0, 5)) ?></td></tr>
+                <?php endif; ?>
                 <tr><td class="text-slate">Lokasi</td><td><?= e($loan['event_location'] ?: '—') ?></td></tr>
                 <tr><td class="text-slate">Personel</td><td>
                     <?php if (!empty($participants)): ?>
@@ -66,9 +69,13 @@
     <div class="col-lg-8">
         <div class="card-sb">
             <div class="card-title">Daftar Alat (<?= count($items) ?>)</div>
+            <?php $canEditItems = in_array($loan['status'], ['Pending','Approved']) && (role_is('admin') || (int)$loan['requester_id'] === Auth::id()); ?>
+            <?php if ($canEditItems && count($items) > 1): ?>
+                <div class="hint-box mb-2"><i class="fa-solid fa-circle-info"></i><div>Anda dapat membatalkan salah satu alat tanpa membatalkan seluruh peminjaman. Jika hanya tersisa satu alat lalu dihapus, peminjaman akan dibatalkan otomatis.</div></div>
+            <?php endif; ?>
             <div class="table-responsive">
                 <table class="table table-sb align-middle" data-testid="loan-items-table">
-                    <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>BMN</th><th>Kode QR</th><th>Paket</th><th>Status Item</th><th>Kondisi Kembali</th></tr></thead>
+                    <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>BMN</th><th>Kode QR</th><th>Paket</th><th>Status Item</th><th>Kondisi Kembali</th><?php if ($canEditItems): ?><th></th><?php endif; ?></tr></thead>
                     <tbody>
                     <?php foreach ($items as $i => $it): $itPhoto = asset_photo_url($it['photo'] ?? null); ?>
                         <tr>
@@ -92,6 +99,18 @@
                                     <?php if ($it['damage_note']): ?><div class="small text-danger mt-1"><?= e($it['damage_note']) ?></div><?php endif; ?>
                                 <?php else: ?>—<?php endif; ?>
                             </td>
+                            <?php if ($canEditItems): ?>
+                            <td class="text-nowrap">
+                                <?php if (in_array($it['item_status'], ['Reserved'])): ?>
+                                    <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($loan['uuid']) ?>/items/<?= (int)$it['id'] ?>/remove" data-confirm="Batalkan alat &quot;<?= e($it['asset_name']) ?>&quot; dari peminjaman ini?" style="display:inline;">
+                                        <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                        <button class="btn btn-sm btn-outline-danger" title="Batalkan alat ini" data-testid="btn-remove-item-<?= (int)$it['id'] ?>"><i class="fa-solid fa-xmark"></i> Batalkan</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span class="text-slate small">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
