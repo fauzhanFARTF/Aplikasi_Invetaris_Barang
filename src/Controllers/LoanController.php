@@ -84,6 +84,8 @@ function loan_create_post(): void {
     $location  = trim($_POST['event_location'] ?? '');
     $start     = $_POST['start_date'] ?? '';
     $end       = $_POST['end_date'] ?? '';
+    $startTime = trim($_POST['start_time'] ?? '') ?: null;
+    $endTime   = trim($_POST['end_time'] ?? '') ?: null;
     $purpose   = trim($_POST['purpose'] ?? '');
     $assetIds  = array_map('intval', $_POST['asset_ids'] ?? []);
     $packageIds= array_map('intval', $_POST['package_ids'] ?? []);
@@ -141,8 +143,8 @@ function loan_create_post(): void {
 
         $code = generate_code('LN', 'loans', 'loan_code');
         $loanUuid = generate_uuid();
-        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,?,'Pending',?)");
-        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $purpose, Auth::id()]);
+        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, start_time, end_time, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,'Pending',?)");
+        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
         $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status) VALUES (?,?,?, 'Reserved')");
@@ -249,6 +251,62 @@ function loan_cancel(string $uuid): void {
     } catch (Throwable $e) {
         $pdo->rollBack();
         flash('error', 'Gagal membatalkan: ' . $e->getMessage());
+    }
+    redirect("/loans/$uuid");
+}
+
+function loan_item_remove(string $uuid, string $itemId): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('loans', $uuid);
+    $itemId = (int) $itemId;
+    $pdo = db();
+
+    $stmt = $pdo->prepare("SELECT * FROM loans WHERE id = ?");
+    $stmt->execute([$id]);
+    $loan = $stmt->fetch();
+    if (!$loan) { flash('error', 'Peminjaman tidak ditemukan.'); redirect('/loans'); }
+    // Hanya pemohon peminjaman tsb atau admin yang boleh menghapus alat.
+    if (Auth::role() !== 'admin' && (int)$loan['requester_id'] !== Auth::id()) {
+        flash('error', 'Tidak berwenang.'); redirect("/loans/$uuid");
+    }
+    // Hanya sebelum penyerahan (Pending/Approved) alat boleh dibatalkan/dihapus.
+    if (!in_array($loan['status'], ['Pending','Approved'])) {
+        flash('error', 'Alat hanya dapat dibatalkan saat peminjaman masih Pending/Approved.');
+        redirect("/loans/$uuid");
+    }
+
+    $it = $pdo->prepare("SELECT li.*, a.name AS asset_name FROM loan_items li JOIN assets a ON a.id = li.asset_id WHERE li.id = ? AND li.loan_id = ?");
+    $it->execute([$itemId, $id]);
+    $item = $it->fetch();
+    if (!$item) { flash('error', 'Alat tidak ditemukan pada peminjaman ini.'); redirect("/loans/$uuid"); }
+
+    $total = (int) $pdo->query("SELECT COUNT(*) FROM loan_items WHERE loan_id = " . (int)$id)->fetchColumn();
+
+    $pdo->beginTransaction();
+    try {
+        // Lepas alat kembali ke Tersedia bila masih dipesan (Reserved), lalu hapus item.
+        if ($item['item_status'] === 'Reserved') {
+            $pdo->prepare("UPDATE assets SET status='Available' WHERE id = ? AND status='Booked'")->execute([(int)$item['asset_id']]);
+        }
+        $pdo->prepare("DELETE FROM loan_items WHERE id = ?")->execute([$itemId]);
+
+        if ($total <= 1) {
+            // Alat terakhir dihapus -> batalkan peminjaman keseluruhan.
+            $pdo->prepare("UPDATE loans SET status='Cancelled', updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
+            $pdo->commit();
+            log_audit('loan.item_remove', 'loan', $id, ['asset' => $item['asset_name'], 'auto_cancel' => true]);
+            Notification::pushToRole('supervisor', 'Peminjaman Dibatalkan', "Peminjaman {$loan['loan_code']} dibatalkan (alat terakhir dihapus).", "/loans/$uuid");
+            flash('success', "Alat \"{$item['asset_name']}\" dihapus. Karena tidak ada alat tersisa, peminjaman dibatalkan.");
+            redirect('/loans');
+        }
+        $pdo->prepare("UPDATE loans SET updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
+        $pdo->commit();
+        log_audit('loan.item_remove', 'loan', $id, ['asset' => $item['asset_name']]);
+        flash('success', "Alat \"{$item['asset_name']}\" dibatalkan dari peminjaman ini.");
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        flash('error', 'Gagal membatalkan alat: ' . $e->getMessage());
     }
     redirect("/loans/$uuid");
 }
