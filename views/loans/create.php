@@ -20,6 +20,24 @@
                     <label class="form-label">Lokasi Acara</label>
                     <input type="text" name="event_location" class="form-control" placeholder="Gedung Smart Building, Ruang..." data-testid="input-event-location">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Personel yang Dilibatkan</label>
+                    <?php if (empty($itStaff)): ?>
+                        <div class="form-text">Belum ada user ber-role IT Staff. Atur role user menjadi <strong>IT Staff</strong> di Manajemen User agar bisa dipilih.</div>
+                    <?php else: ?>
+                        <div class="border rounded-3 p-2" style="max-height:180px;overflow-y:auto;" data-testid="participants-box">
+                            <?php foreach ($itStaff as $st): ?>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="participant_ids[]" value="<?= (int)$st['id'] ?>" id="part<?= (int)$st['id'] ?>" data-testid="participant-<?= (int)$st['id'] ?>">
+                                    <label class="form-check-label" for="part<?= (int)$st['id'] ?>">
+                                        <?= e($st['name']) ?><?php if (!empty($st['unit_kerja'])): ?> <span class="text-slate small">· <?= e($st['unit_kerja']) ?></span><?php endif; ?>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="form-text">Hanya personel ber-role IT Staff yang dapat dilibatkan.</div>
+                    <?php endif; ?>
+                </div>
                 <div class="row g-2">
                     <div class="col-6">
                         <label class="form-label">Tanggal Mulai *</label>
