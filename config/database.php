@@ -110,6 +110,11 @@ function run_pending_migrations(PDO $pdo): void {
             }
             $pdo->exec("UPDATE $table SET uuid = UUID() WHERE uuid IS NULL");
         }
+
+        // Kolom code_prefix (kode singkatan kategori) untuk kode aset otomatis.
+        if (!$pdo->query("SHOW COLUMNS FROM categories LIKE 'code_prefix'")->fetch()) {
+            $pdo->exec("ALTER TABLE categories ADD COLUMN code_prefix VARCHAR(20) NULL");
+        }
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
         // just log it so an admin can still apply database/migration_add_asset_price.sql /

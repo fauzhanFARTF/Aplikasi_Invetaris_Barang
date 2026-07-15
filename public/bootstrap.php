@@ -132,6 +132,7 @@ $routes = [
     // AJAX/API endpoints — served under /ajax to avoid conflict with reserved /api ingress path
     ['GET',  '#^/ajax/availability$#',         'api_availability'],
     ['GET',  '#^/ajax/assets/search$#',        'api_asset_search'],
+    ['GET',  '#^/ajax/next-asset-code$#',      'api_next_asset_code'],
     ['GET',  '#^/ajax/loans/(\d+)$#',          'api_loan_detail'],
     ['GET',  '#^/ajax/notifications/unread$#', 'api_unread_notif'],
     ['GET',  '#^/ajax/health$#',               'api_health'],

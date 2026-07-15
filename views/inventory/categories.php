@@ -15,11 +15,12 @@
     </div>
     <div class="table-responsive">
         <table class="table table-sb align-middle" data-testid="categories-table">
-            <thead><tr><th>Nama</th><th>Deskripsi</th><th>Jumlah Alat</th><th></th></tr></thead>
+            <thead><tr><th>Nama</th><th>Kode</th><th>Deskripsi</th><th>Jumlah Alat</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($cats as $c): ?>
                 <tr data-ls-row data-ls-text="<?= e(strtolower($c['name'].' '.($c['description'] ?? ''))) ?>" data-testid="category-row-<?= (int)$c['id'] ?>">
                     <td><strong><?= e($c['name']) ?></strong><?= audit_trail_info($c) ?></td>
+                    <td class="text-mono small"><?= e($c['code_prefix'] ?? '') ?: '—' ?></td>
                     <td class="small text-slate"><?= e($c['description'] ?: '—') ?></td>
                     <td><span class="badge bg-info text-dark"><?= (int)$c['asset_count'] ?></span></td>
                     <td class="text-nowrap">
@@ -31,9 +32,9 @@
                     </td>
                 </tr>
             <?php endforeach; ?>
-            <tr data-ls-empty style="display:none;"><td colspan="4" class="text-center text-slate py-4">Tidak ada kategori yang cocok dengan pencarian.</td></tr>
+            <tr data-ls-empty style="display:none;"><td colspan="5" class="text-center text-slate py-4">Tidak ada kategori yang cocok dengan pencarian.</td></tr>
             <?php if (empty($cats)): ?>
-                <tr><td colspan="4" class="text-center text-slate py-4">Belum ada kategori. Klik "Tambah Kategori" untuk membuat.</td></tr>
+                <tr><td colspan="5" class="text-center text-slate py-4">Belum ada kategori. Klik "Tambah Kategori" untuk membuat.</td></tr>
             <?php endif; ?>
             </tbody>
         </table>

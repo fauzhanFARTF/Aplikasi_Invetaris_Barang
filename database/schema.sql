@@ -47,6 +47,7 @@ CREATE TABLE categories (
     id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     uuid CHAR(36) NULL UNIQUE,
     name VARCHAR(100) NOT NULL UNIQUE,
+    code_prefix VARCHAR(20) NULL,
     description VARCHAR(255) NULL,
     created_by BIGINT UNSIGNED NULL,
     updated_by BIGINT UNSIGNED NULL,
