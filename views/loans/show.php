@@ -85,9 +85,11 @@
                             </td>
                             <td>
                                 <div class="fw-semibold"><?= e($it['asset_name']) ?></div>
+                                <div class="text-slate small text-mono"><?= e($it['asset_code']) ?></div>
                                 <?php if (!empty($it['category_name'])): ?><div class="text-slate small"><?= e($it['category_name']) ?></div><?php endif; ?>
                                 <?php $bm = trim(($it['brand'] ?? '') . ' ' . ($it['model'] ?? '')); ?>
                                 <?php if ($bm !== ''): ?><div class="text-slate small"><?= e($bm) ?></div><?php endif; ?>
+                                <?php if (!empty($it['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($it['serial_number']) ?></div><?php endif; ?>
                             </td>
                             <td><?= status_badge($it['item_status']) ?></td>
                             <?php if ($canEditItems): ?>

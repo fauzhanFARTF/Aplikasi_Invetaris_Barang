@@ -20,6 +20,10 @@
                     <label class="form-label">Lokasi Acara</label>
                     <input type="text" name="event_location" class="form-control" placeholder="Gedung Smart Building, Ruang..." data-testid="input-event-location">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Tujuan / Keperluan</label>
+                    <textarea name="purpose" rows="3" class="form-control" placeholder="Jelaskan singkat kebutuhan penggunaan alat" data-testid="input-purpose"></textarea>
+                </div>
                 <?php if (Auth::role() !== 'pemohon'): // pemohon meminjam untuk keperluan pribadi, tanpa personel ?>
                 <div class="mb-3">
                     <label class="form-label">Personel yang Dilibatkan</label>
@@ -53,10 +57,6 @@
                         <label class="form-label">Jam Acara</label>
                         <input type="time" name="start_time" class="form-control" data-testid="input-start-time">
                     </div>
-                </div>
-                <div class="mt-3">
-                    <label class="form-label">Tujuan / Keperluan</label>
-                    <textarea name="purpose" rows="3" class="form-control" placeholder="Jelaskan singkat kebutuhan penggunaan alat" data-testid="input-purpose"></textarea>
                 </div>
             </div>
         </div>
@@ -98,13 +98,14 @@
                 </div>
                 <div id="assetList" style="max-height:400px; overflow-y:auto;" data-testid="asset-list">
                     <?php foreach ($assets as $a): $photoUrl = asset_photo_url($a['photo'] ?? null); ?>
-                        <label class="d-flex gap-2 align-items-center p-2 border-bottom asset-row" data-name="<?= e(strtolower($a['name'].' '.$a['bmn_number'].' '.$a['asset_code'].' '.($a['category_name'] ?? ''))) ?>" data-category="<?= (int)($a['category_id'] ?? 0) ?>" data-id="<?= (int)$a['id'] ?>">
+                        <?php $brandModel = trim(($a['brand'] ?? '') . ' ' . ($a['model'] ?? '')); ?>
+                        <label class="d-flex gap-2 align-items-center p-2 border-bottom asset-row" data-name="<?= e(strtolower($a['name'].' '.$a['asset_code'].' '.$a['bmn_number'].' '.($a['category_name'] ?? '').' '.$brandModel.' '.($a['serial_number'] ?? '').' '.($holders[$a['id']] ?? '').' '.($followers[$a['id']] ?? ''))) ?>" data-category="<?= (int)($a['category_id'] ?? 0) ?>" data-id="<?= (int)$a['id'] ?>">
                             <input type="checkbox" name="asset_ids[]" value="<?= (int)$a['id'] ?>" class="form-check-input" <?= $a['status'] !== 'Available' ? 'disabled' : '' ?> data-testid="asset-<?= (int)$a['id'] ?>">
                             <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" class="asset-thumb rounded" style="width:52px;height:52px;object-fit:cover;border:1px solid #E2E8F0;background:#fff;flex-shrink:0;" data-testid="asset-photo-<?= (int)$a['id'] ?>">
                             <div class="flex-grow-1">
                                 <div class="fw-semibold small"><?= e($a['name']) ?></div>
+                                <div class="text-slate small text-mono"><?= e($a['asset_code']) ?></div>
                                 <?php if (!empty($a['category_name'])): ?><div class="text-slate small"><?= e($a['category_name']) ?></div><?php endif; ?>
-                                <?php $brandModel = trim(($a['brand'] ?? '') . ' ' . ($a['model'] ?? '')); ?>
                                 <?php if ($brandModel !== ''): ?><div class="text-slate small"><?= e($brandModel) ?></div><?php endif; ?>
                                 <?php if (!empty($a['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?>
                             </div>
