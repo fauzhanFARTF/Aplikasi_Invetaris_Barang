@@ -202,8 +202,9 @@ function loan_show(string $uuid): void {
         http_response_code(403); include APP_ROOT . '/views/errors/403.php'; return;
     }
 
-    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.photo, a.purchase_price, a.current_value, p.name AS package_name
+    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.photo, a.brand, a.model, a.purchase_price, a.current_value, c.name AS category_name, p.name AS package_name
                             FROM loan_items li JOIN assets a ON a.id = li.asset_id
+                            LEFT JOIN categories c ON c.id = a.category_id
                             LEFT JOIN packages p ON p.id = li.package_id
                             WHERE li.loan_id = ? ORDER BY li.id");
     $items->execute([$id]);
