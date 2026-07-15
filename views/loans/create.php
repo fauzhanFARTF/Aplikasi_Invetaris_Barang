@@ -102,6 +102,14 @@
                                 <div class="text-slate small text-mono"><?= e($a['bmn_number']) ?> · <?= e($a['asset_code']) ?></div>
                             </div>
                             <?= status_badge($a['status']) ?>
+                            <?php if (!empty($holders[$a['id']])): ?>
+                                <div class="small text-slate" style="min-width:140px;max-width:200px;">
+                                    <div title="Penanggungjawab"><i class="fa-solid fa-user-tag"></i> <?= e($holders[$a['id']]) ?></div>
+                                    <?php if (!empty($followers[$a['id']])): ?>
+                                        <div style="font-size:11px;" title="Pengikut"><i class="fa-solid fa-users"></i> <?= e($followers[$a['id']]) ?></div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </label>
                     <?php endforeach; ?>
                     <div id="assetNoResult" class="text-slate small text-center py-3" style="display:none;">Tidak ada alat yang cocok dengan pencarian.</div>
@@ -162,4 +170,20 @@ async function refreshAvail() {
 }
 document.getElementById('start_date').addEventListener('change', refreshAvail);
 document.getElementById('end_date').addEventListener('change', refreshAvail);
+
+// Alat yang dicentang otomatis pindah ke atas daftar (checked-first, urutan stabil).
+function reorderCheckedAssets() {
+    const list = document.getElementById('assetList');
+    if (!list) return;
+    const rows = Array.from(list.querySelectorAll('.asset-row'));
+    rows.sort((a, b) => {
+        const ca = a.querySelector('input[type=checkbox]').checked ? 0 : 1;
+        const cb = b.querySelector('input[type=checkbox]').checked ? 0 : 1;
+        return ca - cb; // Array.prototype.sort stabil -> urutan dalam tiap grup tetap
+    });
+    rows.forEach(r => list.appendChild(r));
+}
+document.getElementById('assetList')?.addEventListener('change', function (e) {
+    if (e.target && e.target.matches('input[type=checkbox]')) reorderCheckedAssets();
+});
 </script>
