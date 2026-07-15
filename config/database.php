@@ -115,6 +115,15 @@ function run_pending_migrations(PDO $pdo): void {
         if (!$pdo->query("SHOW COLUMNS FROM categories LIKE 'code_prefix'")->fetch()) {
             $pdo->exec("ALTER TABLE categories ADD COLUMN code_prefix VARCHAR(20) NULL");
         }
+
+        // Tabel personel (IT Staff) yang dilibatkan pada acara peminjaman.
+        $pdo->exec("CREATE TABLE IF NOT EXISTS loan_participants (
+            loan_id BIGINT UNSIGNED NOT NULL,
+            user_id BIGINT UNSIGNED NOT NULL,
+            PRIMARY KEY (loan_id, user_id),
+            CONSTRAINT fk_lp_loan FOREIGN KEY (loan_id) REFERENCES loans(id) ON DELETE CASCADE,
+            CONSTRAINT fk_lp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     } catch (Throwable $e) {
         // Never let a migration hiccup break the app (e.g. limited DB privileges) —
         // just log it so an admin can still apply database/migration_add_asset_price.sql /
