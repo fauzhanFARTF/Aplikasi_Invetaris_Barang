@@ -151,7 +151,7 @@ function _user_capture(): array {
  * diberikan oleh superadmin (admin biasa tidak bisa membuat/menaikkan superadmin).
  */
 function _user_role_assignable(string $role): bool {
-    $valid = ['superadmin', 'admin', 'pemohon', 'supervisor', 'admin_gudang', 'inventory_staff'];
+    $valid = ['superadmin', 'admin', 'pemohon', 'supervisor', 'admin_gudang', 'inventory_staff', 'it_staff_pembantu', 'pimpinan'];
     if (!in_array($role, $valid, true)) return false;
     if ($role === 'superadmin' && Auth::role() !== 'superadmin') return false;
     return true;
