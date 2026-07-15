@@ -38,8 +38,8 @@
                 <tr><td class="text-slate">Status</td><td><?= status_badge($loan['status']) ?></td></tr>
                 <tr><td class="text-slate">Pemohon</td><td><?= e($loan['requester_name']) ?><br><span class="small text-slate"><?= e($loan['requester_unit']) ?></span></td></tr>
                 <tr><td class="text-slate">Tanggal</td><td><?= fmt_date($loan['start_date']) ?> — <?= fmt_date($loan['end_date']) ?></td></tr>
-                <?php if (!empty($loan['start_time']) || !empty($loan['end_time'])): ?>
-                    <tr><td class="text-slate">Jam Acara</td><td><?= e(substr((string)$loan['start_time'], 0, 5) ?: '—') ?> — <?= e(substr((string)$loan['end_time'], 0, 5) ?: '—') ?></td></tr>
+                <?php if (!empty($loan['start_time'])): ?>
+                    <tr><td class="text-slate">Jam Acara</td><td><?= e(substr((string)$loan['start_time'], 0, 5)) ?></td></tr>
                 <?php endif; ?>
                 <tr><td class="text-slate">Lokasi</td><td><?= e($loan['event_location'] ?: '—') ?></td></tr>
                 <tr><td class="text-slate">Personel</td><td>

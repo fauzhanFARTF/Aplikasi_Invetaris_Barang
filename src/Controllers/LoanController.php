@@ -85,7 +85,7 @@ function loan_create_post(): void {
     $start     = $_POST['start_date'] ?? '';
     $end       = $_POST['end_date'] ?? '';
     $startTime = trim($_POST['start_time'] ?? '') ?: null;
-    $endTime   = trim($_POST['end_time'] ?? '') ?: null;
+    $endTime   = null; // jam selesai tidak dipakai
     $purpose   = trim($_POST['purpose'] ?? '');
     $assetIds  = array_map('intval', $_POST['asset_ids'] ?? []);
     $packageIds= array_map('intval', $_POST['package_ids'] ?? []);
