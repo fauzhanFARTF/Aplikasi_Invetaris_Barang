@@ -28,9 +28,23 @@ function dashboard_index(): void {
     } else {
         $myLoans = $pdo->query("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.deleted_at IS NULL ORDER BY l.created_at DESC LIMIT 8")->fetchAll();
     }
-    // Personel yang terlibat per peminjaman yang ditampilkan.
+    // Recent activity
+    $recentDamage = $pdo->query("SELECT r.*, a.name AS asset_name, a.bmn_number FROM repairs r JOIN assets a ON a.id = r.asset_id WHERE r.status != 'Completed' AND r.deleted_at IS NULL ORDER BY r.created_at DESC LIMIT 5")->fetchAll();
+
+    // Jadwal hari ini & selanjutnya (acara yang masih berlangsung / akan datang).
+    $today = date('Y-m-d');
+    $scheduleLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id
+                                    WHERE l.status IN ('Pending','Approved','CheckedOut') AND l.deleted_at IS NULL AND l.end_date >= ?
+                                    ORDER BY l.start_date ASC, l.start_time ASC LIMIT 40");
+    $scheduleLoans->execute([$today]);
+    $scheduleLoans = $scheduleLoans->fetchAll();
+
+    // Personel yang terlibat untuk semua peminjaman yang ditampilkan (peminjaman terbaru + jadwal).
     $loanParticipants = [];
-    $loanIds = array_map(fn($l) => (int)$l['id'], $myLoans);
+    $loanIds = array_values(array_unique(array_merge(
+        array_map(fn($l) => (int)$l['id'], $myLoans),
+        array_map(fn($l) => (int)$l['id'], $scheduleLoans)
+    )));
     if ($loanIds) {
         $in = implode(',', array_fill(0, count($loanIds), '?'));
         $pst = $pdo->prepare("SELECT lp.loan_id, GROUP_CONCAT(u.name ORDER BY u.name SEPARATOR ', ') AS names
@@ -40,22 +54,13 @@ function dashboard_index(): void {
         foreach ($pst->fetchAll() as $r) { $loanParticipants[(int)$r['loan_id']] = $r['names']; }
     }
 
-    // Recent activity
-    $recentDamage = $pdo->query("SELECT r.*, a.name AS asset_name, a.bmn_number FROM repairs r JOIN assets a ON a.id = r.asset_id WHERE r.status != 'Completed' AND r.deleted_at IS NULL ORDER BY r.created_at DESC LIMIT 5")->fetchAll();
-
-    // Today's schedule
-    $today = date('Y-m-d');
-    $todayLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.status IN ('Approved','CheckedOut') AND l.deleted_at IS NULL AND l.start_date <= ? AND l.end_date >= ? ORDER BY l.start_date ASC");
-    $todayLoans->execute([$today, $today]);
-    $todayLoans = $todayLoans->fetchAll();
-
     layout('main', 'dashboard/index', [
         'title' => 'Dashboard',
         'stats' => $stats,
         'myLoans' => $myLoans,
         'loanParticipants' => $loanParticipants,
         'recentDamage' => $recentDamage,
-        'todayLoans' => $todayLoans,
+        'scheduleLoans' => $scheduleLoans,
         'currentPath' => '/dashboard',
     ]);
 }
