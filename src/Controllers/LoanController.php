@@ -65,7 +65,10 @@ function loan_create_post(): void {
     $purpose   = trim($_POST['purpose'] ?? '');
     $assetIds  = array_map('intval', $_POST['asset_ids'] ?? []);
     $packageIds= array_map('intval', $_POST['package_ids'] ?? []);
-    $participantIds = array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
+    // Pemohon meminjam untuk keperluan pribadi — tanpa personel yang dilibatkan.
+    $participantIds = Auth::role() === 'pemohon'
+        ? []
+        : array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
 
     if (!$eventName || !$start || !$end || (!$assetIds && !$packageIds)) {
         flash('error', 'Lengkapi nama acara, tanggal, dan pilih minimal 1 alat / paket.');
