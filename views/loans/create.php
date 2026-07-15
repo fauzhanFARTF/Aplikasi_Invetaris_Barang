@@ -49,6 +49,14 @@
                         <label class="form-label">Tanggal Selesai *</label>
                         <input type="date" name="end_date" id="end_date" class="form-control" required min="<?= date('Y-m-d') ?>" data-testid="input-end-date">
                     </div>
+                    <div class="col-6">
+                        <label class="form-label">Jam Mulai</label>
+                        <input type="time" name="start_time" class="form-control" data-testid="input-start-time">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Jam Selesai</label>
+                        <input type="time" name="end_time" class="form-control" data-testid="input-end-time">
+                    </div>
                 </div>
                 <div class="mt-3">
                     <label class="form-label">Tujuan / Keperluan</label>
