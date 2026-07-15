@@ -58,16 +58,10 @@
                         <td><input type="checkbox" class="form-check-input asset-check" value="<?= e($a['uuid']) ?>" data-testid="check-<?= (int)$a['id'] ?>"></td>
                     <?php endif; ?>
                     <td>
-                        <?php $photoUrl = photo_url($a['photo'] ?? null); ?>
-                        <?php if ($photoUrl): ?>
-                            <a href="<?= e($photoUrl) ?>" target="_blank" title="Lihat foto ukuran penuh">
-                                <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;">
-                            </a>
-                        <?php else: ?>
-                            <div class="d-flex align-items-center justify-content-center text-slate" style="width:44px;height:44px;border-radius:8px;background:#F1F5F9;">
-                                <i class="fa-solid fa-image"></i>
-                            </div>
-                        <?php endif; ?>
+                        <?php $photoUrl = asset_photo_url($a['photo'] ?? null); ?>
+                        <a href="<?= e($photoUrl) ?>" target="_blank" title="Lihat foto ukuran penuh">
+                            <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($a['name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;background:#fff;">
+                        </a>
                     </td>
                     <td class="code"><?= e($a['asset_code']) ?></td>
                     <td><strong><?= e($a['name']) ?></strong><?php if ($a['serial_number']): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?></td>

@@ -1,5 +1,5 @@
 <?php $user = Auth::user(); ?>
-<?php if (in_array($user['role'], ['pemohon','inventory_staff'], true)): ?>
+<?php if (in_array($user['role'], ['pemohon','inventory_staff','it_staff_pembantu'], true)): ?>
 <div class="hint-box no-print">
     <i class="fa-solid fa-circle-info"></i>
     <div>Butuh alat untuk kegiatan? Klik <strong>"Ajukan Peminjaman"</strong> di kanan atas, isi formulir singkat, lalu tunggu persetujuan dari supervisor. Anda akan mendapat notifikasi begitu disetujui.</div>
@@ -10,7 +10,7 @@
         <h1>Selamat datang, <?= e(explode(' ', $user['name'])[0]) ?> 👋</h1>
         <p class="subtitle">Ringkasan aset streaming & aktivitas peminjaman.</p>
     </div>
-    <?php if (role_is('pemohon','inventory_staff','admin')): ?>
+    <?php if (role_is('pemohon','inventory_staff','it_staff_pembantu','admin')): ?>
         <a href="<?= BASE_PATH ?>/loans/create" class="btn btn-amber" data-testid="btn-create-loan"><i class="fa-solid fa-plus"></i> Ajukan Peminjaman</a>
     <?php endif; ?>
 </div>
@@ -62,7 +62,7 @@
                     <div class="empty-icon"><i class="fa-regular fa-clipboard"></i></div>
                     <h4>Belum ada peminjaman</h4>
                     <p>Riwayat peminjaman Anda akan muncul di sini.</p>
-                    <?php if (role_is('pemohon','inventory_staff','admin')): ?>
+                    <?php if (role_is('pemohon','inventory_staff','it_staff_pembantu','admin')): ?>
                         <a href="<?= BASE_PATH ?>/loans/create" class="btn btn-sm btn-amber"><i class="fa-solid fa-plus"></i> Ajukan Sekarang</a>
                     <?php endif; ?>
                 </div>

@@ -35,14 +35,10 @@
         <div class="card-sb">
             <div class="card-title">Progress Alat (<?= count($items) ?>)</div>
             <div id="itemList" data-testid="item-progress-list">
-                <?php foreach ($items as $it): $itPhoto = photo_url($it['photo'] ?? null, 'assets'); ?>
+                <?php foreach ($items as $it): $itPhoto = asset_photo_url($it['photo'] ?? null); ?>
                     <div class="item-progress <?= $it['item_status'] === 'CheckedOut' ? 'done' : '' ?>" data-barcode="<?= e($it['barcode']) ?>" data-testid="item-<?= (int)$it['id'] ?>">
                         <div class="d-flex align-items-center gap-2">
-                            <?php if ($itPhoto): ?>
-                                <img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;">
-                            <?php else: ?>
-                                <div class="d-flex align-items-center justify-content-center text-slate" style="width:40px;height:40px;border-radius:8px;background:#EEF2F8;"><i class="fa-solid fa-image"></i></div>
-                            <?php endif; ?>
+                            <img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;background:#fff;">
                             <div>
                                 <div class="fw-semibold"><?= e($it['asset_name']) ?></div>
                                 <div class="text-slate small text-mono"><?= e($it['bmn_number']) ?></div>

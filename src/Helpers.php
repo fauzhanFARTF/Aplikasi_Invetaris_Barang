@@ -168,6 +168,99 @@ function user_avatar_url(?string $photo): string {
  *  ['filename' => string|null, 'error' => string|null]
  * 'filename' adalah null jika tidak ada file baru yang diupload (bukan error).
  */
+/**
+ * Ubah URL berbagi Google Drive menjadi URL unduhan langsung agar bisa diambil
+ * sebagai gambar. Contoh:
+ *   https://drive.google.com/file/d/FILEID/view?usp=sharing
+ *   https://drive.google.com/open?id=FILEID
+ *   -> https://drive.google.com/uc?export=download&id=FILEID
+ * URL lain dikembalikan apa adanya.
+ */
+function normalize_image_url(string $url): string {
+    if (preg_match('#drive\.google\.com/file/d/([A-Za-z0-9_-]+)#', $url, $m)) {
+        return 'https://drive.google.com/uc?export=download&id=' . $m[1];
+    }
+    if (preg_match('#drive\.google\.com/(?:open|uc)\?[^ ]*id=([A-Za-z0-9_-]+)#', $url, $m)) {
+        return 'https://drive.google.com/uc?export=download&id=' . $m[1];
+    }
+    return $url;
+}
+
+/**
+ * Unduh gambar dari sebuah URL (mis. link Google Drive / URL gambar langsung),
+ * validasi tipe & ukuran, lalu simpan ke public/uploads/{$dir}/ seperti hasil
+ * upload biasa. Mengembalikan ['filename' => string|null, 'error' => string|null].
+ * filename null tanpa error = tidak ada URL diberikan.
+ */
+function handle_photo_from_url(string $url, ?string $oldPhoto = null, string $dir = 'assets', string $prefix = 'asset'): array {
+    $url = trim($url);
+    if ($url === '') return ['filename' => null, 'error' => null];
+    if (!filter_var($url, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $url)) {
+        return ['filename' => null, 'error' => 'Link foto tidak valid (harus diawali http:// atau https://).'];
+    }
+
+    $fetchUrl = normalize_image_url($url);
+    $maxBytes = 3 * 1024 * 1024; // 3 MB
+    $data = null;
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($fetchUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_USERAGENT => 'SIMANTAP-BMN/1.0',
+            CURLOPT_BUFFERSIZE => 65536,
+            CURLOPT_NOPROGRESS => false,
+            CURLOPT_PROGRESSFUNCTION => function ($ch, $dlTotal, $dlNow) use ($maxBytes) {
+                return ($dlTotal > $maxBytes || $dlNow > $maxBytes) ? 1 : 0; // batalkan bila terlalu besar
+            },
+        ]);
+        $data = curl_exec($ch);
+        $err = curl_error($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($data === false || $data === '') {
+            return ['filename' => null, 'error' => 'Gagal mengunduh foto dari link' . ($err ? ": $err" : ($code ? " (HTTP $code)" : '') ) . '.'];
+        }
+    } else {
+        $ctx = stream_context_create(['http' => ['timeout' => 20, 'follow_location' => 1]]);
+        $data = @file_get_contents($fetchUrl, false, $ctx, 0, $maxBytes + 1);
+        if ($data === false) return ['filename' => null, 'error' => 'Gagal mengunduh foto dari link.'];
+    }
+
+    if (strlen($data) > $maxBytes) {
+        return ['filename' => null, 'error' => 'Ukuran foto dari link maksimal 3MB.'];
+    }
+
+    // Validasi bahwa isinya benar-benar gambar (JPG/PNG/WEBP).
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    $mime = null;
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $data);
+        finfo_close($finfo);
+    }
+    if (!isset($allowed[$mime])) {
+        return ['filename' => null, 'error' => 'Link tidak mengarah ke gambar JPG/PNG/WEBP (untuk Google Drive, pastikan file dibagikan publik / "siapa saja yang memiliki link").'];
+    }
+
+    $uploadDir = APP_ROOT . '/public/uploads/' . $dir;
+    if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0775, true); }
+    $filename = $prefix . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+    if (file_put_contents($uploadDir . '/' . $filename, $data) === false) {
+        return ['filename' => null, 'error' => 'Gagal menyimpan foto ke server.'];
+    }
+
+    if ($oldPhoto) {
+        $oldPath = $uploadDir . '/' . basename($oldPhoto);
+        if (is_file($oldPath)) { @unlink($oldPath); }
+    }
+    return ['filename' => $filename, 'error' => null];
+}
+
 function handle_photo_upload(string $field, ?string $oldPhoto = null, string $dir = 'assets', string $prefix = 'asset'): array {
     if (empty($_FILES[$field]) || ($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return ['filename' => null, 'error' => null]; // Tidak ada file baru diupload
@@ -297,6 +390,15 @@ function role_is(string ...$roles): bool {
  */
 function inventory_can_manage($createdBy = null): bool {
     return in_array(Auth::role(), ['superadmin', 'admin', 'admin_gudang', 'it_staff_pembantu'], true);
+}
+
+/**
+ * URL foto alat untuk ditampilkan. Jika alat belum punya foto, pakai logo
+ * Diskominfo sebagai gambar default (tidak pernah mengembalikan null).
+ */
+function asset_photo_url(?string $photo): string {
+    $prefix = defined('ASSET_PREFIX') ? ASSET_PREFIX : '';
+    return photo_url($photo, 'assets') ?? ($prefix . '/assets/img/logo-kominfo-icon.png');
 }
 
 /** Role bertipe "pemohon" (mengajukan peminjaman, lihat miliknya sendiri): pemohon & IT Staff. */
