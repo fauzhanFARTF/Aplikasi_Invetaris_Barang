@@ -88,11 +88,16 @@ function run_pending_migrations(PDO $pdo): void {
                         ADD COLUMN restored_at DATETIME NULL");
         }
 
-        // Role 'superadmin' (akses penuh + reset data) & 'inventory_staff'
-        // (kelola alat miliknya sendiri). Perluas enum bila salah satu belum ada.
+        // Perluas enum role bila ada nilai baru yang belum terdaftar
+        // (superadmin, inventory_staff, it_staff_pembantu, pimpinan).
         $roleCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'")->fetch();
-        if ($roleCol && (strpos($roleCol['Type'], 'superadmin') === false || strpos($roleCol['Type'], 'inventory_staff') === false)) {
-            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff') NOT NULL");
+        if ($roleCol) {
+            foreach (['superadmin', 'inventory_staff', 'it_staff_pembantu', 'pimpinan'] as $needle) {
+                if (strpos($roleCol['Type'], $needle) === false) {
+                    $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL");
+                    break;
+                }
+            }
         }
 
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
