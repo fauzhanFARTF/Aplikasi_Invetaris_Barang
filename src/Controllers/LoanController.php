@@ -202,7 +202,7 @@ function loan_show(string $uuid): void {
         http_response_code(403); include APP_ROOT . '/views/errors/403.php'; return;
     }
 
-    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.photo, a.brand, a.model, a.purchase_price, a.current_value, c.name AS category_name, p.name AS package_name
+    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.asset_code, a.barcode, a.photo, a.brand, a.model, a.serial_number, a.purchase_price, a.current_value, c.name AS category_name, p.name AS package_name
                             FROM loan_items li JOIN assets a ON a.id = li.asset_id
                             LEFT JOIN categories c ON c.id = a.category_id
                             LEFT JOIN packages p ON p.id = li.package_id
@@ -254,6 +254,31 @@ function loan_cancel(string $uuid): void {
         flash('error', 'Gagal membatalkan: ' . $e->getMessage());
     }
     redirect("/loans/$uuid");
+}
+
+function loan_berita_acara(string $uuid): void {
+    Auth::requireRole('admin_gudang', 'admin');
+    $id = uuid_to_id_or_404('loans', $uuid);
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit, u.phone AS requester_phone
+                           FROM loans l JOIN users u ON u.id = l.requester_id
+                           WHERE l.id = ? AND l.deleted_at IS NULL");
+    $stmt->execute([$id]);
+    $loan = $stmt->fetch();
+    if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
+
+    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number
+                               FROM loan_items li JOIN assets a ON a.id = li.asset_id
+                               WHERE li.loan_id = ? ORDER BY a.name");
+    $itemsStmt->execute([$id]);
+    $items = $itemsStmt->fetchAll();
+
+    $partStmt = $pdo->prepare("SELECT u.name, u.unit_kerja FROM loan_participants lp JOIN users u ON u.id = lp.user_id WHERE lp.loan_id = ? ORDER BY u.name");
+    $partStmt->execute([$id]);
+    $participants = $partStmt->fetchAll();
+
+    log_audit('loan.berita_acara', 'loan', $id);
+    include APP_ROOT . '/views/loans/berita_acara.php';
 }
 
 function loan_item_remove(string $uuid, string $itemId): void {
