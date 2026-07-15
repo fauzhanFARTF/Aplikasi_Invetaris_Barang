@@ -70,7 +70,7 @@
     <div class="col-lg-7">
         <div class="card-sb">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="card-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-slate"></i>Peminjaman Terbaru</div>
+                <div class="card-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-slate"></i>Peminjaman Terbaru<?= in_array($user['role'], ['pemohon','inventory_staff'], true) ? ' Anda' : '' ?></div>
                 <a href="<?= BASE_PATH ?>/loans" class="btn btn-sm btn-outline-navy">Lihat semua</a>
             </div>
             <?php if (empty($myLoans)): ?>
