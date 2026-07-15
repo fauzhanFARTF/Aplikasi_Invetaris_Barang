@@ -15,6 +15,9 @@ function dashboard_index(): void {
         'damaged'        => (int) $pdo->query("SELECT COUNT(*) FROM assets WHERE status = 'Damaged' AND deleted_at IS NULL")->fetchColumn(),
         'pending_approvals' => (int) $pdo->query("SELECT COUNT(*) FROM loans WHERE status = 'Pending' AND deleted_at IS NULL")->fetchColumn(),
         'active_loans'   => (int) $pdo->query("SELECT COUNT(*) FROM loans WHERE status IN ('Approved','CheckedOut') AND deleted_at IS NULL")->fetchColumn(),
+        // Jumlah BARANG (alat) pada peminjaman menunggu approval & yang telah disetujui.
+        'items_pending'  => (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id WHERE l.status = 'Pending' AND l.deleted_at IS NULL")->fetchColumn(),
+        'items_approved' => (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id WHERE l.status = 'Approved' AND l.deleted_at IS NULL")->fetchColumn(),
     ];
 
     // My data
