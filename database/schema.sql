@@ -179,6 +179,15 @@ CREATE TABLE loan_items (
     INDEX idx_li_status (item_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Personel (IT Staff) yang dilibatkan dalam acara peminjaman.
+CREATE TABLE loan_participants (
+    loan_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (loan_id, user_id),
+    CONSTRAINT fk_lp_loan FOREIGN KEY (loan_id) REFERENCES loans(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE repairs (
     id BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     uuid CHAR(36) NULL UNIQUE,

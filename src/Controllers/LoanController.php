@@ -41,12 +41,15 @@ function loan_create_get(): void {
     $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
     $packages = $pdo->query("SELECT p.*, GROUP_CONCAT(a.name SEPARATOR ', ') AS items FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id LEFT JOIN assets a ON a.id = pi.asset_id WHERE p.is_active = 1 AND p.deleted_at IS NULL GROUP BY p.id ORDER BY p.name")->fetchAll();
+    // Personel yang dapat dilibatkan hanya user ber-role IT Staff.
+    $itStaff = $pdo->query("SELECT id, name, unit_kerja FROM users WHERE role = 'inventory_staff' AND is_active = 1 AND deleted_at IS NULL ORDER BY name")->fetchAll();
 
     layout('main', 'loans/create', [
         'title' => 'Ajukan Peminjaman',
         'categories' => $categories,
         'assets' => $assets,
         'packages' => $packages,
+        'itStaff' => $itStaff,
         'currentPath' => '/loans',
     ]);
 }
@@ -62,6 +65,7 @@ function loan_create_post(): void {
     $purpose   = trim($_POST['purpose'] ?? '');
     $assetIds  = array_map('intval', $_POST['asset_ids'] ?? []);
     $packageIds= array_map('intval', $_POST['package_ids'] ?? []);
+    $participantIds = array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
 
     if (!$eventName || !$start || !$end || (!$assetIds && !$packageIds)) {
         flash('error', 'Lengkapi nama acara, tanggal, dan pilih minimal 1 alat / paket.');
@@ -122,6 +126,16 @@ function loan_create_post(): void {
             $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null]);
             $upA->execute([$aid]);
         }
+
+        // Personel yang dilibatkan — hanya user ber-role IT Staff yang valid.
+        if ($participantIds) {
+            $in = implode(',', array_fill(0, count($participantIds), '?'));
+            $vst = $pdo->prepare("SELECT id FROM users WHERE id IN ($in) AND role = 'inventory_staff' AND is_active = 1 AND deleted_at IS NULL");
+            $vst->execute($participantIds);
+            $validIds = array_map('intval', $vst->fetchAll(PDO::FETCH_COLUMN));
+            $pIns = $pdo->prepare("INSERT INTO loan_participants (loan_id, user_id) VALUES (?, ?)");
+            foreach ($validIds as $pid) { $pIns->execute([$loanId, $pid]); }
+        }
         $pdo->commit();
 
         log_audit('loan.create', 'loan', $loanId, ['code' => $code, 'items' => count($allAssetIds)]);
@@ -168,10 +182,15 @@ function loan_show(string $uuid): void {
     $items->execute([$id]);
     $items = $items->fetchAll();
 
+    $partStmt = $pdo->prepare("SELECT u.name, u.unit_kerja FROM loan_participants lp JOIN users u ON u.id = lp.user_id WHERE lp.loan_id = ? ORDER BY u.name");
+    $partStmt->execute([$id]);
+    $participants = $partStmt->fetchAll();
+
     layout('main', 'loans/show', [
         'title' => 'Detail Peminjaman ' . $loan['loan_code'],
         'loan' => $loan,
         'items' => $items,
+        'participants' => $participants,
         'currentPath' => '/loans',
     ]);
 }

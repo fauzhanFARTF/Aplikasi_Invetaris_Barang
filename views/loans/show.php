@@ -39,6 +39,13 @@
                 <tr><td class="text-slate">Pemohon</td><td><?= e($loan['requester_name']) ?><br><span class="small text-slate"><?= e($loan['requester_unit']) ?></span></td></tr>
                 <tr><td class="text-slate">Tanggal</td><td><?= fmt_date($loan['start_date']) ?> — <?= fmt_date($loan['end_date']) ?></td></tr>
                 <tr><td class="text-slate">Lokasi</td><td><?= e($loan['event_location'] ?: '—') ?></td></tr>
+                <tr><td class="text-slate">Personel</td><td>
+                    <?php if (!empty($participants)): ?>
+                        <?php foreach ($participants as $p): ?>
+                            <div><?= e($p['name']) ?><?php if (!empty($p['unit_kerja'])): ?> <span class="small text-slate">· <?= e($p['unit_kerja']) ?></span><?php endif; ?></div>
+                        <?php endforeach; ?>
+                    <?php else: ?>—<?php endif; ?>
+                </td></tr>
                 <tr><td class="text-slate">Tujuan</td><td><?= nl2br(e($loan['purpose'] ?: '—')) ?></td></tr>
                 <tr><td class="text-slate">Diajukan</td><td><?= fmt_datetime($loan['created_at']) ?></td></tr>
                 <?php if ($loan['approved_at']): ?>
