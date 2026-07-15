@@ -85,17 +85,27 @@
             <?php else: ?>
                 <div class="table-responsive">
                     <table class="table table-sb align-middle" data-testid="table-my-loans">
-                        <thead><tr><th>Kode</th><th>Acara</th><th>Tanggal</th><th>Status</th></tr></thead>
+                        <thead><tr><th>Kode</th><th>Acara</th><th>Peminjam</th><th>Status</th><?php if (role_is('admin_gudang')): ?><th></th><?php endif; ?></tr></thead>
                         <tbody>
                         <?php foreach ($myLoans as $l): ?>
                             <tr>
                                 <td class="code"><a href="<?= BASE_PATH ?>/loans/<?= e($l["uuid"]) ?>"><?= e($l['loan_code']) ?></a></td>
                                 <td>
                                     <div class="fw-semibold"><?= e($l['event_name']) ?></div>
-                                    <?php if (!empty($l['requester_name'])): ?><div class="text-slate small"><?= e($l['requester_name']) ?></div><?php endif; ?>
+                                    <?php if (!empty($l['event_location'])): ?><div class="text-slate small"><i class="fa-solid fa-location-dot me-1"></i><?= e($l['event_location']) ?></div><?php endif; ?>
+                                    <div class="text-slate small"><i class="fa-regular fa-calendar me-1"></i><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></div>
+                                    <?php if (!empty($l['start_time'])): ?><div class="text-slate small"><i class="fa-regular fa-clock me-1"></i><?= e(substr((string)$l['start_time'],0,5)) ?></div><?php endif; ?>
                                 </td>
-                                <td class="small"><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></td>
+                                <td>
+                                    <div class="fw-semibold small"><?= e($l['requester_name'] ?? '—') ?></div>
+                                    <?php if (!empty($loanParticipants[$l['id']])): ?><div class="text-slate small"><i class="fa-solid fa-users me-1"></i><?= e($loanParticipants[$l['id']]) ?></div><?php endif; ?>
+                                </td>
                                 <td><?= status_badge($l['status']) ?></td>
+                                <?php if (role_is('admin_gudang')): ?>
+                                <td class="text-nowrap">
+                                    <a href="<?= BASE_PATH ?>/loans/<?= e($l['uuid']) ?>/berita-acara" target="_blank" class="btn btn-sm btn-outline-navy" title="Cetak Berita Acara Keluar" data-testid="btn-berita-<?= (int)$l['id'] ?>"><i class="fa-solid fa-file-lines"></i> Berita Acara</a>
+                                </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
