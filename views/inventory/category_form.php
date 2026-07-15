@@ -18,6 +18,14 @@
                 <div class="form-text">Nama harus unik.</div>
             </div>
             <div class="col-md-6">
+                <label class="form-label">Kode Singkatan *</label>
+                <input type="text" name="code_prefix" class="form-control text-uppercase" required
+                       value="<?= e($category['code_prefix'] ?? '') ?>" placeholder="mis. CAMVIDEO"
+                       pattern="[A-Za-z0-9]+" maxlength="20" data-testid="input-cat-prefix"
+                       oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+                <div class="form-text">Huruf/angka tanpa spasi. Dipakai untuk Kode Aset otomatis, mis. <strong>CAMVIDEO-001</strong>.</div>
+            </div>
+            <div class="col-md-12">
                 <label class="form-label">Deskripsi</label>
                 <input type="text" name="description" class="form-control" value="<?= e($category['description'] ?? '') ?>" placeholder="mis. Kamera video / camcorder / DSLR" data-testid="input-cat-desc">
             </div>

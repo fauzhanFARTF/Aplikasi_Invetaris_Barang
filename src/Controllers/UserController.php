@@ -195,15 +195,24 @@ function category_create_post(): void {
     Auth::requireRole('admin', 'admin_gudang');
     Auth::verifyCsrf();
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
+    $prefix = _capture_code_prefix();
     if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/create'); }
+    if (!$prefix) { flash('error', 'Kode singkatan kategori wajib diisi (mis. CAMVIDEO).'); redirect('/categories/create'); }
     try {
-        db()->prepare("INSERT INTO categories (uuid, name, description, created_by) VALUES (?,?,?,?)")->execute([generate_uuid(), $name, $desc, Auth::id()]);
+        db()->prepare("INSERT INTO categories (uuid, name, code_prefix, description, created_by) VALUES (?,?,?,?,?)")->execute([generate_uuid(), $name, $prefix, $desc, Auth::id()]);
         flash('success', 'Kategori ditambahkan.');
         redirect('/categories');
     } catch (Throwable $e) {
-        flash('error', 'Gagal menambah kategori (nama mungkin sudah dipakai): ' . $e->getMessage());
+        flash('error', 'Gagal menambah kategori (nama/kode mungkin sudah dipakai): ' . $e->getMessage());
         redirect('/categories/create');
     }
+}
+
+/** Normalisasi kode singkatan kategori: huruf/angka kapital tanpa spasi. */
+function _capture_code_prefix(): ?string {
+    $p = strtoupper(trim($_POST['code_prefix'] ?? ''));
+    $p = preg_replace('/[^A-Z0-9]/', '', $p);
+    return $p !== '' ? $p : null;
 }
 
 function category_edit_get(string $uuid): void {
@@ -226,9 +235,11 @@ function category_edit_post(string $uuid): void {
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('categories', $uuid);
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
+    $prefix = _capture_code_prefix();
     if (!$name) { flash('error', 'Nama kategori wajib diisi.'); redirect('/categories/' . $uuid . '/edit'); }
+    if (!$prefix) { flash('error', 'Kode singkatan kategori wajib diisi (mis. CAMVIDEO).'); redirect('/categories/' . $uuid . '/edit'); }
     try {
-        db()->prepare("UPDATE categories SET name=?, description=?, updated_by=? WHERE id=?")->execute([$name, $desc, Auth::id(), (int)$id]);
+        db()->prepare("UPDATE categories SET name=?, code_prefix=?, description=?, updated_by=? WHERE id=?")->execute([$name, $prefix, $desc, Auth::id(), (int)$id]);
         flash('success', 'Kategori diperbarui.');
         redirect('/categories');
     } catch (Throwable $e) {
@@ -351,6 +362,16 @@ function api_availability(): void {
     $stmt->execute([$end, $start]);
     $busy = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     json_response(['busy_asset_ids' => $busy]);
+}
+
+/** Preview Kode Aset & No. BMN otomatis untuk kategori terpilih (dipakai form tambah alat). */
+function api_next_asset_code(): void {
+    Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
+    $cat = (int) ($_GET['category_id'] ?? 0);
+    if (!$cat) json_response(['ok' => false, 'message' => 'Kategori belum dipilih.'], 400);
+    $gen = next_asset_code($cat);
+    if (!$gen) json_response(['ok' => false, 'message' => 'Kategori ini belum punya kode singkatan.'], 422);
+    json_response(['ok' => true, 'asset_code' => $gen['asset_code'], 'bmn_number' => $gen['bmn_number']]);
 }
 
 function api_asset_search(): void {
