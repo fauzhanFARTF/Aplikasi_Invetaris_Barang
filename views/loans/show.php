@@ -75,7 +75,7 @@
             <?php endif; ?>
             <div class="table-responsive">
                 <table class="table table-sb align-middle" data-testid="loan-items-table">
-                    <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>BMN</th><th>Kode QR</th><th>Paket</th><th>Status Item</th><th>Kondisi Kembali</th><?php if ($canEditItems): ?><th></th><?php endif; ?></tr></thead>
+                    <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>Status Item</th><?php if ($canEditItems): ?><th></th><?php endif; ?></tr></thead>
                     <tbody>
                     <?php foreach ($items as $i => $it): $itPhoto = asset_photo_url($it['photo'] ?? null); ?>
                         <tr>
@@ -84,21 +84,7 @@
                                 <a href="<?= e($itPhoto) ?>" target="_blank" title="Lihat foto"><img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;background:#fff;"></a>
                             </td>
                             <td><strong><?= e($it['asset_name']) ?></strong><div class="text-slate small text-mono"><?= e($it['asset_code']) ?></div></td>
-                            <td class="text-mono small"><?= e($it['bmn_number']) ?></td>
-                            <td class="text-mono small"><?= e($it['barcode']) ?></td>
-                            <td class="small"><?= e($it['package_name'] ?? '—') ?></td>
                             <td><?= status_badge($it['item_status']) ?></td>
-                            <td>
-                                <?php if ($it['return_condition']):
-                                    $condBadgeKey = ['Good' => 'ReturnedGood', 'Damaged' => 'ReturnedDamaged', 'Lost' => 'ReturnedLost'][$it['return_condition']] ?? 'ReturnedDamaged';
-                                ?>
-                                    <?= status_badge($condBadgeKey) ?>
-                                    <?php if ($it['return_condition'] === 'Lost'): ?>
-                                        <div class="small text-slate mt-1">Harga dulu: <?= fmt_rupiah($it['purchase_price']) ?> · Nilai sekarang: <?= fmt_rupiah($it['current_value']) ?></div>
-                                    <?php endif; ?>
-                                    <?php if ($it['damage_note']): ?><div class="small text-danger mt-1"><?= e($it['damage_note']) ?></div><?php endif; ?>
-                                <?php else: ?>—<?php endif; ?>
-                            </td>
                             <?php if ($canEditItems): ?>
                             <td class="text-nowrap">
                                 <?php if (in_array($it['item_status'], ['Reserved'])): ?>
