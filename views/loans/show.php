@@ -70,15 +70,11 @@
                 <table class="table table-sb align-middle" data-testid="loan-items-table">
                     <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>BMN</th><th>Kode QR</th><th>Paket</th><th>Status Item</th><th>Kondisi Kembali</th></tr></thead>
                     <tbody>
-                    <?php foreach ($items as $i => $it): $itPhoto = photo_url($it['photo'] ?? null, 'assets'); ?>
+                    <?php foreach ($items as $i => $it): $itPhoto = asset_photo_url($it['photo'] ?? null); ?>
                         <tr>
                             <td><?= $i + 1 ?></td>
                             <td>
-                                <?php if ($itPhoto): ?>
-                                    <a href="<?= e($itPhoto) ?>" target="_blank" title="Lihat foto"><img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;"></a>
-                                <?php else: ?>
-                                    <div class="d-flex align-items-center justify-content-center text-slate" style="width:44px;height:44px;border-radius:8px;background:#F1F5F9;"><i class="fa-solid fa-image"></i></div>
-                                <?php endif; ?>
+                                <a href="<?= e($itPhoto) ?>" target="_blank" title="Lihat foto"><img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;background:#fff;"></a>
                             </td>
                             <td><strong><?= e($it['asset_name']) ?></strong><div class="text-slate small text-mono"><?= e($it['asset_code']) ?></div></td>
                             <td class="text-mono small"><?= e($it['bmn_number']) ?></td>

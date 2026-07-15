@@ -85,9 +85,10 @@ function inventory_create_post(): void {
         flash('error', $upload['error']);
         redirect('/inventory/create');
     }
-    if (!$upload['filename']) {
-        flash('error', 'Foto alat wajib diunggah saat menambah alat baru.');
-        redirect('/inventory/create');
+    // Foto opsional. Jika tidak ada file diunggah, coba ambil dari link (mis. Google Drive).
+    if (!$upload['filename'] && trim($_POST['photo_url'] ?? '') !== '') {
+        $upload = handle_photo_from_url($_POST['photo_url']);
+        if ($upload['error']) { flash('error', $upload['error']); redirect('/inventory/create'); }
     }
     $pdo = db();
     // Coba beberapa kali untuk mengatasi tabrakan nomor urut bila ada input bersamaan.
@@ -141,10 +142,15 @@ function inventory_edit_post(string $uuid): void {
         flash('error', $upload['error']);
         redirect('/inventory/' . $uuid . '/edit');
     }
+    // Jika tidak ada file diunggah, coba ambil dari link (mis. Google Drive).
+    if (!$upload['filename'] && trim($_POST['photo_url'] ?? '') !== '') {
+        $upload = handle_photo_from_url($_POST['photo_url'], $oldPhoto);
+        if ($upload['error']) { flash('error', $upload['error']); redirect('/inventory/' . $uuid . '/edit'); }
+    }
 
     // Tentukan nilai kolom photo final:
-    // - Ada file baru diupload -> pakai file baru
-    // - Tidak ada file baru, tapi user centang "hapus foto" -> null
+    // - Ada foto baru (upload/link) -> pakai yang baru
+    // - Tidak ada foto baru, tapi user centang "hapus foto" -> null
     // - Selain itu -> tetap pakai foto lama
     if ($upload['filename']) {
         $photo = $upload['filename'];
