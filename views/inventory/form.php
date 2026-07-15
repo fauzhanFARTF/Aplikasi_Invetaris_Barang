@@ -87,10 +87,6 @@
                 <label class="form-label">Serial Number</label>
                 <input type="text" name="serial_number" class="form-control" value="<?= e($asset['serial_number'] ?? '') ?>" data-testid="input-serial">
             </div>
-            <div class="col-12">
-                <label class="form-label">Catatan Kondisi</label>
-                <textarea name="condition_note" class="form-control" rows="3" data-testid="input-note"><?= e($asset['condition_note'] ?? '') ?></textarea>
-            </div>
         </div>
     </div>
 
