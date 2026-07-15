@@ -116,6 +116,13 @@ function run_pending_migrations(PDO $pdo): void {
             $pdo->exec("ALTER TABLE categories ADD COLUMN code_prefix VARCHAR(20) NULL");
         }
 
+        // Jam acara (start_time, end_time) pada loans.
+        foreach (['start_time', 'end_time'] as $col) {
+            if (!$pdo->query("SHOW COLUMNS FROM loans LIKE '$col'")->fetch()) {
+                $pdo->exec("ALTER TABLE loans ADD COLUMN $col TIME NULL");
+            }
+        }
+
         // Tabel personel (IT Staff) yang dilibatkan pada acara peminjaman.
         $pdo->exec("CREATE TABLE IF NOT EXISTS loan_participants (
             loan_id BIGINT UNSIGNED NOT NULL,

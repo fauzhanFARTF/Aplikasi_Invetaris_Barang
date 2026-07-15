@@ -39,6 +39,7 @@ $routes = [
     ['POST', '#^/loans/create$#',             'loan_create_post'],
     ['GET',  '#^/loans/([0-9a-f-]{36})$#',              'loan_show'],
     ['POST', '#^/loans/([0-9a-f-]{36})/cancel$#',       'loan_cancel'],
+    ['POST', '#^/loans/([0-9a-f-]{36})/items/(\d+)/remove$#', 'loan_item_remove'],
     ['POST', '#^/loans/([0-9a-f-]{36})/delete$#',       'loan_delete'],
     ['POST', '#^/loans/delete-all$#',         'loan_delete_all'],
 
