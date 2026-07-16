@@ -47,10 +47,12 @@
                     <td><strong><?= e($u['name']) ?></strong></td>
                     <td class="small"><?= e($u['email']) ?></td>
                     <td>
-                        <span class="badge bg-secondary"><?= e(role_label($u['role'])) ?></span>
-                        <?php if (!empty($u['extra_roles'])): foreach (explode(',', $u['extra_roles']) as $er): ?>
-                            <span class="badge bg-info text-dark"><?= e(role_label(trim($er))) ?></span>
-                        <?php endforeach; endif; ?>
+                        <div class="d-flex flex-column align-items-start gap-1">
+                            <span class="badge bg-secondary text-wrap text-start"><?= e(role_label($u['role'])) ?></span>
+                            <?php if (!empty($u['extra_roles'])): foreach (explode(',', $u['extra_roles']) as $er): ?>
+                                <span class="badge bg-info text-dark text-wrap text-start"><?= e(role_label(trim($er))) ?></span>
+                            <?php endforeach; endif; ?>
+                        </div>
                     </td>
                     <td class="small text-slate"><?= e($u['unit_kerja'] ?: '—') ?></td>
                     <td class="small"><?= e($u['phone'] ?: '—') ?></td>
