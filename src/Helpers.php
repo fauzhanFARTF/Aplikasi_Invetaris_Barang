@@ -432,22 +432,29 @@ function is_personal_borrower(): bool {
  * User yang berperan IT Staff — baik sebagai peran utama (users.role) maupun
  * peran tambahan (user_roles). Sumber tunggal untuk pilihan "Personel yang
  * Dilibatkan" sekaligus validasinya saat peminjaman disimpan.
+ *
+ * $excludeUserId dipakai untuk mengeluarkan pemohon itu sendiri — ia sudah
+ * tercatat sebagai penanggungjawab, jadi tidak perlu dilibatkan lagi.
  */
-function it_staff_users(): array {
+function it_staff_users(?int $excludeUserId = null): array {
     $base = "SELECT u.id, u.name, u.unit_kerja FROM users u WHERE ";
     $tail = " AND u.is_active = 1 AND u.deleted_at IS NULL ORDER BY u.name";
     try {
-        return db()->query($base . "(u.role = 'inventory_staff'
+        $rows = db()->query($base . "(u.role = 'inventory_staff'
                 OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'inventory_staff'))" . $tail)->fetchAll();
     } catch (Throwable $e) {
         // Tabel user_roles mungkin belum ada saat migrasi awal.
-        return db()->query($base . "u.role = 'inventory_staff'" . $tail)->fetchAll();
+        $rows = db()->query($base . "u.role = 'inventory_staff'" . $tail)->fetchAll();
     }
+    if ($excludeUserId !== null) {
+        $rows = array_values(array_filter($rows, fn ($u) => (int) $u['id'] !== $excludeUserId));
+    }
+    return $rows;
 }
 
 /** Saring $ids, sisakan hanya yang benar-benar berperan IT Staff. */
-function it_staff_filter_ids(array $ids): array {
-    $allowed = array_map('intval', array_column(it_staff_users(), 'id'));
+function it_staff_filter_ids(array $ids, ?int $excludeUserId = null): array {
+    $allowed = array_map('intval', array_column(it_staff_users($excludeUserId), 'id'));
     return array_values(array_intersect(array_map('intval', $ids), $allowed));
 }
 
