@@ -122,8 +122,26 @@
             <?php else: foreach ($scheduleLoans as $l): ?>
                 <div class="d-flex align-items-start justify-content-between py-2 border-bottom gap-2">
                     <div class="min-w-0">
-                        <div class="text-slate small text-mono"><?= e($l['loan_code']) ?></div>
-                        <div class="fw-semibold small"><a href="<?= BASE_PATH ?>/loans/<?= e($l['uuid']) ?>"><?= e($l['event_name']) ?></a></div>
+                        <div class="small text-mono"><a href="<?= BASE_PATH ?>/loans/<?= e($l['uuid']) ?>"><?= e($l['loan_code']) ?></a></div>
+                        <div class="fw-semibold small"><?= e($l['event_name']) ?></div>
+                        <?php if (!empty($l['event_location'])): ?><div class="text-slate small"><i class="fa-solid fa-location-dot me-1"></i><?= e($l['event_location']) ?></div><?php endif; ?>
+                        <div class="text-slate small"><i class="fa-regular fa-calendar me-1"></i><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></div>
+                        <?php if (!empty($l['start_time'])): ?><div class="text-slate small"><i class="fa-regular fa-clock me-1"></i><?= e(substr((string)$l['start_time'],0,5)) ?></div><?php endif; ?>
+                        <div class="text-slate small"><i class="fa-solid fa-user me-1"></i><?= e($l['requester_name']) ?><?php if (!empty($loanParticipants[$l['id']])): ?> <span class="text-slate">· <i class="fa-solid fa-users me-1"></i><?= e($loanParticipants[$l['id']]) ?></span><?php endif; ?></div>
+                    </div>
+                    <?= status_badge($l['status']) ?>
+                </div>
+            <?php endforeach; endif; ?>
+        </div>
+        <div class="card-sb mt-3">
+            <div class="card-title"><i class="fa-solid fa-calendar-check me-2 text-slate"></i>Jadwal yang Telah Lewat</div>
+            <?php if (empty($pastLoans)): ?>
+                <div class="text-slate small">Belum ada jadwal acara yang telah lewat.</div>
+            <?php else: foreach ($pastLoans as $l): ?>
+                <div class="d-flex align-items-start justify-content-between py-2 border-bottom gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-mono"><a href="<?= BASE_PATH ?>/loans/<?= e($l['uuid']) ?>"><?= e($l['loan_code']) ?></a></div>
+                        <div class="fw-semibold small"><?= e($l['event_name']) ?></div>
                         <?php if (!empty($l['event_location'])): ?><div class="text-slate small"><i class="fa-solid fa-location-dot me-1"></i><?= e($l['event_location']) ?></div><?php endif; ?>
                         <div class="text-slate small"><i class="fa-regular fa-calendar me-1"></i><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></div>
                         <?php if (!empty($l['start_time'])): ?><div class="text-slate small"><i class="fa-regular fa-clock me-1"></i><?= e(substr((string)$l['start_time'],0,5)) ?></div><?php endif; ?>
