@@ -198,7 +198,7 @@ function inventory_delete(string $uuid): void {
 
     // Alat yang pernah dipinjam hanya boleh dihapus oleh superadmin — menjaga
     // integritas riwayat peminjaman.
-    if (Auth::role() !== 'superadmin' && asset_has_loan_history($id)) {
+    if (!Auth::hasRole('superadmin') && asset_has_loan_history($id)) {
         flash('error', 'Alat ini pernah dipinjam sehingga tidak dapat dihapus. Hubungi Super Admin bila benar-benar perlu dihapus.');
         redirect('/inventory');
     }

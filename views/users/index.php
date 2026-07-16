@@ -46,7 +46,12 @@
                     </td>
                     <td><strong><?= e($u['name']) ?></strong></td>
                     <td class="small"><?= e($u['email']) ?></td>
-                    <td><span class="badge bg-secondary"><?= e(role_label($u['role'])) ?></span></td>
+                    <td>
+                        <span class="badge bg-secondary"><?= e(role_label($u['role'])) ?></span>
+                        <?php if (!empty($u['extra_roles'])): foreach (explode(',', $u['extra_roles']) as $er): ?>
+                            <span class="badge bg-info text-dark"><?= e(role_label(trim($er))) ?></span>
+                        <?php endforeach; endif; ?>
+                    </td>
                     <td class="small text-slate"><?= e($u['unit_kerja'] ?: '—') ?></td>
                     <td class="small"><?= e($u['phone'] ?: '—') ?></td>
                     <td>
@@ -57,7 +62,7 @@
                         <?php endif; ?>
                     </td>
                     <td class="text-nowrap">
-                        <?php $canManage = $u['role'] !== 'superadmin' || Auth::role() === 'superadmin'; ?>
+                        <?php $canManage = $u['role'] !== 'superadmin' || Auth::hasRole('superadmin'); ?>
                         <?php if ($canManage): ?>
                             <a href="<?= BASE_PATH ?>/users/<?= e($u["uuid"]) ?>/edit" class="btn btn-sm btn-outline-navy" data-testid="btn-edit-user-<?= (int)$u['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
                             <form method="POST" action="<?= BASE_PATH ?>/users/<?= e($u["uuid"]) ?>/toggle" style="display:inline;">

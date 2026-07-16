@@ -14,7 +14,7 @@ function loan_index(): void {
     $status = $_GET['status'] ?? '';
     $params = [];
     $where = ['l.deleted_at IS NULL'];
-    if (in_array($role, ['pemohon', 'inventory_staff'], true)) {
+    if (role_is_requester()) {
         $where[] = 'l.requester_id = ?';
         $params[] = $uid;
     }
@@ -89,8 +89,8 @@ function loan_create_post(): void {
     $purpose   = trim($_POST['purpose'] ?? '');
     $assetIds  = array_map('intval', $_POST['asset_ids'] ?? []);
     $packageIds= array_map('intval', $_POST['package_ids'] ?? []);
-    // Pemohon meminjam untuk keperluan pribadi — tanpa personel yang dilibatkan.
-    $participantIds = Auth::role() === 'pemohon'
+    // Peminjam pribadi (pemohon murni) — tanpa personel yang dilibatkan.
+    $participantIds = is_personal_borrower()
         ? []
         : array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
 
@@ -232,7 +232,7 @@ function loan_cancel(string $uuid): void {
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { flash('error', 'Peminjaman tidak ditemukan.'); redirect('/loans'); }
-    if (Auth::role() !== 'admin' && (int)$loan['requester_id'] !== Auth::id()) {
+    if (!Auth::hasRole('admin') && (int)$loan['requester_id'] !== Auth::id()) {
         flash('error', 'Tidak berwenang.'); redirect('/loans');
     }
     if (!in_array($loan['status'], ['Pending','Approved'])) {
@@ -293,7 +293,7 @@ function loan_item_remove(string $uuid, string $itemId): void {
     $loan = $stmt->fetch();
     if (!$loan) { flash('error', 'Peminjaman tidak ditemukan.'); redirect('/loans'); }
     // Hanya pemohon peminjaman tsb atau admin yang boleh menghapus alat.
-    if (Auth::role() !== 'admin' && (int)$loan['requester_id'] !== Auth::id()) {
+    if (!Auth::hasRole('admin') && (int)$loan['requester_id'] !== Auth::id()) {
         flash('error', 'Tidak berwenang.'); redirect("/loans/$uuid");
     }
     // Hanya sebelum penyerahan (Pending/Approved) alat boleh dibatalkan/dihapus.
