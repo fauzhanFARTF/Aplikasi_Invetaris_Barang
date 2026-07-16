@@ -36,7 +36,7 @@ function loan_index(): void {
 }
 
 function loan_create_get(): void {
-    Auth::requireRole('pemohon', 'inventory_staff', 'it_staff_pembantu', 'admin');
+    Auth::requireRole('pemohon', 'inventory_staff', 'admin');
     $pdo = db();
     $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
@@ -77,7 +77,7 @@ function loan_create_get(): void {
 }
 
 function loan_create_post(): void {
-    Auth::requireRole('pemohon', 'inventory_staff', 'it_staff_pembantu', 'admin');
+    Auth::requireRole('pemohon', 'inventory_staff', 'admin');
     Auth::verifyCsrf();
 
     $eventName = trim($_POST['event_name'] ?? '');

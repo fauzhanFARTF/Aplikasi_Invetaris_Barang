@@ -4,9 +4,9 @@
         <h1>Manajemen Alat / Aset</h1>
         <p class="subtitle">Inventaris aset streaming BMN — total <?= count($assets) ?> item ditampilkan.</p>
     </div>
-    <?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?>
+    <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
         <div class="d-flex gap-2">
-            <?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?>
+            <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
                 <button type="button" class="btn btn-outline-navy" id="btnPrintSelected" disabled data-testid="btn-print-selected"><i class="fa-solid fa-qrcode"></i> Cetak QR Code Terpilih (<span id="selCount">0</span>)</button>
             <?php endif; ?>
             <a href="<?= BASE_PATH ?>/inventory/create" class="btn btn-amber" data-testid="btn-new-asset"><i class="fa-solid fa-plus"></i> Tambah Alat</a>
@@ -16,7 +16,7 @@
 </div>
 
 <div class="card-sb">
-    <?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?>
+    <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
     <div class="hint-box">
         <i class="fa-solid fa-circle-info"></i>
         <div>Setiap alat punya QR code unik. Centang alat lalu klik <strong>"Cetak QR Code Terpilih"</strong> untuk mencetak stiker QR yang bisa ditempel di alat. Stiker ini bisa dipindai memakai <strong>kamera HP</strong> maupun <strong>alat pemindai QR (2D scanner USB/Bluetooth)</strong> saat penyerahan/pengembalian alat.</div>
@@ -46,7 +46,7 @@
     <div class="table-responsive">
         <table class="table table-sb align-middle" data-testid="assets-table">
             <thead><tr>
-                <?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?><th style="width:32px;"><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua"></th><?php endif; ?>
+                <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?><th style="width:32px;"><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua"></th><?php endif; ?>
                 <th>Foto</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Brand/Model</th><th>No. BMN</th><th>Kode QR</th><th>Harga Dulu</th><th>Nilai Sekarang</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($assets as $a): ?>
@@ -54,7 +54,7 @@
                     data-ls-text="<?= e(strtolower($a['name'].' '.$a['bmn_number'].' '.$a['asset_code'].' '.($a['category_name'] ?? '').' '.($a['brand'] ?? '').' '.($a['model'] ?? '').' '.($a['barcode'] ?? ''))) ?>"
                     data-ls-category="<?= (int)($a['category_id'] ?? 0) ?>"
                     data-ls-status="<?= e($a['status']) ?>">
-                    <?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?>
+                    <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
                         <td><input type="checkbox" class="form-check-input asset-check" value="<?= e($a['uuid']) ?>" data-testid="check-<?= (int)$a['id'] ?>"></td>
                     <?php endif; ?>
                     <td>
@@ -80,7 +80,7 @@
                         <?php if ($canManageThis): ?>
                             <a href="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/edit" class="btn btn-sm btn-outline-navy" title="Ubah" data-testid="btn-edit-<?= (int)$a['id'] ?>"><i class="fa-regular fa-pen-to-square"></i></a>
                         <?php endif; ?>
-                        <?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?>
+                        <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
                             <?php if (in_array($a['status'], ['Available','Damaged'])): ?>
                                 <form method="POST" action="<?= BASE_PATH ?>/inventory/<?= e($a["uuid"]) ?>/retire" data-confirm="Nonaktifkan (retire) alat ini?" style="display:inline;">
                                     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
@@ -116,7 +116,7 @@
     </div>
 </div>
 
-<?php if (role_is('admin_gudang','admin','it_staff_pembantu')): ?>
+<?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
 <script>
     const selectAll = document.getElementById('selectAll');
     const checks = () => Array.from(document.querySelectorAll('.asset-check'));
