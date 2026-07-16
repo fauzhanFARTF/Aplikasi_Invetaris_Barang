@@ -363,7 +363,7 @@ function role_label(string $role): string {
     return [
         'superadmin' => 'Super Admin',
         'admin' => 'Administrator',
-        'pemohon' => 'Pemohon',
+        'pemohon' => 'Personel Luar',
         'supervisor' => 'Staff Approval',
         'admin_gudang' => 'Admin Gudang',
         'inventory_staff' => 'IT Staff',
