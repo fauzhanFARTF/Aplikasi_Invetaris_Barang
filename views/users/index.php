@@ -15,7 +15,7 @@
         <div class="col-md-4">
             <select class="form-select" data-ls-filter="role">
                 <option value="">— Semua Role —</option>
-                <?php foreach (['superadmin','admin','admin_gudang','it_staff_pembantu','inventory_staff','supervisor','pimpinan','pemohon'] as $r): ?>
+                <?php foreach (['superadmin','admin','administrator_pembantu_manajemen_user','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','admin_gudang','inventory_staff','supervisor','pimpinan','pemohon'] as $r): ?>
                     <option value="<?= $r ?>"><?= e(role_label($r)) ?></option>
                 <?php endforeach; ?>
             </select>

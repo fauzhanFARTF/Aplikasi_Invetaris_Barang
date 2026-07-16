@@ -24,7 +24,7 @@ CREATE TABLE users (
     name VARCHAR(120) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL,
+    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','administrator_pembantu_manajemen_user','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan') NOT NULL,
     phone VARCHAR(30) NULL,
     unit_kerja VARCHAR(150) NULL,
     photo VARCHAR(255) NULL,
@@ -185,7 +185,7 @@ CREATE TABLE loan_items (
 -- menjalankan beberapa role sekaligus, mis. IT Staff + Staff Approval.
 CREATE TABLE user_roles (
     user_id BIGINT UNSIGNED NOT NULL,
-    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL,
+    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','administrator_pembantu_manajemen_user','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan') NOT NULL,
     PRIMARY KEY (user_id, role),
     CONSTRAINT fk_ur_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
