@@ -3,19 +3,19 @@ declare(strict_types=1);
 // User management (admin only)
 
 function user_index(): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     $users = db()->query("SELECT u.*, (SELECT GROUP_CONCAT(ur.role SEPARATOR ',') FROM user_roles ur WHERE ur.user_id = u.id) AS extra_roles
                           FROM users u WHERE u.deleted_at IS NULL ORDER BY u.updated_at DESC, u.id DESC")->fetchAll();
     layout('main', 'users/index', ['title' => 'Manajemen User', 'users' => $users, 'currentPath' => '/users']);
 }
 
 function user_create_get(): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     layout('main', 'users/form', ['title' => 'Tambah User', 'user' => null, 'currentPath' => '/users']);
 }
 
 function user_create_post(): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     Auth::verifyCsrf();
     $d = _user_capture();
     if (!$d['name'] || !$d['email'] || !$d['role'] || empty($_POST['password'])) {
@@ -45,7 +45,7 @@ function user_create_post(): void {
 }
 
 function user_edit_get(string $uuid): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
     $stmt = db()->prepare("SELECT u.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
@@ -61,7 +61,7 @@ function user_edit_get(string $uuid): void {
 }
 
 function user_edit_post(string $uuid): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
@@ -106,7 +106,7 @@ function user_edit_post(string $uuid): void {
 }
 
 function user_toggle(string $uuid): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
@@ -117,7 +117,7 @@ function user_toggle(string $uuid): void {
 }
 
 function user_delete(string $uuid): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('users', $uuid);
     if ($id === Auth::id()) {
@@ -150,15 +150,23 @@ function _user_capture(): array {
     ];
 }
 
-/**
- * Validasi role yang boleh di-assign: whitelist + role 'superadmin' hanya boleh
- * diberikan oleh superadmin (admin biasa tidak bisa membuat/menaikkan superadmin).
- */
+/** Daftar role yang boleh di-assign oleh user login (untuk dropdown & validasi). */
+function _assignable_roles(): array {
+    $roles = ['pemohon', 'supervisor', 'admin_gudang', 'inventory_staff', 'pimpinan'];
+    // Role dengan kuasa administratif hanya boleh diberikan oleh admin/superadmin
+    // — mencegah eskalasi oleh Administrator Pembantu Manajemen User.
+    if (Auth::hasRole('admin', 'superadmin')) {
+        array_unshift($roles, 'admin',
+            'administrator_pembantu_manajemen_user',
+            'administrator_pembantu_manajemen_alat',
+            'administrator_pembantu_manajemen_kategori');
+    }
+    if (Auth::hasRole('superadmin')) array_unshift($roles, 'superadmin');
+    return $roles;
+}
+
 function _user_role_assignable(string $role): bool {
-    $valid = ['superadmin', 'admin', 'pemohon', 'supervisor', 'admin_gudang', 'inventory_staff', 'it_staff_pembantu', 'pimpinan'];
-    if (!in_array($role, $valid, true)) return false;
-    if ($role === 'superadmin' && !Auth::hasRole('superadmin')) return false;
-    return true;
+    return in_array($role, _assignable_roles(), true);
 }
 
 /**
@@ -201,13 +209,20 @@ function _user_guard_target(int $id): ?string {
         flash('error', 'Akun Super Admin hanya dapat dikelola oleh Super Admin.');
         redirect('/users');
     }
+    // Akun ber-kuasa administratif hanya boleh dikelola oleh admin/superadmin —
+    // Administrator Pembantu Manajemen User tidak boleh menyentuhnya.
+    $privileged = ['admin', 'administrator_pembantu_manajemen_user', 'administrator_pembantu_manajemen_alat', 'administrator_pembantu_manajemen_kategori'];
+    if (in_array($targetRole, $privileged, true) && !Auth::hasRole('admin', 'superadmin')) {
+        flash('error', 'Akun dengan hak administratif hanya dapat dikelola oleh Administrator Sistem.');
+        redirect('/users');
+    }
     return $targetRole;
 }
 
 // ================ Category ================
 
 function category_index(): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'administrator_pembantu_manajemen_kategori');
     $cats = db()->query("SELECT c.*, COUNT(a.id) AS asset_count, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                          FROM categories c
                          LEFT JOIN assets a ON a.category_id = c.id
@@ -219,12 +234,12 @@ function category_index(): void {
 }
 
 function category_create_get(): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'administrator_pembantu_manajemen_kategori');
     layout('main', 'inventory/category_form', ['title' => 'Tambah Kategori', 'category' => null, 'currentPath' => '/categories']);
 }
 
 function category_create_post(): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'administrator_pembantu_manajemen_kategori');
     Auth::verifyCsrf();
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
     $prefix = _capture_code_prefix();
@@ -248,7 +263,7 @@ function _capture_code_prefix(): ?string {
 }
 
 function category_edit_get(string $uuid): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'administrator_pembantu_manajemen_kategori');
     $id = uuid_to_id_or_404('categories', $uuid);
     $stmt = db()->prepare("SELECT c.*, cu.name AS created_by_name, uu.name AS updated_by_name, ru.name AS restored_by_name
                            FROM categories c
@@ -263,7 +278,7 @@ function category_edit_get(string $uuid): void {
 }
 
 function category_edit_post(string $uuid): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'administrator_pembantu_manajemen_kategori');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('categories', $uuid);
     $name = trim($_POST['name'] ?? ''); $desc = trim($_POST['description'] ?? '') ?: null;
@@ -281,7 +296,7 @@ function category_edit_post(string $uuid): void {
 }
 
 function category_delete(string $uuid): void {
-    Auth::requireRole('admin', 'admin_gudang');
+    Auth::requireRole('admin', 'admin_gudang', 'administrator_pembantu_manajemen_kategori');
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('categories', $uuid);
     try { soft_delete('categories', (int)$id); flash('success','Kategori dihapus (bisa dipulihkan lewat Riwayat Terhapus).'); }
@@ -398,7 +413,7 @@ function api_availability(): void {
 
 /** Preview Kode Aset & No. BMN otomatis untuk kategori terpilih (dipakai form tambah alat). */
 function api_next_asset_code(): void {
-    Auth::requireRole('admin_gudang', 'admin', 'it_staff_pembantu');
+    Auth::requireRole('admin_gudang', 'admin', 'administrator_pembantu_manajemen_alat');
     $cat = (int) ($_GET['category_id'] ?? 0);
     if (!$cat) json_response(['ok' => false, 'message' => 'Kategori belum dipilih.'], 400);
     $gen = next_asset_code($cat);
