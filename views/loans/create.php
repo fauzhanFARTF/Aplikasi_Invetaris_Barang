@@ -24,7 +24,7 @@
                     <label class="form-label">Tujuan / Keperluan</label>
                     <textarea name="purpose" rows="3" class="form-control" placeholder="Jelaskan singkat kebutuhan penggunaan alat" data-testid="input-purpose"></textarea>
                 </div>
-                <?php if (Auth::role() !== 'pemohon'): // pemohon meminjam untuk keperluan pribadi, tanpa personel ?>
+                <?php if (!is_personal_borrower()): // pemohon murni: peminjaman pribadi tanpa personel ?>
                 <div class="mb-3">
                     <label class="form-label">Personel yang Dilibatkan</label>
                     <?php if (empty($itStaff)): ?>

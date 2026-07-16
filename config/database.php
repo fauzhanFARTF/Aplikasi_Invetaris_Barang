@@ -123,6 +123,14 @@ function run_pending_migrations(PDO $pdo): void {
             }
         }
 
+        // Tabel peran tambahan (multi-role per user).
+        $pdo->exec("CREATE TABLE IF NOT EXISTS user_roles (
+            user_id BIGINT UNSIGNED NOT NULL,
+            role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL,
+            PRIMARY KEY (user_id, role),
+            CONSTRAINT fk_ur_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
         // Tabel personel (IT Staff) yang dilibatkan pada acara peminjaman.
         $pdo->exec("CREATE TABLE IF NOT EXISTS loan_participants (
             loan_id BIGINT UNSIGNED NOT NULL,
