@@ -46,19 +46,25 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
             <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i> Perbaikan</a>
         <?php endif; ?>
 
-        <?php if (role_is('admin_gudang','admin','supervisor','it_staff_pembantu','pimpinan')): ?>
+        <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan')): ?>
             <div class="nav-section">Master Data</div>
-            <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Alat / Aset</a>
+            <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_alat','pimpinan')): ?>
+                <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Alat / Aset</a>
+            <?php endif; ?>
             <?php if (role_is('admin_gudang','admin','supervisor')): ?>
                 <a href="<?= BASE_PATH ?>/packages" class="nav-item <?= active('/packages', $currentPath) ?>" data-testid="nav-packages"><i class="fa-solid fa-cubes"></i> Paket Alat</a>
+            <?php endif; ?>
+            <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_kategori')): ?>
                 <a href="<?= BASE_PATH ?>/categories" class="nav-item <?= active('/categories', $currentPath) ?>" data-testid="nav-categories"><i class="fa-solid fa-tags"></i> Kategori</a>
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php if (role_is('admin')): ?>
+        <?php if (role_is('admin','administrator_pembantu_manajemen_user')): ?>
             <div class="nav-section">Administrasi</div>
             <a href="<?= BASE_PATH ?>/users" class="nav-item <?= active('/users', $currentPath) ?>" data-testid="nav-users"><i class="fa-solid fa-user-shield"></i> Manajemen User</a>
-            <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i> Riwayat Terhapus</a>
+            <?php if (role_is('admin')): ?>
+                <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i> Riwayat Terhapus</a>
+            <?php endif; ?>
         <?php endif; ?>
 
         <div class="nav-section">Akun</div>

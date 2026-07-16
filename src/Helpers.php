@@ -368,6 +368,9 @@ function role_label(string $role): string {
         'admin_gudang' => 'Admin Gudang',
         'inventory_staff' => 'IT Staff',
         'it_staff_pembantu' => 'IT Staff Pembantu',
+        'administrator_pembantu_manajemen_user' => 'Administrator Pembantu — Manajemen User',
+        'administrator_pembantu_manajemen_alat' => 'Administrator Pembantu — Manajemen Alat',
+        'administrator_pembantu_manajemen_kategori' => 'Administrator Pembantu — Manajemen Kategori',
         'pimpinan' => 'Pimpinan',
     ][$role] ?? $role;
 }
@@ -383,12 +386,12 @@ function role_is(string ...$roles): bool {
 
 /**
  * Bolehkah user login mengelola (tambah/edit/hapus) alat?
- * Pengelola alat: superadmin, admin, admin_gudang, it_staff_pembantu.
+ * Pengelola alat: superadmin, admin, admin_gudang, administrator_pembantu_manajemen_alat.
  * (IT Staff & pemohon TIDAK bisa mengelola alat — hanya melihat.)
  * $createdBy dipertahankan di signature untuk kompatibilitas pemanggil.
  */
 function inventory_can_manage($createdBy = null): bool {
-    return Auth::hasRole('superadmin', 'admin', 'admin_gudang', 'it_staff_pembantu');
+    return Auth::hasRole('superadmin', 'admin', 'admin_gudang', 'administrator_pembantu_manajemen_alat');
 }
 
 /**
@@ -405,7 +408,7 @@ function asset_photo_url(?string $photo): string {
  * Dipakai untuk menentukan apakah user dibatasi hanya melihat miliknya sendiri.
  */
 function _loan_elevated_roles(): array {
-    return ['admin', 'supervisor', 'admin_gudang', 'it_staff_pembantu', 'pimpinan', 'superadmin'];
+    return ['admin', 'supervisor', 'admin_gudang', 'pimpinan', 'superadmin'];
 }
 
 /**
@@ -422,7 +425,7 @@ function role_is_requester(): bool {
  */
 function is_personal_borrower(): bool {
     return Auth::hasRole('pemohon')
-        && !Auth::hasRole('inventory_staff', 'it_staff_pembantu', 'admin', 'supervisor', 'admin_gudang', 'pimpinan', 'superadmin');
+        && !Auth::hasRole('inventory_staff', 'admin', 'supervisor', 'admin_gudang', 'pimpinan', 'superadmin');
 }
 
 /** Apakah alat pernah/masih dipinjam (punya baris di loan_items)? */

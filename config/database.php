@@ -92,12 +92,22 @@ function run_pending_migrations(PDO $pdo): void {
         // (superadmin, inventory_staff, it_staff_pembantu, pimpinan).
         $roleCol = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'")->fetch();
         if ($roleCol) {
-            foreach (['superadmin', 'inventory_staff', 'it_staff_pembantu', 'pimpinan'] as $needle) {
+            foreach (['superadmin', 'inventory_staff', 'administrator_pembantu_manajemen_user', 'administrator_pembantu_manajemen_alat', 'administrator_pembantu_manajemen_kategori', 'pimpinan'] as $needle) {
                 if (strpos($roleCol['Type'], $needle) === false) {
-                    $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL");
+                    $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','administrator_pembantu_manajemen_user','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan') NOT NULL");
                     break;
                 }
             }
+            // Selaraskan enum user_roles bila tabelnya sudah ada dengan enum lama.
+            try {
+                $urCol = $pdo->query("SHOW COLUMNS FROM user_roles LIKE 'role'")->fetch();
+                if ($urCol && strpos($urCol['Type'], 'administrator_pembantu_manajemen_alat') === false) {
+                    $pdo->exec("ALTER TABLE user_roles MODIFY COLUMN role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','administrator_pembantu_manajemen_user','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan') NOT NULL");
+                }
+            } catch (Throwable $e) {}
+            // Role 'it_staff_pembantu' dihentikan — alihkan ke pengelola alat baru.
+            $pdo->exec("UPDATE users SET role='administrator_pembantu_manajemen_alat' WHERE role='it_staff_pembantu'");
+            try { $pdo->exec("UPDATE user_roles SET role='administrator_pembantu_manajemen_alat' WHERE role='it_staff_pembantu'"); } catch (Throwable $e) {}
         }
 
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
@@ -126,7 +136,7 @@ function run_pending_migrations(PDO $pdo): void {
         // Tabel peran tambahan (multi-role per user).
         $pdo->exec("CREATE TABLE IF NOT EXISTS user_roles (
             user_id BIGINT UNSIGNED NOT NULL,
-            role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL,
+            role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','administrator_pembantu_manajemen_user','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan') NOT NULL,
             PRIMARY KEY (user_id, role),
             CONSTRAINT fk_ur_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
