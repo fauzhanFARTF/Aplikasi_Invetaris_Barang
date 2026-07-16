@@ -20,8 +20,8 @@ function dashboard_index(): void {
         'items_approved' => (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id WHERE l.status = 'Approved' AND l.deleted_at IS NULL")->fetchColumn(),
     ];
 
-    // My data (peminjaman terbaru)
-    if (in_array($role, ['pemohon', 'inventory_staff'], true)) {
+    // My data (peminjaman terbaru) — requester murni hanya lihat miliknya sendiri.
+    if (role_is_requester()) {
         $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.requester_id = ? AND l.deleted_at IS NULL ORDER BY l.created_at DESC LIMIT 8");
         $stmt->execute([$uid]);
         $myLoans = $stmt->fetchAll();

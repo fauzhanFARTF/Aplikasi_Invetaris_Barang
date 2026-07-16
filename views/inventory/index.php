@@ -94,7 +94,7 @@
                             <?php endif; ?>
                         <?php endif; ?>
                         <?php if ($canManageThis): ?>
-                            <?php $lockDelete = (Auth::role() !== 'superadmin' && !empty($a['has_loan'])); ?>
+                            <?php $lockDelete = (!Auth::hasRole('superadmin') && !empty($a['has_loan'])); ?>
                             <?php if ($lockDelete): ?>
                                 <button class="btn btn-sm btn-outline-danger" title="Pernah dipinjam — hanya Super Admin yang dapat menghapus" disabled data-testid="btn-delete-locked-<?= (int)$a['id'] ?>"><i class="fa-solid fa-lock"></i></button>
                             <?php else: ?>
