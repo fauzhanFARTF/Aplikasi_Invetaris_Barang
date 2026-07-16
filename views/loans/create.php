@@ -28,7 +28,7 @@
                 <div class="mb-3">
                     <label class="form-label">Personel yang Dilibatkan</label>
                     <?php if (empty($itStaff)): ?>
-                        <div class="form-text">Belum ada user ber-role IT Staff. Atur role user menjadi <strong>IT Staff</strong> di Manajemen User agar bisa dipilih.</div>
+                        <div class="form-text">Belum ada user ber-role IT Staff. Atur <strong>IT Staff</strong> sebagai role utama atau peran tambahan user di Manajemen User agar bisa dipilih.</div>
                     <?php else: ?>
                         <div class="border rounded-3 p-2" style="max-height:180px;overflow-y:auto;" data-testid="participants-box">
                             <?php foreach ($itStaff as $st): ?>
@@ -40,7 +40,7 @@
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        <div class="form-text">Hanya personel ber-role IT Staff yang dapat dilibatkan.</div>
+                        <div class="form-text">Hanya personel ber-role IT Staff yang dapat dilibatkan — termasuk user yang memegang IT Staff sebagai peran tambahan.</div>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
