@@ -181,6 +181,15 @@ CREATE TABLE loan_items (
     INDEX idx_li_status (item_status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Peran tambahan (selain users.role sebagai peran utama) — mendukung 1 user
+-- menjalankan beberapa role sekaligus, mis. IT Staff + Staff Approval.
+CREATE TABLE user_roles (
+    user_id BIGINT UNSIGNED NOT NULL,
+    role ENUM('superadmin','admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan') NOT NULL,
+    PRIMARY KEY (user_id, role),
+    CONSTRAINT fk_ur_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Personel (IT Staff) yang dilibatkan dalam acara peminjaman.
 CREATE TABLE loan_participants (
     loan_id BIGINT UNSIGNED NOT NULL,

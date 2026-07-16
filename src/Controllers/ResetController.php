@@ -108,7 +108,7 @@ function reset_repairs(): void {
  * superadmin. Dipakai di tiap halaman manajemen.
  */
 function reset_button(string $action, string $label, string $confirm): string {
-    if (Auth::role() !== 'superadmin') return '';
+    if (!Auth::hasRole('superadmin')) return '';
     return '<form method="POST" action="' . BASE_PATH . '/reset/' . e($action) . '" data-confirm="' . e($confirm) . '" style="display:inline;">'
          . '<input type="hidden" name="_csrf" value="' . e(Auth::csrfToken()) . '">'
          . '<button type="submit" class="btn btn-danger" data-testid="btn-reset-' . e($action) . '"><i class="fa-solid fa-rotate"></i> ' . e($label) . '</button>'

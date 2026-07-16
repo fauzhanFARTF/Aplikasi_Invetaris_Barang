@@ -56,9 +56,30 @@ class Auth {
         return $u ? (int)$u['id'] : null;
     }
 
+    /** Peran UTAMA (dipakai untuk tampilan & percabangan default). */
     public static function role(): ?string {
         $u = self::user();
         return $u['role'] ?? null;
+    }
+
+    /** Seluruh peran efektif user: peran utama + peran tambahan (user_roles). */
+    public static function roles(): array {
+        static $cache = null;
+        if ($cache !== null) return $cache;
+        $u = self::user();
+        if (!$u) return $cache = [];
+        $roles = [$u['role']];
+        try {
+            $stmt = db()->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+            $stmt->execute([(int) $u['id']]);
+            foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $r) { $roles[] = $r; }
+        } catch (Throwable $e) { /* tabel mungkin belum ada saat migrasi awal */ }
+        return $cache = array_values(array_unique($roles));
+    }
+
+    /** True jika user memiliki salah satu dari peran yang diberikan. */
+    public static function hasRole(string ...$roles): bool {
+        return count(array_intersect(self::roles(), $roles)) > 0;
     }
 
     public static function check(): bool { return self::user() !== null; }
@@ -72,12 +93,10 @@ class Auth {
 
     public static function requireRole(string ...$roles): void {
         self::requireLogin();
-        $role = self::role();
-        // Superadmin punya akses penuh ke semua halaman — KECUALI halaman yang
-        // secara eksplisit hanya untuk 'superadmin' (mis. endpoint reset) yang
-        // memang sudah lolos lewat in_array di bawah.
-        if ($role === 'superadmin') return;
-        if (!in_array($role, $roles, true)) {
+        // Superadmin punya akses penuh; selain itu cukup memiliki salah satu
+        // peran (utama atau tambahan) yang diizinkan.
+        if (self::hasRole('superadmin')) return;
+        if (!self::hasRole(...$roles)) {
             http_response_code(403);
             include APP_ROOT . '/views/errors/403.php';
             exit;

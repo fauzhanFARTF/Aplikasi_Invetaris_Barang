@@ -44,18 +44,31 @@
             <div class="col-md-6"><label class="form-label">Nama Lengkap *</label><input type="text" name="name" required class="form-control" value="<?= e($user['name'] ?? '') ?>" data-testid="input-name"></div>
             <div class="col-md-6"><label class="form-label">Email *</label><input type="email" name="email" required class="form-control" value="<?= e($user['email'] ?? '') ?>" data-testid="input-email"></div>
             <div class="col-md-4">
-                <label class="form-label">Role *</label>
-                <select name="role" class="form-select" required data-testid="input-role">
+                <label class="form-label">Role Utama *</label>
+                <select name="role" id="primaryRole" class="form-select" required data-testid="input-role">
                     <option value="">— Pilih —</option>
                     <?php
                         // Role 'superadmin' hanya bisa diberikan oleh superadmin.
                         $assignableRoles = ['admin','pemohon','supervisor','admin_gudang','inventory_staff','it_staff_pembantu','pimpinan'];
-                        if (Auth::role() === 'superadmin') array_unshift($assignableRoles, 'superadmin');
+                        if (Auth::hasRole('superadmin')) array_unshift($assignableRoles, 'superadmin');
                     ?>
                     <?php foreach ($assignableRoles as $r): ?>
                         <option value="<?= $r ?>" <?= ($user['role'] ?? '') === $r ? 'selected' : '' ?>><?= e(role_label($r)) ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label">Peran Tambahan</label>
+                <?php $extraRoles = $extraRoles ?? []; ?>
+                <div class="d-flex flex-wrap gap-3 border rounded-3 p-2" data-testid="extra-roles-box">
+                    <?php foreach ($assignableRoles as $r): ?>
+                        <div class="form-check">
+                            <input class="form-check-input extra-role-cb" type="checkbox" name="extra_roles[]" value="<?= $r ?>" id="extra_<?= $r ?>" data-testid="extra-role-<?= $r ?>" <?= in_array($r, $extraRoles, true) ? 'checked' : '' ?>>
+                            <label class="form-check-label" for="extra_<?= $r ?>"><?= e(role_label($r)) ?></label>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="form-text">Centang bila user menjalankan lebih dari satu peran (mis. IT Staff + Staff Approval). Role utama otomatis diabaikan di sini.</div>
             </div>
             <div class="col-md-4"><label class="form-label">Telepon</label><input type="text" name="phone" class="form-control" value="<?= e($user['phone'] ?? '') ?>"></div>
             <div class="col-md-4">
@@ -107,5 +120,21 @@
         }
         sel.addEventListener('change', sync);
         sync();
+    })();
+
+    // Peran tambahan: nonaktifkan centang yang sama dengan Role Utama.
+    (function () {
+        var pr = document.getElementById('primaryRole');
+        if (!pr) return;
+        function syncExtra() {
+            document.querySelectorAll('.extra-role-cb').forEach(function (cb) {
+                var same = cb.value === pr.value;
+                cb.disabled = same;
+                if (same) cb.checked = false;
+                cb.closest('.form-check').style.opacity = same ? '0.4' : '';
+            });
+        }
+        pr.addEventListener('change', syncExtra);
+        syncExtra();
     })();
 </script>

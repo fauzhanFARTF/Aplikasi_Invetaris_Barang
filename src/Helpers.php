@@ -377,9 +377,8 @@ function role_label(string $role): string {
  * SEMUA pengecekan role — konsisten dengan Auth::requireRole di sisi controller.
  */
 function role_is(string ...$roles): bool {
-    $r = Auth::role();
-    if ($r === null) return false;
-    return $r === 'superadmin' || in_array($r, $roles, true);
+    if (!Auth::check()) return false;
+    return Auth::hasRole('superadmin') || Auth::hasRole(...$roles);
 }
 
 /**
@@ -389,7 +388,7 @@ function role_is(string ...$roles): bool {
  * $createdBy dipertahankan di signature untuk kompatibilitas pemanggil.
  */
 function inventory_can_manage($createdBy = null): bool {
-    return in_array(Auth::role(), ['superadmin', 'admin', 'admin_gudang', 'it_staff_pembantu'], true);
+    return Auth::hasRole('superadmin', 'admin', 'admin_gudang', 'it_staff_pembantu');
 }
 
 /**
@@ -401,9 +400,29 @@ function asset_photo_url(?string $photo): string {
     return photo_url($photo, 'assets') ?? ($prefix . '/assets/img/logo-kominfo-icon.png');
 }
 
-/** Role bertipe "pemohon" (mengajukan peminjaman, lihat miliknya sendiri): pemohon & IT Staff. */
+/**
+ * Peran yang meng-elevasi hak lihat peminjaman (boleh melihat SEMUA peminjaman).
+ * Dipakai untuk menentukan apakah user dibatasi hanya melihat miliknya sendiri.
+ */
+function _loan_elevated_roles(): array {
+    return ['admin', 'supervisor', 'admin_gudang', 'it_staff_pembantu', 'pimpinan', 'superadmin'];
+}
+
+/**
+ * User "requester murni": hanya bisa melihat peminjaman miliknya sendiri.
+ * Yaitu punya peran pemohon/IT Staff dan TIDAK punya peran yang lebih tinggi.
+ */
 function role_is_requester(): bool {
-    return in_array(Auth::role(), ['pemohon', 'inventory_staff'], true);
+    return Auth::hasRole('pemohon', 'inventory_staff') && !Auth::hasRole(..._loan_elevated_roles());
+}
+
+/**
+ * Peminjam pribadi (pemohon murni) — peminjaman untuk keperluan pribadi tanpa
+ * personel yang dilibatkan. IT Staff & peran lain tetap boleh melibatkan personel.
+ */
+function is_personal_borrower(): bool {
+    return Auth::hasRole('pemohon')
+        && !Auth::hasRole('inventory_staff', 'it_staff_pembantu', 'admin', 'supervisor', 'admin_gudang', 'pimpinan', 'superadmin');
 }
 
 /** Apakah alat pernah/masih dipinjam (punya baris di loan_items)? */

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 function user_index(): void {
     Auth::requireRole('admin');
-    $users = db()->query("SELECT * FROM users WHERE deleted_at IS NULL ORDER BY updated_at DESC, id DESC")->fetchAll();
+    $users = db()->query("SELECT u.*, (SELECT GROUP_CONCAT(ur.role SEPARATOR ',') FROM user_roles ur WHERE ur.user_id = u.id) AS extra_roles
+                          FROM users u WHERE u.deleted_at IS NULL ORDER BY u.updated_at DESC, u.id DESC")->fetchAll();
     layout('main', 'users/index', ['title' => 'Manajemen User', 'users' => $users, 'currentPath' => '/users']);
 }
 
@@ -31,7 +32,9 @@ function user_create_post(): void {
     try {
         db()->prepare("INSERT INTO users (uuid,name,email,password_hash,role,phone,unit_kerja,photo,is_active,created_by) VALUES (?,?,?,?,?,?,?,?,1,?)")
             ->execute([generate_uuid(), $d['name'], $d['email'], password_hash($_POST['password'], PASSWORD_BCRYPT), $d['role'], $d['phone'], $d['unit_kerja'], $upload['filename'], Auth::id()]);
-        log_audit('user.create', 'user', db()->lastInsertId(), ['email' => $d['email']]);
+        $newId = (int) db()->lastInsertId();
+        _sync_extra_roles($newId, $d['role']);
+        log_audit('user.create', 'user', $newId, ['email' => $d['email']]);
         flash('success', 'User dibuat.');
         redirect('/users');
     } catch (Throwable $e) {
@@ -54,7 +57,7 @@ function user_edit_get(string $uuid): void {
     $stmt->execute([(int)$id]);
     $user = $stmt->fetch();
     if (!$user) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
-    layout('main', 'users/form', ['title' => 'Ubah User', 'user' => $user, 'currentPath' => '/users']);
+    layout('main', 'users/form', ['title' => 'Ubah User', 'user' => $user, 'extraRoles' => _user_extra_roles((int)$id), 'currentPath' => '/users']);
 }
 
 function user_edit_post(string $uuid): void {
@@ -95,6 +98,7 @@ function user_edit_post(string $uuid): void {
     $sql .= " WHERE id = ?"; $params[] = (int)$id;
     try {
         db()->prepare($sql)->execute($params);
+        _sync_extra_roles((int)$id, $d['role']);
         log_audit('user.update', 'user', $id);
         flash('success', 'User diperbarui.');
     } catch (Throwable $e) { flash('error', $e->getMessage()); }
@@ -153,8 +157,36 @@ function _user_capture(): array {
 function _user_role_assignable(string $role): bool {
     $valid = ['superadmin', 'admin', 'pemohon', 'supervisor', 'admin_gudang', 'inventory_staff', 'it_staff_pembantu', 'pimpinan'];
     if (!in_array($role, $valid, true)) return false;
-    if ($role === 'superadmin' && Auth::role() !== 'superadmin') return false;
+    if ($role === 'superadmin' && !Auth::hasRole('superadmin')) return false;
     return true;
+}
+
+/**
+ * Sinkronkan peran tambahan (user_roles) dari input $_POST['extra_roles'].
+ * Hanya peran yang boleh di-assign, bukan peran utama, dan bukan duplikat.
+ */
+function _sync_extra_roles(int $userId, string $primaryRole): void {
+    $extra = (array) ($_POST['extra_roles'] ?? []);
+    $valid = [];
+    foreach ($extra as $r) {
+        $r = (string) $r;
+        if ($r === $primaryRole) continue;              // sama dengan role utama
+        if (!_user_role_assignable($r)) continue;        // tak berwenang / tak valid
+        $valid[$r] = true;
+    }
+    $pdo = db();
+    $pdo->prepare("DELETE FROM user_roles WHERE user_id = ?")->execute([$userId]);
+    if ($valid) {
+        $ins = $pdo->prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)");
+        foreach (array_keys($valid) as $r) { $ins->execute([$userId, $r]); }
+    }
+}
+
+/** Ambil daftar peran tambahan (user_roles) untuk sebuah user. */
+function _user_extra_roles(int $userId): array {
+    $stmt = db()->prepare("SELECT role FROM user_roles WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
 }
 
 /**
@@ -165,7 +197,7 @@ function _user_guard_target(int $id): ?string {
     $stmt = db()->prepare("SELECT role FROM users WHERE id = ?");
     $stmt->execute([$id]);
     $targetRole = $stmt->fetchColumn() ?: null;
-    if ($targetRole === 'superadmin' && Auth::role() !== 'superadmin') {
+    if ($targetRole === 'superadmin' && !Auth::hasRole('superadmin')) {
         flash('error', 'Akun Super Admin hanya dapat dikelola oleh Super Admin.');
         redirect('/users');
     }

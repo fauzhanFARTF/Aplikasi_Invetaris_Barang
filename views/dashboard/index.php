@@ -1,5 +1,5 @@
 <?php $user = Auth::user(); ?>
-<?php if (in_array($user['role'], ['pemohon','inventory_staff','it_staff_pembantu'], true)): ?>
+<?php if (Auth::hasRole('pemohon','inventory_staff','it_staff_pembantu')): ?>
 <div class="hint-box no-print">
     <i class="fa-solid fa-circle-info"></i>
     <div>Butuh alat untuk kegiatan? Klik <strong>"Ajukan Peminjaman"</strong> di kanan atas, isi formulir singkat, lalu tunggu persetujuan dari supervisor. Anda akan mendapat notifikasi begitu disetujui.</div>
