@@ -41,8 +41,8 @@ function loan_create_get(): void {
     $categories = $pdo->query("SELECT * FROM categories WHERE deleted_at IS NULL ORDER BY name")->fetchAll();
     $assets = $pdo->query("SELECT a.*, c.name AS category_name FROM assets a LEFT JOIN categories c ON c.id = a.category_id WHERE a.status != 'Retired' AND a.deleted_at IS NULL ORDER BY a.name")->fetchAll();
     $packages = $pdo->query("SELECT p.*, GROUP_CONCAT(a.name SEPARATOR ', ') AS items FROM packages p LEFT JOIN package_items pi ON pi.package_id = p.id LEFT JOIN assets a ON a.id = pi.asset_id WHERE p.is_active = 1 AND p.deleted_at IS NULL GROUP BY p.id ORDER BY p.name")->fetchAll();
-    // Personel yang dapat dilibatkan hanya user ber-role IT Staff.
-    $itStaff = $pdo->query("SELECT id, name, unit_kerja FROM users WHERE role = 'inventory_staff' AND is_active = 1 AND deleted_at IS NULL ORDER BY name")->fetchAll();
+    // Personel yang dapat dilibatkan hanya user ber-role IT Staff (utama maupun tambahan).
+    $itStaff = it_staff_users();
 
     // Penanggungjawab (pemohon) & pengikut (personel) untuk alat yang sedang dipesan/dipinjam.
     $active = "l.status IN ('Pending','Approved','CheckedOut') AND li.item_status IN ('Reserved','CheckedOut')";
@@ -156,10 +156,7 @@ function loan_create_post(): void {
 
         // Personel yang dilibatkan — hanya user ber-role IT Staff yang valid.
         if ($participantIds) {
-            $in = implode(',', array_fill(0, count($participantIds), '?'));
-            $vst = $pdo->prepare("SELECT id FROM users WHERE id IN ($in) AND role = 'inventory_staff' AND is_active = 1 AND deleted_at IS NULL");
-            $vst->execute($participantIds);
-            $validIds = array_map('intval', $vst->fetchAll(PDO::FETCH_COLUMN));
+            $validIds = it_staff_filter_ids($participantIds);
             $pIns = $pdo->prepare("INSERT INTO loan_participants (loan_id, user_id) VALUES (?, ?)");
             foreach ($validIds as $pid) { $pIns->execute([$loanId, $pid]); }
         }
