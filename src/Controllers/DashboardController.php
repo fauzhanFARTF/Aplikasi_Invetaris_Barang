@@ -39,11 +39,19 @@ function dashboard_index(): void {
     $scheduleLoans->execute([$today]);
     $scheduleLoans = $scheduleLoans->fetchAll();
 
-    // Personel yang terlibat untuk semua peminjaman yang ditampilkan (peminjaman terbaru + jadwal).
+    // Jadwal yang telah lewat (acara yang sudah selesai berlangsung).
+    $pastLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id
+                                WHERE l.status IN ('Approved','CheckedOut','Returned','Completed') AND l.deleted_at IS NULL AND l.end_date < ?
+                                ORDER BY l.end_date DESC, l.start_time DESC LIMIT 20");
+    $pastLoans->execute([$today]);
+    $pastLoans = $pastLoans->fetchAll();
+
+    // Personel yang terlibat untuk semua peminjaman yang ditampilkan.
     $loanParticipants = [];
     $loanIds = array_values(array_unique(array_merge(
         array_map(fn($l) => (int)$l['id'], $myLoans),
-        array_map(fn($l) => (int)$l['id'], $scheduleLoans)
+        array_map(fn($l) => (int)$l['id'], $scheduleLoans),
+        array_map(fn($l) => (int)$l['id'], $pastLoans)
     )));
     if ($loanIds) {
         $in = implode(',', array_fill(0, count($loanIds), '?'));
@@ -61,6 +69,7 @@ function dashboard_index(): void {
         'loanParticipants' => $loanParticipants,
         'recentDamage' => $recentDamage,
         'scheduleLoans' => $scheduleLoans,
+        'pastLoans' => $pastLoans,
         'currentPath' => '/dashboard',
     ]);
 }
