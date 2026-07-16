@@ -75,7 +75,8 @@
             <?php endif; ?>
             <div class="table-responsive">
                 <table class="table table-sb align-middle" data-testid="loan-items-table">
-                    <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>Status Item</th><?php if ($canEditItems): ?><th></th><?php endif; ?></tr></thead>
+                    <?php $participantNames = !empty($participants) ? implode(', ', array_column($participants, 'name')) : ''; ?>
+                    <thead><tr><th>#</th><th>Foto</th><th>Alat</th><th>Status Item</th><th>Peminjam</th><?php if ($canEditItems): ?><th></th><?php endif; ?></tr></thead>
                     <tbody>
                     <?php foreach ($items as $i => $it): $itPhoto = asset_photo_url($it['photo'] ?? null); ?>
                         <tr>
@@ -92,6 +93,10 @@
                                 <?php if (!empty($it['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($it['serial_number']) ?></div><?php endif; ?>
                             </td>
                             <td><?= status_badge($it['item_status']) ?></td>
+                            <td class="small">
+                                <div><i class="fa-solid fa-user me-1 text-slate"></i><?= e($loan['requester_name']) ?></div>
+                                <?php if ($participantNames !== ''): ?><div class="text-slate"><i class="fa-solid fa-users me-1"></i><?= e($participantNames) ?></div><?php endif; ?>
+                            </td>
                             <?php if ($canEditItems): ?>
                             <td class="text-nowrap">
                                 <?php if (in_array($it['item_status'], ['Reserved'])): ?>
