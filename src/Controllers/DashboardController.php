@@ -31,20 +31,28 @@ function dashboard_index(): void {
     // Recent activity
     $recentDamage = $pdo->query("SELECT r.*, a.name AS asset_name, a.bmn_number FROM repairs r JOIN assets a ON a.id = r.asset_id WHERE r.status != 'Completed' AND r.deleted_at IS NULL ORDER BY r.created_at DESC LIMIT 5")->fetchAll();
 
-    // Jadwal hari ini & selanjutnya (acara yang masih berlangsung / akan datang).
-    $today = date('Y-m-d');
-    $scheduleLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id
-                                    WHERE l.status IN ('Pending','Approved','CheckedOut') AND l.deleted_at IS NULL AND l.end_date >= ?
-                                    ORDER BY l.start_date ASC, l.start_time ASC LIMIT 40");
-    $scheduleLoans->execute([$today]);
-    $scheduleLoans = $scheduleLoans->fetchAll();
+    // Kartu jadwal tidak ditampilkan untuk Personel Luar (pemohon murni) — peminjamannya
+    // bersifat pribadi, jadi tidak perlu melihat agenda seluruh dinas. Query-nya pun
+    // dilewati agar datanya tidak ikut terkirim ke halaman.
+    $showSchedule  = !is_personal_borrower();
+    $scheduleLoans = [];
+    $pastLoans     = [];
+    if ($showSchedule) {
+        // Jadwal hari ini & selanjutnya (acara yang masih berlangsung / akan datang).
+        $today = date('Y-m-d');
+        $scheduleLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id
+                                        WHERE l.status IN ('Pending','Approved','CheckedOut') AND l.deleted_at IS NULL AND l.end_date >= ?
+                                        ORDER BY l.start_date ASC, l.start_time ASC LIMIT 40");
+        $scheduleLoans->execute([$today]);
+        $scheduleLoans = $scheduleLoans->fetchAll();
 
-    // Jadwal yang telah lewat (acara yang sudah selesai berlangsung).
-    $pastLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id
-                                WHERE l.status IN ('Approved','CheckedOut','Returned','Completed') AND l.deleted_at IS NULL AND l.end_date < ?
-                                ORDER BY l.end_date DESC, l.start_time DESC LIMIT 20");
-    $pastLoans->execute([$today]);
-    $pastLoans = $pastLoans->fetchAll();
+        // Jadwal yang telah lewat (acara yang sudah selesai berlangsung).
+        $pastLoans = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id
+                                    WHERE l.status IN ('Approved','CheckedOut','Returned','Completed') AND l.deleted_at IS NULL AND l.end_date < ?
+                                    ORDER BY l.end_date DESC, l.start_time DESC LIMIT 20");
+        $pastLoans->execute([$today]);
+        $pastLoans = $pastLoans->fetchAll();
+    }
 
     // Personel yang terlibat untuk semua peminjaman yang ditampilkan.
     $loanParticipants = [];
@@ -70,6 +78,7 @@ function dashboard_index(): void {
         'recentDamage' => $recentDamage,
         'scheduleLoans' => $scheduleLoans,
         'pastLoans' => $pastLoans,
+        'showSchedule' => $showSchedule,
         'currentPath' => '/dashboard',
     ]);
 }
