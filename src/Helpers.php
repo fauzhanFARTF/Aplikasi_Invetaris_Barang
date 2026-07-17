@@ -508,6 +508,10 @@ function hidden_user_emails(): array {
     return [
         'superadmin@tangerangkab.go.id',
         'admingudang@tangerangkab.go.id',
+        // Domainnya memang terbalik (kabtangerang, bukan tangerangkab) — ini akun
+        // yang benar-benar ada di server, bukan salah ketik. Versi di atas
+        // dipertahankan: mendaftarkan email yang tidak ada tidak berefek apa pun.
+        'admingudang@kabtangerang.go.id',
         'staffapproval@tangerangkab.go.id',
         'supervisor@tangerangkab.go.id',
         'pemohon@tangerangkab.go.id',
