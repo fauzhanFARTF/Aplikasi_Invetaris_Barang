@@ -70,6 +70,11 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
         <?php if (role_is('admin','administrator_pembantu_manajemen_user')): ?>
             <div class="nav-section">Administrasi</div>
             <a href="<?= BASE_PATH ?>/users" class="nav-item <?= active('/users', $currentPath) ?>" data-testid="nav-users"><i class="fa-solid fa-user-shield"></i><span>Manajemen User</span></a>
+            <?php $pendingReg = pending_registration_count(); ?>
+            <a href="<?= BASE_PATH ?>/registrations" class="nav-item <?= active('/registrations', $currentPath) ?>" data-testid="nav-registrations">
+                <i class="fa-solid fa-user-check"></i><span>Verifikasi Pendaftaran</span>
+                <?php if ($pendingReg): ?><span class="nav-badge" data-testid="nav-reg-count"><?= $pendingReg ?></span><?php endif; ?>
+            </a>
             <?php if (role_is('admin')): ?>
                 <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i><span>Riwayat Terhapus</span></a>
             <?php endif; ?>

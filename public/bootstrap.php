@@ -7,6 +7,7 @@ require_once __DIR__ . '/../src/JWT.php';
 require_once __DIR__ . '/../src/Auth.php';
 require_once __DIR__ . '/../src/Helpers.php';
 require_once __DIR__ . '/../src/Notification.php';
+require_once __DIR__ . '/../src/Google.php';
 
 // Load all controllers (each defines procedural functions)
 foreach (glob(APP_ROOT . '/src/Controllers/*.php') as $ctrl) {
@@ -28,6 +29,18 @@ $routes = [
     ['GET',  '#^/login$#',  'auth_login_get'],
     ['POST', '#^/login$#',  'auth_login_post'],
     ['POST', '#^/logout$#', 'auth_logout'],
+
+    // Login dengan Google + pendaftaran mandiri (menunggu verifikasi admin)
+    ['GET',  '#^/auth/google$#',          'google_start'],
+    ['GET',  '#^/auth/google/callback$#', 'google_callback'],
+    ['GET',  '#^/daftar$#',               'register_form'],
+    ['POST', '#^/daftar$#',               'register_submit'],
+    ['GET',  '#^/daftar/menunggu$#',      'register_pending'],
+
+    // Verifikasi pendaftaran (admin)
+    ['GET',  '#^/registrations$#',                 'registration_index'],
+    ['POST', '#^/registrations/([\w-]+)/approve$#', 'registration_approve'],
+    ['POST', '#^/registrations/([\w-]+)/reject$#',  'registration_reject'],
 
     // Dashboard
     ['GET',  '#^/$#',           'dashboard_index'],

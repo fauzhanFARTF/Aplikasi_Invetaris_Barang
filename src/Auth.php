@@ -6,7 +6,11 @@ class Auth {
     private const COOKIE = 'simassta_token';
 
     public static function attempt(string $email, string $password): ?array {
-        $stmt = db()->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1 AND deleted_at IS NULL LIMIT 1");
+        // password_hash IS NOT NULL: akun yang mendaftar lewat Google tidak punya
+        // password, jadi jangan sampai bisa ditembus lewat form email+password.
+        // reg_status: pendaftar yang belum/tidak disetujui admin tidak boleh masuk.
+        $stmt = db()->prepare("SELECT * FROM users WHERE email = ? AND is_active = 1 AND deleted_at IS NULL
+                               AND password_hash IS NOT NULL AND reg_status = 'approved' LIMIT 1");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         if (!$user || !password_verify($password, $user['password_hash'])) return null;
@@ -45,7 +49,10 @@ class Auth {
         if (!$token) return $cache = null;
         $payload = JWT::decode($token, JWT_SECRET);
         if (!$payload) return $cache = null;
-        $stmt = db()->prepare("SELECT id,name,email,role,phone,unit_kerja,is_active FROM users WHERE id = ? AND is_active = 1 AND deleted_at IS NULL");
+        // reg_status dicek juga di sini: kalau admin menolak/menonaktifkan akun
+        // saat sesinya masih hidup, token lamanya langsung tidak berlaku.
+        $stmt = db()->prepare("SELECT id,name,email,role,phone,unit_kerja,is_active FROM users
+                               WHERE id = ? AND is_active = 1 AND deleted_at IS NULL AND reg_status = 'approved'");
         $stmt->execute([$payload['sub']]);
         $u = $stmt->fetch();
         return $cache = ($u ?: null);

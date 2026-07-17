@@ -1,0 +1,142 @@
+<?php
+declare(strict_types=1);
+// Login dengan Google (OAuth 2.0 Authorization Code). Tanpa dependensi luar —
+// proyek ini tidak memakai Composer, jadi HTTP-nya pakai cURL langsung.
+//
+// Pemisahan yang disengaja: semua yang menyentuh jaringan ada di fetchProfile(),
+// sedangkan keputusan "profil ini mau diapakan" ada di resolveProfile() yang
+// murni logika + database. Dengan begitu alur pendaftaran/verifikasi bisa diuji
+// tanpa benar-benar memanggil Google.
+
+class Google
+{
+    public static function enabled(): bool
+    {
+        return GOOGLE_CLIENT_ID !== '' && GOOGLE_CLIENT_SECRET !== '';
+    }
+
+    /** URL tujuan tombol "Masuk dengan Google", lengkap dengan state anti-CSRF. */
+    public static function authUrl(): string
+    {
+        $state = bin2hex(random_bytes(16));
+        $_SESSION['google_oauth_state'] = $state;
+        return 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
+            'client_id'     => GOOGLE_CLIENT_ID,
+            'redirect_uri'  => GOOGLE_REDIRECT_URI,
+            'response_type' => 'code',
+            'scope'         => 'openid email profile',
+            'state'         => $state,
+            'prompt'        => 'select_account',
+        ]);
+    }
+
+    /** State dari Google harus sama dengan yang kita simpan — sekali pakai. */
+    public static function verifyState(?string $state): bool
+    {
+        $saved = $_SESSION['google_oauth_state'] ?? null;
+        unset($_SESSION['google_oauth_state']);
+        return $saved !== null && $state !== null && hash_equals($saved, $state);
+    }
+
+    /**
+     * Tukar authorization code jadi profil Google.
+     * Mengembalikan ['sub','email','name','picture','email_verified'] atau null.
+     */
+    public static function fetchProfile(string $code): ?array
+    {
+        $token = self::post('https://oauth2.googleapis.com/token', [
+            'code'          => $code,
+            'client_id'     => GOOGLE_CLIENT_ID,
+            'client_secret' => GOOGLE_CLIENT_SECRET,
+            'redirect_uri'  => GOOGLE_REDIRECT_URI,
+            'grant_type'    => 'authorization_code',
+        ]);
+        if (!isset($token['access_token'])) return null;
+
+        $info = self::get('https://openidconnect.googleapis.com/v1/userinfo', $token['access_token']);
+        if (!isset($info['sub'], $info['email'])) return null;
+
+        return [
+            'sub'            => (string) $info['sub'],
+            'email'          => strtolower(trim((string) $info['email'])),
+            'name'           => trim((string) ($info['name'] ?? '')),
+            'picture'        => (string) ($info['picture'] ?? ''),
+            'email_verified' => (bool) ($info['email_verified'] ?? false),
+        ];
+    }
+
+    /**
+     * Tentukan nasib sebuah profil Google. Murni logika + DB, tidak menyentuh
+     * jaringan, sehingga bisa diuji langsung dari CLI.
+     *
+     * Hasil:
+     *   ['action' => 'login',    'user' => [...]]  akun siap dipakai
+     *   ['action' => 'register', 'profile' => [...]] belum terdaftar -> form daftar
+     *   ['action' => 'pending']                    sudah daftar, menunggu admin
+     *   ['action' => 'rejected']                   pendaftarannya ditolak
+     *   ['action' => 'inactive']                   akunnya dinonaktifkan admin
+     *   ['action' => 'error', 'message' => '...']
+     */
+    public static function resolveProfile(array $profile): array
+    {
+        if (!($profile['email_verified'] ?? false)) {
+            return ['action' => 'error', 'message' => 'Email Google Anda belum terverifikasi oleh Google.'];
+        }
+        $pdo = db();
+
+        // Cocokkan lewat google_id dulu; kalau belum ada, lewat email. Pencocokan
+        // via email aman karena Google sudah memastikan email itu milik yang login
+        // (email_verified dicek di atas) — inilah yang menyambungkan akun lama
+        // ber-password ke tombol Google tanpa perlu pendaftaran ulang.
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE google_id = ? AND deleted_at IS NULL LIMIT 1");
+        $stmt->execute([$profile['sub']]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1");
+            $stmt->execute([$profile['email']]);
+            $user = $stmt->fetch();
+            if ($user) {
+                $pdo->prepare("UPDATE users SET google_id = ? WHERE id = ?")
+                    ->execute([$profile['sub'], (int) $user['id']]);
+                $user['google_id'] = $profile['sub'];
+            }
+        }
+
+        if (!$user) return ['action' => 'register', 'profile' => $profile];
+
+        if (($user['reg_status'] ?? 'approved') === 'pending')  return ['action' => 'pending'];
+        if (($user['reg_status'] ?? 'approved') === 'rejected') return ['action' => 'rejected'];
+        if (!$user['is_active'])                                return ['action' => 'inactive'];
+
+        return ['action' => 'login', 'user' => $user];
+    }
+
+    // ── HTTP ──────────────────────────────────────────────────────────────────
+    private static function post(string $url, array $data): array
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => http_build_query($data),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        return is_string($res) ? (json_decode($res, true) ?: []) : [];
+    }
+
+    private static function get(string $url, string $accessToken): array
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $accessToken],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        return is_string($res) ? (json_decode($res, true) ?: []) : [];
+    }
+}
