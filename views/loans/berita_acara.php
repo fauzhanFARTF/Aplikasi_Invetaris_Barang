@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Berita Acara Keluar <?= e($loan['loan_code']) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= ASSET_PREFIX ?>/assets/css/app.css">
+    <link rel="stylesheet" href="<?= asset_url("/assets/css/app.css") ?>">
     <style>
         .ba-page { max-width: 820px; margin: 0 auto; padding: 28px 34px; color: #0F172A; font-size: 13px; }
         .ba-head { text-align: center; border-bottom: 3px double #0F172A; padding-bottom: 10px; margin-bottom: 4px; }

@@ -94,7 +94,7 @@
     <div class="text-end mt-3"><button class="btn btn-primary" data-testid="btn-save-user"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
 </form>
 
-<script src="<?= ASSET_PREFIX ?>/assets/js/photo-capture.js"></script>
+<script src="<?= asset_url("/assets/js/photo-capture.js") ?>"></script>
 <script>
     initPhotoCapture({
         inputId: 'photoInput', previewWrapId: 'photoPreviewWrap', previewImgId: 'photoPreview',

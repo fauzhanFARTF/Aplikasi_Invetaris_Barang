@@ -12,7 +12,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="<?= ASSET_PREFIX ?>/assets/css/app.css">
+    <link rel="stylesheet" href="<?= asset_url("/assets/css/app.css") ?>">
     <link rel="icon" type="image/png" sizes="32x32" href="<?= ASSET_PREFIX ?>/assets/img/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="<?= ASSET_PREFIX ?>/assets/img/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="<?= ASSET_PREFIX ?>/assets/img/favicon-180.png">
@@ -145,7 +145,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
 
 <script>window.BASE_PATH = <?= json_encode(BASE_PATH) ?>;</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= ASSET_PREFIX ?>/assets/js/live-search.js"></script>
-<script src="<?= ASSET_PREFIX ?>/assets/js/app.js"></script>
+<script src="<?= asset_url("/assets/js/live-search.js") ?>"></script>
+<script src="<?= asset_url("/assets/js/app.js") ?>"></script>
 </body>
 </html>
