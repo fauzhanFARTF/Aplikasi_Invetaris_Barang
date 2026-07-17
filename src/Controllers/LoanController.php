@@ -142,7 +142,7 @@ function loan_create_post(): void {
         $bad = $stD->fetchAll();
         if ($bad) throw new RuntimeException('Alat tidak dapat dipinjam (rusak / dihapus): ' . implode(', ', array_column($bad,'name')));
 
-        $code = generate_code('LN', 'loans', 'loan_code');
+        $code = next_loan_code();
         $loanUuid = generate_uuid();
         $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, start_time, end_time, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,'Pending',?)");
         $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, Auth::id()]);

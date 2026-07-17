@@ -47,7 +47,7 @@
         <table class="table table-sb align-middle" data-testid="assets-table">
             <thead><tr>
                 <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?><th style="width:32px;"><input type="checkbox" class="form-check-input" id="selectAll" aria-label="Pilih semua"></th><?php endif; ?>
-                <th>Foto</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Brand/Model</th><th>No. BMN</th><th>Kode QR</th><th>Harga Dulu</th><th>Nilai Sekarang</th><th>Status</th><th></th></tr></thead>
+                <th>Foto</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Brand/Model</th><th>No. BMD</th><th>Kode QR</th><th>Harga Dulu</th><th>Nilai Sekarang</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($assets as $a): ?>
                 <tr class="asset-row" data-ls-row

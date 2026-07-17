@@ -412,7 +412,7 @@ function api_availability(): void {
     json_response(['busy_asset_ids' => $busy]);
 }
 
-/** Preview Kode Aset & No. BMN otomatis untuk kategori terpilih (dipakai form tambah alat). */
+/** Preview Kode Aset & No. BMD otomatis untuk kategori terpilih (dipakai form tambah alat). */
 function api_next_asset_code(): void {
     Auth::requireRole('admin_gudang', 'admin', 'administrator_pembantu_manajemen_alat');
     $cat = (int) ($_GET['category_id'] ?? 0);
