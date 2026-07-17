@@ -21,6 +21,13 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
         // Pasang kelas ciut SEBELUM halaman tergambar, supaya sidebar tidak
         // berkedip lebar-lalu-menyempit saat pindah halaman.
         try { if (localStorage.getItem('sidebarCollapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
+        // Mode terang/gelap dipasang SEBELUM halaman tergambar, supaya tidak
+        // berkedip putih dulu. Pilihan user (localStorage) menang atas setelan OS.
+        try {
+            var t = localStorage.getItem('theme');
+            if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
     </script>
 </head>
 <body>
@@ -103,6 +110,9 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
                 </div>
             </div>
             <div class="top-actions">
+                <button type="button" class="bell theme-toggle" id="themeToggle" aria-label="Ganti mode tampilan" title="Ganti mode tampilan" data-testid="btn-theme-toggle">
+                    <i class="fa-solid fa-moon" id="themeToggleIcon"></i>
+                </button>
                 <a href="<?= BASE_PATH ?>/notifications" class="bell" data-testid="notif-bell" title="Notifikasi">
                     <i class="fa-regular fa-bell"></i>
                     <span class="dot" id="bell-count" style="<?= $unread ? '' : 'display:none;' ?>" data-testid="bell-count"><?= $unread ?></span>
