@@ -388,6 +388,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     z-index: 99; opacity: 0; transition: opacity 200ms var(--ease);
 }
 
+/* Lencana jumlah di menu (mis. pendaftaran yang menunggu verifikasi). */
+.sidebar .nav-badge {
+    margin-left: auto; background: var(--nav-gold); color: #3B2600;
+    font-size: 11px; font-weight: 800; line-height: 1;
+    padding: 4px 7px; border-radius: 999px; flex: 0 0 auto;
+}
+
+/* Tombol "Masuk dengan Google" — putih bergaris, sesuai panduan merek Google. */
+.btn-google {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    background: #fff; color: #1F2937; border: 1px solid #CBD5E1; font-weight: 600;
+}
+.btn-google:hover { background: #F8FAFC; color: #0F172A; border-color: #94A3B8; }
+.auth-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 18px 0; color: #94A3B8; font-size: 12px;
+}
+.auth-divider::before, .auth-divider::after {
+    content: ''; flex: 1; height: 1px; background: #E2E8F0;
+}
+
 /* ── Sidebar ciut (desktop) ───────────────────────────────────────────────
    Kelas .sb-collapsed dipasang di <html> oleh skrip inline di <head> supaya
    lebar sidebar sudah benar sebelum halaman tergambar (tidak berkedip).
@@ -419,6 +440,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
        memaksa overflow-x ikut memotong, sehingga tooltip di samping ikon akan
        terpotong begitu daftar menu lebih tinggi dari layar (mis. laptop 768px). */
     html.sb-collapsed .sidebar .nav-item span { display: none; }
+    /* Lencana tetap tampil, mengecil jadi titik di pojok ikon — kalau ikut
+       disembunyikan, admin kehilangan penanda ada pendaftaran yang menunggu. */
+    html.sb-collapsed .sidebar .nav-item .nav-badge {
+        display: block; position: absolute; top: 5px; right: 8px;
+        min-width: 8px; height: 8px; padding: 0; border-radius: 999px;
+        font-size: 0; color: transparent; margin: 0;
+    }
 }
 @media (max-width: 900px) {
     .sidebar-toggle { display: none; }
