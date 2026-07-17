@@ -117,6 +117,13 @@
                 </div>
                 <div class="form-text">Estimasi nilai buku / nilai wajar aset saat ini (setelah penyusutan).</div>
             </div>
+            <div class="col-md-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_consumable" value="1" id="isConsumable" <?= !empty($asset['is_consumable']) ? 'checked' : '' ?> data-testid="input-consumable">
+                    <label class="form-check-label" for="isConsumable"><strong>Barang habis pakai</strong></label>
+                </div>
+                <div class="form-text">Centang bila alat ini bersifat habis pakai (mis. kabel, konektor). Saat diserahkan ke OPD, barang habis pakai dianggap tuntas dan <strong>tidak ditunggu kembali</strong>.</div>
+            </div>
         </div>
     </div>
     <div class="text-end mt-3">

@@ -137,6 +137,12 @@ function run_pending_migrations(PDO $pdo): void {
             $pdo->exec("ALTER TABLE loans ADD COLUMN loan_type ENUM('event','opd') NOT NULL DEFAULT 'event' AFTER status");
         }
 
+        // Alat habis pakai: saat diserahkan ke OPD dianggap tuntas (tidak ditunggu
+        // kembali). Sifat tetap milik alat, ditandai di form Tambah/Edit Alat.
+        if (!$pdo->query("SHOW COLUMNS FROM assets LIKE 'is_consumable'")->fetch()) {
+            $pdo->exec("ALTER TABLE assets ADD COLUMN is_consumable TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+        }
+
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
         // Tambah kolom bila belum ada, lalu backfill baris yang uuid-nya NULL —
         // sekaligus jadi jaring pengaman kalau ada insert yang terlewat mengisi uuid.
