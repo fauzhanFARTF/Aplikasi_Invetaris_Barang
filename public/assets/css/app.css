@@ -310,6 +310,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     color: #fff; display: flex; flex-direction: column; justify-content: center;
     padding: 60px; position: relative; overflow: hidden;
 }
+/* Kanvas partikel mengisi panel biru, di bawah teks. pointer-events: none —
+   interaksi mouse sengaja dimatikan (lihat auth.php), jadi kanvas tidak boleh
+   mencegat klik apa pun. */
+.auth-side #particles-js { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.auth-side > *:not(#particles-js) { position: relative; z-index: 1; }
 .auth-side .side-mark {
     width: 64px; height: 64px; border-radius: 18px;
     background: #fff;

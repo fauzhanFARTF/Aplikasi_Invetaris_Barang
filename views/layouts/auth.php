@@ -16,6 +16,7 @@
 <body>
 <div class="auth-page">
     <div class="auth-side no-print">
+        <div id="particles-js" aria-hidden="true"></div>
         <div class="side-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
         <h2>Kelola semua aset dinas dengan tenang, semua tercatat rapi.</h2>
         <p>SIMANTAP membantu tim Diskominfo Kabupaten Tangerang meminjam, memeriksa, dan merawat berbagai barang milik negara — dari peralatan streaming, perangkat jaringan, hingga kendaraan dinas (mobil &amp; motor) — tanpa ribet, cukup beberapa klik.</p>
@@ -29,5 +30,47 @@
         <?= $content ?>
     </div>
 </div>
+
+<script src="<?= ASSET_PREFIX ?>/assets/js/particles.min.js" defer></script>
+<script>
+    // Partikel di panel biru. Sengaja dijaga ringan — halaman login adalah
+    // halaman pertama yang dibuka orang, sering dari HP kentang di lapangan.
+    window.addEventListener('load', function () {
+        // 1) Panel biru di-display:none pada layar <=900px, jadi di HP partikelnya
+        //    tidak dibuat sama sekali. Ini penghematan terbesar: tidak ada kanvas,
+        //    tidak ada requestAnimationFrame, tidak ada beban baterai.
+        if (!window.matchMedia('(min-width: 901px)').matches) return;
+        // 2) Hormati pengguna yang meminta animasi dikurangi.
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (typeof particlesJS !== 'function') return;
+
+        particlesJS('particles-js', {
+            particles: {
+                // 46 -> sekitar 27 partikel nyata di panel ini (density menghitung ulang
+                // berdasarkan luas kanvas). Bukan 50: jumlah garis penghubung tumbuh kuadratik terhadap
+                // jumlah partikel, jadi di sinilah biaya sebenarnya berada.
+                number: { value: 46, density: { enable: true, value_area: 900 } },
+                // Putih & emas — mengikuti identitas SIMANTAP. Warna-warni asli
+                // (ungu/hijau/merah) bertabrakan dengan panel navy.
+                color: { value: ['#FFFFFF', '#FFDD87', '#F5B301'] },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: true, anim: { enable: false } },
+                size: { value: 2.4, random: true, anim: { enable: false } },
+                line_linked: { enable: true, distance: 130, color: '#8FB6F0', opacity: 0.28, width: 1 },
+                // Melayang pelan (1.1, bukan 6) supaya terasa tenang, bukan gelisah.
+                move: { enable: true, speed: 1.1, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false }
+            },
+            // 3) Interaktivitas dimatikan total. Hover-repulse memaksa hitung jarak
+            //    mouse ke SETIAP partikel tiap frame, dan click-push menambah
+            //    partikel terus-menerus sampai berat. Di halaman login tidak ada
+            //    gunanya.
+            interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
+            // 4) retina_detect: false. Kalau true, di layar 2x kanvasnya digambar
+            //    4x lebih banyak piksel — ini penghemat terbesar kedua setelah
+            //    tidak jalan di HP.
+            retina_detect: false
+        });
+    });
+</script>
 </body>
 </html>
