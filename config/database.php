@@ -137,11 +137,15 @@ function run_pending_migrations(PDO $pdo): void {
             $pdo->exec("ALTER TABLE loans ADD COLUMN loan_type ENUM('event','opd') NOT NULL DEFAULT 'event' AFTER status");
         }
 
-        // Alat habis pakai: saat diserahkan ke OPD dianggap tuntas (tidak ditunggu
-        // kembali). Sifat tetap milik alat, ditandai di form Tambah/Edit Alat.
-        if (!$pdo->query("SHOW COLUMNS FROM assets LIKE 'is_consumable'")->fetch()) {
-            $pdo->exec("ALTER TABLE assets ADD COLUMN is_consumable TINYINT(1) NOT NULL DEFAULT 0 AFTER status");
+        // Barang habis pakai: ditandai PER BARIS peminjaman OPD (bukan sifat tetap
+        // alat), dicentang saat mengajukan peminjaman Untuk OPD. Barang habis pakai
+        // dianggap tuntas saat diserahkan — tidak ditunggu kembali.
+        if (!$pdo->query("SHOW COLUMNS FROM loan_items LIKE 'is_consumable'")->fetch()) {
+            $pdo->exec("ALTER TABLE loan_items ADD COLUMN is_consumable TINYINT(1) NOT NULL DEFAULT 0");
         }
+        // Kolom assets.is_consumable (pendekatan lama) dipertahankan bila sudah ada —
+        // tidak dipakai lagi, dan menghapus kolom berisiko; dibiarkan sebagai default
+        // opsional. Tidak ditambahkan pada instalasi baru.
 
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
         // Tambah kolom bila belum ada, lalu backfill baris yang uuid-nya NULL —

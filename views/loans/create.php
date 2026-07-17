@@ -172,6 +172,13 @@
                                 <?php if (!empty($a['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?>
                             </div>
                             <div class="text-center" style="flex-shrink:0;"><?= status_badge($a['status']) ?></div>
+                            <?php // "Habis pakai" per barang — hanya tampil di mode OPD (diatur JS).
+                                  // onclick stopPropagation: baris ini <label> untuk checkbox pilih alat,
+                                  // jadi klik di sini tidak boleh ikut mencentang/mem-batal pilih alatnya. ?>
+                            <div class="form-check opd-consumable" style="display:none;flex-shrink:0;min-width:110px;" title="Barang habis pakai: tidak ditunggu kembali" onclick="event.stopPropagation();">
+                                <input class="form-check-input" type="checkbox" name="consumable_ids[]" value="<?= (int)$a['id'] ?>" id="cons<?= (int)$a['id'] ?>" disabled data-testid="consumable-<?= (int)$a['id'] ?>">
+                                <label class="form-check-label small" for="cons<?= (int)$a['id'] ?>" onclick="event.stopPropagation();">Habis pakai</label>
+                            </div>
                             <?php if (!empty($holders[$a['id']])): ?>
                                 <div class="small text-slate" style="min-width:150px;max-width:210px;flex-shrink:0;">
                                     <div><span class="text-slate">Pemesan:</span> <?= e($holders[$a['id']]) ?></div>
@@ -263,6 +270,15 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
             el.querySelectorAll('[data-req-' + (k === 'event' ? 'opd' : 'event') + ']').forEach(c => c.removeAttribute('required'));
         });
         buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
+
+        // Checkbox "Habis pakai" per barang hanya ada/berlaku di mode OPD. Di mode
+        // acara disembunyikan, dinonaktifkan, dan dikosongkan agar tidak terkirim.
+        const opd = type === 'opd';
+        document.querySelectorAll('.opd-consumable').forEach(box => {
+            box.style.display = opd ? '' : 'none';
+            const cb = box.querySelector('input[type=checkbox]');
+            if (cb) { cb.disabled = !opd; if (!opd) cb.checked = false; }
+        });
     }
     buttons.forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
     setType('event');
