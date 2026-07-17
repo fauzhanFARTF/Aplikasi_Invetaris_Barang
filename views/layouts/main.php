@@ -27,6 +27,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
 <div class="app-shell">
     <div class="sidebar-backdrop" id="sidebarBackdrop" data-testid="sidebar-backdrop"></div>
     <aside class="sidebar" id="sidebar" data-testid="sidebar">
+        <div id="particles-sidebar" aria-hidden="true"></div>
         <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Tutup menu" data-testid="btn-sidebar-close"><i class="fa-solid fa-xmark"></i></button>
         <div class="brand">
             <div class="brand-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
@@ -34,10 +35,12 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
                 <div class="brand-title">SIMANTAP</div>
                 <div class="brand-sub">Diskominfo · Kab. Tangerang</div>
             </div>
-            <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Ciutkan menu" aria-expanded="true" title="Ciutkan menu" data-testid="btn-sidebar-toggle">
-                <i class="fa-solid fa-angles-left"></i>
-            </button>
         </div>
+        <!-- Barisnya sendiri, di luar .brand: kalau ikut baris brand, tombol ini
+             memakan ruang teks dan "Diskominfo · Kab. Tangerang" pecah jadi 3 baris. -->
+        <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Ciutkan menu" aria-expanded="true" title="Ciutkan menu" data-testid="btn-sidebar-toggle">
+            <i class="fa-solid fa-angles-left"></i>
+        </button>
 
         <div class="nav-section">Menu</div>
         <a href="<?= BASE_PATH ?>/dashboard" class="nav-item <?= active('/dashboard', $currentPath) ?>" data-testid="nav-dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
@@ -145,6 +148,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
 
 <script>window.BASE_PATH = <?= json_encode(BASE_PATH) ?>;</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= asset_url("/assets/js/particles.min.js") ?>"></script>
 <script src="<?= asset_url("/assets/js/live-search.js") ?>"></script>
 <script src="<?= asset_url("/assets/js/app.js") ?>"></script>
 </body>
