@@ -15,6 +15,12 @@ function db(): PDO {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ]);
+        // Samakan zona waktu MySQL dengan zona aplikasi (APP_TZ, default Asia/Jakarta).
+        // Tanpa ini NOW()/CURRENT_TIMESTAMP mengikuti zona OS server — di server
+        // produksi itu UTC, sehingga created_at dkk tercatat 7 jam lebih awal.
+        // Dipakai offset numerik (+07:00), bukan nama zona, karena tabel zona waktu
+        // MySQL sering tidak terpasang. Indonesia tidak punya DST jadi offset tetap aman.
+        $pdo->exec("SET time_zone = '" . (new DateTime('now'))->format('P') . "'");
         run_pending_migrations($pdo);
     }
     return $pdo;
