@@ -166,10 +166,15 @@ function loan_create_post(): void {
         $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, $loanType, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
-        $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status) VALUES (?,?,?, 'Reserved')");
+        // Barang habis pakai hanya relevan untuk peminjaman OPD (barang acara selalu
+        // dikembalikan). Yang dicentang di form OPD dikirim sebagai consumable_ids[].
+        $consumableIds = $loanType === 'opd'
+            ? array_flip(array_map('intval', $_POST['consumable_ids'] ?? []))
+            : [];
+        $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status, is_consumable) VALUES (?,?,?, 'Reserved', ?)");
         $upA = $pdo->prepare("UPDATE assets SET status = 'Booked' WHERE id = ? AND status = 'Available'");
         foreach ($allAssetIds as $aid) {
-            $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null]);
+            $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null, isset($consumableIds[$aid]) ? 1 : 0]);
             $upA->execute([$aid]);
         }
 
@@ -287,7 +292,7 @@ function loan_berita_acara(string $uuid): void {
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
 
-    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number, a.is_consumable
+    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number, li.is_consumable
                                FROM loan_items li JOIN assets a ON a.id = li.asset_id
                                WHERE li.loan_id = ? ORDER BY a.name");
     $itemsStmt->execute([$id]);

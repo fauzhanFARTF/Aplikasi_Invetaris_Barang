@@ -44,8 +44,8 @@ function dashboard_index(): void {
         try {
             $stmt = $pdo->query("SELECT l.uuid, l.loan_code, l.event_name AS opd_name, l.checkout_at,
                                         u.name AS requester_name,
-                                        (SELECT COUNT(*) FROM loan_items li JOIN assets a ON a.id = li.asset_id
-                                         WHERE li.loan_id = l.id AND li.item_status = 'CheckedOut' AND a.is_consumable = 0) AS pending_return
+                                        (SELECT COUNT(*) FROM loan_items li
+                                         WHERE li.loan_id = l.id AND li.item_status = 'CheckedOut' AND li.is_consumable = 0) AS pending_return
                                  FROM loans l JOIN users u ON u.id = l.requester_id
                                  WHERE l.loan_type = 'opd' AND l.status = 'CheckedOut' AND l.deleted_at IS NULL
                                  HAVING pending_return > 0
