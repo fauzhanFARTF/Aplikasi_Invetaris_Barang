@@ -77,7 +77,7 @@
                 <div class="card-title">Rincian Kebutuhan OPD</div>
                 <div class="hint-box">
                     <i class="fa-solid fa-circle-info"></i>
-                    <div>Barang untuk OPD dikeluarkan <strong>tanpa batas waktu</strong>. Tanggal keluar dicatat hari ini, dan alat tetap tercatat terpakai sampai dikembalikan lewat <strong>penyerahan aset</strong> (mis. bila rusak).</div>
+                    <div>Barang untuk OPD dikeluarkan <strong>tanpa batas waktu</strong>. Tanggal keluar dicatat <strong>saat barang benar-benar diserahkan dari gudang</strong>, bukan sekarang. Alat tetap tercatat di OPD sampai dikembalikan lewat <strong>penyerahan aset</strong> bila rusak — kecuali barang habis pakai, yang dianggap tuntas saat diserahkan.</div>
                 </div>
                 <?php $opd = opd_options(); ?>
                 <div class="mb-3">

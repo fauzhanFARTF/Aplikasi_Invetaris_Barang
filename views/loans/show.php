@@ -31,6 +31,13 @@
         <?php if ($loan['status'] === 'CheckedOut' && role_is('admin_gudang','admin')): ?>
             <a href="<?= BASE_PATH ?>/checkin/<?= e($loan["uuid"]) ?>" class="btn btn-amber" data-testid="btn-goto-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i> Pengembalian Sekarang</a>
         <?php endif; ?>
+
+        <?php if (in_array($loan['status'], ['Approved','CheckedOut','Returned','Completed'], true) && role_is('admin_gudang','admin')): ?>
+            <?php $isOpd = ($loan['loan_type'] ?? 'event') === 'opd'; ?>
+            <a href="<?= BASE_PATH ?>/loans/<?= e($loan["uuid"]) ?>/berita-acara" target="_blank" class="btn btn-outline-navy" data-testid="btn-berita-acara">
+                <i class="fa-solid fa-file-lines"></i> <?= $isOpd ? 'Berita Acara Serah Terima' : 'Berita Acara Keluar' ?>
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 

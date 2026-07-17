@@ -34,16 +34,22 @@ function dashboard_index(): void {
     // Barang yang sedang keluar ke OPD (tanpa batas waktu). Belum dikembalikan =
     // peminjaman OPD yang masih Approved/CheckedOut. Ditampilkan ke pengelola,
     // bukan ke Personel Luar. Kolom loan_type mungkin belum ada saat migrasi awal.
+    // "Barang keluar ke OPD": hanya yang benar-benar SUDAH keluar dari gudang
+    // (status CheckedOut), dan masih ada barang NON-habis-pakai yang ditunggu
+    // kembali. Barang habis pakai tuntas saat serah terima, jadi tidak dihitung —
+    // loan yang seluruh isinya habis pakai otomatis hilang dari daftar ini.
+    // Tanggal yang ditampilkan = checkout_at (saat keluar), bukan tanggal pesan.
     $opdOut = [];
     if (!is_personal_borrower()) {
         try {
-            $stmt = $pdo->query("SELECT l.uuid, l.loan_code, l.event_name AS opd_name, l.event_location, l.start_date,
+            $stmt = $pdo->query("SELECT l.uuid, l.loan_code, l.event_name AS opd_name, l.checkout_at,
                                         u.name AS requester_name,
-                                        (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id) AS item_count
+                                        (SELECT COUNT(*) FROM loan_items li JOIN assets a ON a.id = li.asset_id
+                                         WHERE li.loan_id = l.id AND li.item_status = 'CheckedOut' AND a.is_consumable = 0) AS pending_return
                                  FROM loans l JOIN users u ON u.id = l.requester_id
-                                 WHERE l.loan_type = 'opd' AND l.status IN ('Approved','CheckedOut')
-                                   AND l.deleted_at IS NULL
-                                 ORDER BY l.start_date DESC, l.id DESC LIMIT 20");
+                                 WHERE l.loan_type = 'opd' AND l.status = 'CheckedOut' AND l.deleted_at IS NULL
+                                 HAVING pending_return > 0
+                                 ORDER BY l.checkout_at DESC, l.id DESC LIMIT 20");
             $opdOut = $stmt->fetchAll();
         } catch (Throwable $e) { $opdOut = []; }
     }
