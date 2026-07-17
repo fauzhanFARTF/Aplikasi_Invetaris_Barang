@@ -66,7 +66,7 @@
     </table>
 
     <table class="items">
-        <thead><tr><th style="width:32px;">No</th><th>Nama Alat</th><th>Kode Aset</th><th>No. BMN</th><th>Brand / Model</th><th>Serial Number</th></tr></thead>
+        <thead><tr><th style="width:32px;">No</th><th>Nama Alat</th><th>Kode Aset</th><th>No. BMD</th><th>Brand / Model</th><th>Serial Number</th></tr></thead>
         <tbody>
             <?php foreach ($items as $i => $it): ?>
                 <tr>
@@ -99,7 +99,7 @@
     </div>
 
     <div class="ba-note">
-        Dokumen ini dicetak dari Sistem Informasi Manajemen Aset (SIMANTAP BMN) Diskominfo Kabupaten Tangerang pada <?= e(date('d/m/Y H:i')) ?> WIB.
+        Dokumen ini dicetak dari Sistem Informasi Manajemen Aset (SIMANTAP) Diskominfo Kabupaten Tangerang pada <?= e(date('d/m/Y H:i')) ?> WIB.
     </div>
 </div>
 

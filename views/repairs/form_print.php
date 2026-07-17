@@ -25,7 +25,7 @@
         <tr><td>Tanggal Cetak</td><td><?= fmt_datetime($repair['form_printed_at'] ?: date('Y-m-d H:i:s')) ?></td></tr>
         <tr><td>Nama Alat</td><td><strong><?= e($repair['asset_name']) ?></strong></td></tr>
         <tr><td>Kode Aset</td><td class="text-mono"><?= e($repair['asset_code']) ?></td></tr>
-        <tr><td>Nomor BMN</td><td class="text-mono"><?= e($repair['bmn_number']) ?></td></tr>
+        <tr><td>Nomor BMD</td><td class="text-mono"><?= e($repair['bmn_number']) ?></td></tr>
         <tr><td>Brand / Model</td><td><?= e(trim($repair['brand'].' '.$repair['model'])) ?: '—' ?></td></tr>
         <tr><td>Serial Number</td><td class="text-mono"><?= e($repair['serial_number'] ?: '—') ?></td></tr>
         <tr><td>Kode Peminjaman Sumber</td><td class="text-mono"><?= e($repair['loan_code'] ?: '—') ?></td></tr>

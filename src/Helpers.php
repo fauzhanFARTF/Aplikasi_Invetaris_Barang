@@ -72,6 +72,30 @@ function fmt_date(?string $d): string {
     } catch (Throwable) { return $d; }
 }
 
+/**
+ * Kode peminjaman: APTIKA-YYYYMMDD-NNN, NNN mulai dari 001 setiap hari.
+ * Tanggalnya = hari pembuatan (created_at), jadi nomor urut otomatis mengulang
+ * dari awal di hari berikutnya.
+ *
+ * Nomor diambil dari MAX yang sudah ada pada hari itu (+1), bukan COUNT, supaya
+ * penghapusan baris tidak membuat nomor terpakai ulang. Baris yang di-soft-delete
+ * ikut dihitung karena UNIQUE constraint tetap berlaku untuk mereka.
+ */
+function next_loan_code(?string $day = null): string {
+    $day    = $day ?: date('Ymd');
+    $prefix = "APTIKA-$day-";
+    $q = db()->prepare("SELECT loan_code FROM loans WHERE loan_code LIKE ?");
+    $q->execute([$prefix . '%']);
+    $max = 0;
+    foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $code) {
+        if (preg_match('/-(\d+)$/', (string) $code, $m)) {
+            $n = (int) $m[1];
+            if ($n > $max) $max = $n;
+        }
+    }
+    return $prefix . str_pad((string) ($max + 1), 3, '0', STR_PAD_LEFT);
+}
+
 function generate_code(string $prefix, string $table, string $col = 'loan_code'): string {
     $year = date('Y');
     $stmt = db()->prepare("SELECT COUNT(*) c FROM $table WHERE YEAR(created_at) = ?");
@@ -85,8 +109,8 @@ function generate_code(string $prefix, string $table, string $col = 'loan_code')
  * Mengembalikan null kalau tidak ada foto.
  */
 /**
- * Buat Kode Aset & No. BMN otomatis dari kode singkatan kategori.
- * Contoh: prefix CAMVIDEO -> asset_code "CAMVIDEO-001", bmn "BMN-2026-CAMVIDEO-001".
+ * Buat Kode Aset & No. BMD otomatis dari kode singkatan kategori.
+ * Contoh: prefix CAMVIDEO -> asset_code "CAMVIDEO-001", bmd "BMD-2026-CAMVIDEO-001".
  * Nomor urut = angka tertinggi yang sudah ada untuk prefix tsb + 1 (menghindari
  * tabrakan meski ada aset yang terhapus). Mengembalikan null jika kategori tidak
  * punya kode singkatan.
@@ -112,8 +136,24 @@ function next_asset_code(int $categoryId): ?array {
         'prefix'     => $prefix,
         'seq'        => $seq,
         'asset_code' => "$prefix-$pad",
-        'bmn_number' => 'BMN-' . date('Y') . "-$prefix-$pad",
+        'bmn_number' => 'BMD-' . date('Y') . "-$prefix-$pad",
     ];
+}
+
+/**
+ * Cocokkan hasil pindai QR dengan alat, menerima awalan BMN- maupun BMD-.
+ *
+ * Nomor BMN sudah diganti jadi BMD, tapi stiker QR yang terlanjur tertempel di
+ * alat masih berisi "BMN-...". Tanpa toleransi ini, seluruh stiker lama mati dan
+ * penyerahan/pengembalian di lapangan gagal. Mengembalikan daftar kandidat yang
+ * dicoba berurutan.
+ */
+function barcode_candidates(string $scanned): array {
+    $scanned = trim($scanned);
+    $out = [$scanned];
+    if (stripos($scanned, 'BMN-') === 0) $out[] = 'BMD-' . substr($scanned, 4);
+    elseif (stripos($scanned, 'BMD-') === 0) $out[] = 'BMN-' . substr($scanned, 4);
+    return $out;
 }
 
 /** UUID v4 acak (RFC 4122) untuk identitas publik entitas di URL. */

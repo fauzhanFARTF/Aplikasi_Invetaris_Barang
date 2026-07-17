@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 // ==============================================================
-//  SIMANTAP BMN — One-time cleanup for orphaned notifications
+//  SIMANTAP — One-time cleanup for orphaned notifications
 //
 //  Fixes notifications created BEFORE the fix in LoanController.php
 //  (loan_delete / loan_delete_all), whose `link` still points to a

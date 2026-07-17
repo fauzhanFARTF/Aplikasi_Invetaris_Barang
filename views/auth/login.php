@@ -1,6 +1,6 @@
 <div class="auth-card" data-testid="login-card">
     <div class="brand-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
-    <h1>Masuk ke SIMANTAP BMN</h1>
+    <h1>Masuk ke SIMANTAP</h1>
     <p class="sub">Sistem Informasi Manajemen Aset Terpadu — Diskominfo Kabupaten Tangerang</p>
 
     <?php if ($msg = flash('error')): ?>
