@@ -131,6 +131,12 @@ function run_pending_migrations(PDO $pdo): void {
             $pdo->exec("UPDATE users SET reg_status = 'approved' WHERE reg_status IS NULL OR reg_status = ''");
         }
 
+        // Jenis peminjaman: 'event' (acara, ada rentang tanggal) atau 'opd'
+        // (barang keluar ke OPD tanpa batas waktu, kembali hanya bila rusak).
+        if (!$pdo->query("SHOW COLUMNS FROM loans LIKE 'loan_type'")->fetch()) {
+            $pdo->exec("ALTER TABLE loans ADD COLUMN loan_type ENUM('event','opd') NOT NULL DEFAULT 'event' AFTER status");
+        }
+
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
         // Tambah kolom bila belum ada, lalu backfill baris yang uuid-nya NULL —
         // sekaligus jadi jaring pengaman kalau ada insert yang terlewat mengisi uuid.

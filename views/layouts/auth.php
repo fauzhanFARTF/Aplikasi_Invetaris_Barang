@@ -12,6 +12,15 @@
     <link rel="icon" type="image/png" sizes="16x16" href="<?= ASSET_PREFIX ?>/assets/img/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="<?= ASSET_PREFIX ?>/assets/img/favicon-180.png">
     <link rel="shortcut icon" href="<?= ASSET_PREFIX ?>/assets/img/favicon.ico">
+    <script>
+        // Halaman masuk ikut mode yang dipilih user (atau setelan OS bila belum
+        // pernah memilih). Dipasang sebelum paint agar tidak berkedip putih.
+        try {
+            var t = localStorage.getItem('theme');
+            if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {}
+    </script>
 </head>
 <body>
 <div class="auth-page">

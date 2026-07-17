@@ -81,10 +81,8 @@ function loan_create_post(): void {
     Auth::requireRole('pemohon', 'inventory_staff', 'admin');
     Auth::verifyCsrf();
 
-    $eventName = trim($_POST['event_name'] ?? '');
+    $loanType  = ($_POST['loan_type'] ?? 'event') === 'opd' ? 'opd' : 'event';
     $location  = trim($_POST['event_location'] ?? '');
-    $start     = $_POST['start_date'] ?? '';
-    $end       = $_POST['end_date'] ?? '';
     $startTime = trim($_POST['start_time'] ?? '') ?: null;
     $endTime   = null; // jam selesai tidak dipakai
     $purpose   = trim($_POST['purpose'] ?? '');
@@ -95,11 +93,31 @@ function loan_create_post(): void {
         ? []
         : array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
 
-    if (!$eventName || !$start || !$end || (!$assetIds && !$packageIds)) {
-        flash('error', 'Lengkapi nama acara, tanggal, dan pilih minimal 1 alat / paket.');
-        redirect('/loans/create');
+    if ($loanType === 'opd') {
+        // Barang keluar ke OPD tanpa batas waktu. event_name diisi dari Nama OPD
+        // supaya seluruh tampilan lama (daftar, jadwal, Berita Acara) langsung ikut.
+        // Tanggal keluar = hari ini; end_date dipatok jauh ke depan agar alat tetap
+        // dianggap terpinjam sampai dikembalikan (bukan bebas otomatis besok).
+        $eventName = trim($_POST['opd_name'] ?? '');
+        $location  = $location ?: $eventName; // lokasi = OPD tujuan bila kosong
+        $purpose   = trim($_POST['opd_purpose'] ?? '');
+        $start     = date('Y-m-d');
+        $end       = '2099-12-31';
+        $startTime = null;
+        if (!$eventName || (!$assetIds && !$packageIds)) {
+            flash('error', 'Lengkapi nama OPD dan pilih minimal 1 alat / paket.');
+            redirect('/loans/create');
+        }
+    } else {
+        $eventName = trim($_POST['event_name'] ?? '');
+        $start     = $_POST['start_date'] ?? '';
+        $end       = $_POST['end_date'] ?? '';
+        if (!$eventName || !$start || !$end || (!$assetIds && !$packageIds)) {
+            flash('error', 'Lengkapi nama acara, tanggal, dan pilih minimal 1 alat / paket.');
+            redirect('/loans/create');
+        }
+        if ($start > $end) { flash('error', 'Tanggal selesai harus setelah tanggal mulai.'); redirect('/loans/create'); }
     }
-    if ($start > $end) { flash('error', 'Tanggal selesai harus setelah tanggal mulai.'); redirect('/loans/create'); }
 
     $pdo = db();
     $pdo->beginTransaction();
@@ -144,8 +162,8 @@ function loan_create_post(): void {
 
         $code = next_loan_code();
         $loanUuid = generate_uuid();
-        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, start_time, end_time, purpose, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,'Pending',?)");
-        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, Auth::id()]);
+        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, start_time, end_time, purpose, status, loan_type, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,'Pending',?,?)");
+        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, $loanType, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
         $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status) VALUES (?,?,?, 'Reserved')");
@@ -166,8 +184,11 @@ function loan_create_post(): void {
         log_audit('loan.create', 'loan', $loanId, ['code' => $code, 'items' => count($allAssetIds)]);
 
         // Notify supervisors
+        $konteks = $loanType === 'opd'
+            ? "untuk OPD \"$eventName\" (tanpa batas waktu)"
+            : "untuk acara \"$eventName\" ($start s/d $end)";
         Notification::pushToRole('supervisor', 'Pengajuan Peminjaman Baru',
-            "Pengajuan $code untuk acara \"$eventName\" ($start s/d $end) menunggu persetujuan Anda.",
+            "Pengajuan $code $konteks menunggu persetujuan Anda.",
             "/loans/$loanUuid");
 
         flash('success', "Peminjaman $code berhasil diajukan. Menunggu persetujuan atasan.");

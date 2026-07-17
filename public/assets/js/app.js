@@ -106,6 +106,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('load', initSidebarParticles);
 
+    // ── Mode terang / gelap ───────────────────────────────────────────────────
+    // Atribut data-theme sudah dipasang skrip di <head> sebelum paint; di sini
+    // hanya mengurus tombol & menyimpan pilihan. Sekali user menekan tombol,
+    // pilihannya disimpan dan seterusnya menang atas setelan OS.
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeToggleIcon');
+    const currentTheme = () => document.documentElement.getAttribute('data-theme') || 'light';
+    const syncThemeButton = () => {
+        const dark = currentTheme() === 'dark';
+        if (themeIcon) themeIcon.className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        if (themeToggle) {
+            const label = dark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap';
+            themeToggle.setAttribute('aria-label', label);
+            themeToggle.setAttribute('title', label);
+        }
+    };
+    themeToggle?.addEventListener('click', () => {
+        const next = currentTheme() === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        syncThemeButton();
+    });
+    syncThemeButton();
+
     // Poll unread notification count every 30s
     const bell = document.getElementById('bell-count');
     if (bell) {

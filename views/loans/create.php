@@ -8,13 +8,25 @@
 
 <form method="POST" action="<?= BASE_PATH ?>/loans/create" id="loanForm" data-testid="loan-create-form">
     <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+    <input type="hidden" name="loan_type" id="loanType" value="event">
     <div class="row g-3">
         <div class="col-lg-5">
-            <div class="card-sb">
+            <!-- Pemilih jenis peminjaman -->
+            <div class="loan-type-toggle mb-3" role="tablist" data-testid="loan-type-toggle">
+                <button type="button" class="lt-btn active" data-type="event" data-testid="lt-event">
+                    <i class="fa-solid fa-calendar-day"></i> Untuk Acara
+                </button>
+                <button type="button" class="lt-btn" data-type="opd" data-testid="lt-opd">
+                    <i class="fa-solid fa-building-columns"></i> Untuk OPD
+                </button>
+            </div>
+
+            <!-- ===== Blok ACARA ===== -->
+            <div class="card-sb" id="blockEvent" data-testid="block-event">
                 <div class="card-title">Rincian Acara</div>
                 <div class="mb-3">
                     <label class="form-label">Nama Acara *</label>
-                    <input type="text" name="event_name" class="form-control" required placeholder="mis. Live Streaming Rapat Paripurna" data-testid="input-event-name">
+                    <input type="text" name="event_name" class="form-control" data-req-event required placeholder="mis. Live Streaming Rapat Paripurna" data-testid="input-event-name">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Lokasi Acara</label>
@@ -47,17 +59,67 @@
                 <div class="row g-2">
                     <div class="col-6">
                         <label class="form-label">Tanggal Mulai *</label>
-                        <input type="date" name="start_date" id="start_date" class="form-control" required min="<?= date('Y-m-d') ?>" data-testid="input-start-date">
+                        <input type="date" name="start_date" id="start_date" class="form-control" data-req-event required min="<?= date('Y-m-d') ?>" data-testid="input-start-date">
                     </div>
                     <div class="col-6">
                         <label class="form-label">Tanggal Selesai *</label>
-                        <input type="date" name="end_date" id="end_date" class="form-control" required min="<?= date('Y-m-d') ?>" data-testid="input-end-date">
+                        <input type="date" name="end_date" id="end_date" class="form-control" data-req-event required min="<?= date('Y-m-d') ?>" data-testid="input-end-date">
                     </div>
                     <div class="col-6">
                         <label class="form-label">Jam Acara</label>
                         <input type="time" name="start_time" class="form-control" data-testid="input-start-time">
                     </div>
                 </div>
+            </div>
+
+            <!-- ===== Blok OPD ===== -->
+            <div class="card-sb" id="blockOpd" style="display:none;" data-testid="block-opd">
+                <div class="card-title">Rincian Kebutuhan OPD</div>
+                <div class="hint-box">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <div>Barang untuk OPD dikeluarkan <strong>tanpa batas waktu</strong>. Tanggal keluar dicatat hari ini, dan alat tetap tercatat terpakai sampai dikembalikan lewat <strong>penyerahan aset</strong> (mis. bila rusak).</div>
+                </div>
+                <?php $opd = opd_options(); ?>
+                <div class="mb-3">
+                    <label class="form-label">Nama OPD *</label>
+                    <?php if (!empty($opd)): ?>
+                        <select name="opd_name" class="form-select" data-req-opd disabled data-testid="input-opd-name">
+                            <option value="">— Pilih OPD —</option>
+                            <?php foreach ($opd as $grp => $items): ?>
+                                <?php if (is_array($items)): ?>
+                                    <optgroup label="<?= e((string)$grp) ?>">
+                                        <?php foreach ($items as $o): ?><option value="<?= e($o) ?>"><?= e($o) ?></option><?php endforeach; ?>
+                                    </optgroup>
+                                <?php else: ?>
+                                    <option value="<?= e($items) ?>"><?= e($items) ?></option>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php else: ?>
+                        <input type="text" name="opd_name" class="form-control" data-req-opd disabled placeholder="mis. Dinas Pendidikan Kabupaten Tangerang" data-testid="input-opd-name">
+                        <div class="form-text">Ketik nama OPD tujuan. Daftar pilihan menyusul setelah data resmi tersedia.</div>
+                    <?php endif; ?>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tujuan / Keperluan</label>
+                    <textarea name="opd_purpose" rows="3" class="form-control" disabled placeholder="Jelaskan singkat kebutuhan / penempatan alat di OPD" data-testid="input-opd-purpose"></textarea>
+                </div>
+                <?php if (!is_personal_borrower() && !empty($itStaff)): ?>
+                <div class="mb-3">
+                    <label class="form-label">Personel yang Dilibatkan dalam Instalasi</label>
+                    <div class="border rounded-3 p-2" style="max-height:180px;overflow-y:auto;" data-testid="opd-participants-box">
+                        <?php foreach ($itStaff as $st): ?>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="participant_ids[]" value="<?= (int)$st['id'] ?>" id="opdpart<?= (int)$st['id'] ?>" disabled data-testid="opd-participant-<?= (int)$st['id'] ?>">
+                                <label class="form-check-label" for="opdpart<?= (int)$st['id'] ?>">
+                                    <?= e($st['name']) ?><?php if (!empty($st['unit_kerja'])): ?> <span class="text-slate small">· <?= e($st['unit_kerja']) ?></span><?php endif; ?>
+                                </label>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="form-text">Boleh dikosongkan bila tidak ada personel yang perlu ikut memasang.</div>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -176,8 +238,35 @@ async function refreshAvail() {
         }
     });
 }
-document.getElementById('start_date').addEventListener('change', refreshAvail);
-document.getElementById('end_date').addEventListener('change', refreshAvail);
+document.getElementById('start_date')?.addEventListener('change', refreshAvail);
+document.getElementById('end_date')?.addEventListener('change', refreshAvail);
+
+// ── Pemilih jenis: Untuk Acara / Untuk OPD ────────────────────────────────────
+// Kunci: field di blok yang TERSEMBUNYI di-disable. Field yang required tapi
+// tak terlihat akan menggagalkan submit; field disabled juga tidak ikut terkirim,
+// jadi event_name & opd_name tidak pernah bertabrakan.
+(function () {
+    const hidden = document.getElementById('loanType');
+    const blocks = { event: document.getElementById('blockEvent'), opd: document.getElementById('blockOpd') };
+    const buttons = document.querySelectorAll('.lt-btn');
+
+    function setType(type) {
+        hidden.value = type;
+        Object.entries(blocks).forEach(([k, el]) => {
+            if (!el) return;
+            const on = k === type;
+            el.style.display = on ? '' : 'none';
+            // Nyalakan/matikan seluruh kontrol di blok agar hanya yang aktif terkirim.
+            el.querySelectorAll('input, select, textarea').forEach(c => { c.disabled = !on; });
+            // `required` hanya berlaku untuk field yang memang wajib di jenis ini.
+            el.querySelectorAll('[data-req-' + k + ']').forEach(c => { if (on) c.setAttribute('required', ''); });
+            el.querySelectorAll('[data-req-' + (k === 'event' ? 'opd' : 'event') + ']').forEach(c => c.removeAttribute('required'));
+        });
+        buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
+    }
+    buttons.forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
+    setType('event');
+})();
 
 // Alat yang dicentang otomatis pindah ke atas daftar (checked-first, urutan stabil).
 function reorderCheckedAssets() {

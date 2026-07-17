@@ -413,6 +413,23 @@ function unit_kerja_options(): array {
     ];
 }
 
+/**
+ * Daftar OPD Kabupaten Tangerang untuk dropdown peminjaman "Untuk OPD".
+ * SEMENTARA kosong — menunggu daftar resmi dari Diskominfo. Selama kosong, form
+ * OPD menampilkan isian teks bebas sebagai gantinya (lihat views/loans/create.php),
+ * jadi fiturnya tetap bisa dipakai tanpa mengarang nama instansi.
+ *
+ * Kalau diisi, boleh dikelompokkan: ['Dinas' => [...], 'Kecamatan' => [...]]
+ * akan dirender sebagai <optgroup>. Daftar rata (['A','B']) juga didukung.
+ */
+function opd_options(): array {
+    return [
+        // 'Dinas' => ['Dinas Komunikasi dan Informatika', ...],
+        // 'Badan' => [...],
+        // 'Kecamatan' => [...],
+    ];
+}
+
 function role_label(string $role): string {
     return [
         'superadmin' => 'Super Admin',
