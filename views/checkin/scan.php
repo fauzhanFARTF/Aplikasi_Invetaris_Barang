@@ -87,7 +87,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"
     onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';s.onerror=function(){var s2=document.createElement('script');s2.src='https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js';document.head.appendChild(s2);};document.head.appendChild(s);"></script>
-<script src="<?= ASSET_PREFIX ?>/assets/js/scanner.js"></script>
+<script src="<?= asset_url("/assets/js/scanner.js") ?>"></script>
 <script>
 const loanId = <?= (int)$loan['id'] ?>;
 const csrf = "<?= e(Auth::csrfToken()) ?>";
