@@ -77,6 +77,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     z-index: 10;
 }
 .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border: none; }
+/* Kanvas partikel sebagai latar sidebar. position: sticky (bukan absolute) supaya
+   tetap menempel di area yang terlihat ketika daftar menu digulir — kalau absolute,
+   partikelnya ikut tergulir dan menyisakan area kosong. margin-bottom negatif
+   membuatnya tidak memakan ruang di flex column. */
+.sidebar #particles-sidebar {
+    position: sticky; top: 0; height: 100vh; margin-bottom: -100vh;
+    z-index: 0; pointer-events: none; flex: 0 0 auto;
+}
+.sidebar > *:not(#particles-sidebar) { position: relative; z-index: 1; }
 .sidebar .brand { display: flex; align-items: center; gap: 12px; padding: 8px 10px 22px; }
 .sidebar .brand-mark {
     width: 42px; height: 42px; border-radius: 12px;
@@ -442,10 +451,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
    lebar sidebar sudah benar sebelum halaman tergambar (tidak berkedip).
    Semua aturan di bawah hanya berlaku >900px; di mobile sidebar tetap
    off-canvas seperti biasa dan tombol ciut disembunyikan. */
+/* Punya baris sendiri di bawah brand, rata kanan. Sempat ikut baris brand dengan
+   margin-left:auto — tombol ini memakan ~44px dan membuat "Diskominfo · Kab.
+   Tangerang" pecah dari 2 baris jadi 3. Diposisikan absolut pun tidak bisa:
+   tombolnya lalu menimpa tulisan itu. */
 .sidebar-toggle {
-    width: 32px; height: 32px; border-radius: 9px; border: 0; flex: 0 0 auto;
+    width: 32px; height: 32px; border-radius: 9px; border: 0;
     background: rgba(255,255,255,0.1); color: #D6E4F7; cursor: pointer;
-    display: grid; place-items: center; font-size: 13px; margin-left: auto;
+    display: grid; place-items: center; font-size: 13px;
+    margin: -10px 0 6px auto; flex: 0 0 auto;
     transition: background 160ms var(--ease), color 160ms var(--ease);
 }
 .sidebar-toggle:hover { background: rgba(255,255,255,0.2); color: #fff; }
@@ -462,7 +476,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
         position: relative; /* jangkar untuk tooltip */
     }
     html.sb-collapsed .sidebar .nav-item:hover { transform: none; }
-    html.sb-collapsed .sidebar-toggle { margin: 0; }
+    html.sb-collapsed .sidebar-toggle { margin: -6px auto 6px; } /* di rail sempit: ke tengah */
     /* Label disembunyikan; nama menu muncul lewat atribut title yang dipasang JS.
        Tooltip ber-CSS sengaja TIDAK dipakai: .sidebar punya overflow-y auto, yang
        memaksa overflow-x ikut memotong, sehingga tooltip di samping ikon akan
