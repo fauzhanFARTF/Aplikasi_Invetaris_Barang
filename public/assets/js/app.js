@@ -49,8 +49,62 @@ document.addEventListener('DOMContentLoaded', () => {
         const collapsed = document.documentElement.classList.toggle('sb-collapsed');
         try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
         syncToggle();
+        refreshSidebarParticles();
     });
     syncToggle();
+
+    // ── Partikel latar sidebar ────────────────────────────────────────────────
+    // Aturan ringannya sama dengan halaman login: tidak jalan di layar <=900px
+    // (di sana sidebar cuma drawer yang sesekali dibuka), retina_detect off, dan
+    // tanpa interaktivitas.
+    //
+    // Bedanya: sidebar bisa diciutkan. particles.js mengunci lebar kanvas saat
+    // dibuat dan tidak menyesuaikannya ketika wadahnya berubah lebar — kanvas
+    // 264px yang tertinggal di dalam rail 76px akan membuat sidebar bisa digeser
+    // ke samping. Karena itu partikelnya dibuang saat menciut, lalu dibuat ulang
+    // saat melebar.
+    let sidebarParticlesOn = false;
+
+    const sidebarParticlesAllowed = () =>
+        document.getElementById('particles-sidebar')
+        && typeof particlesJS === 'function'
+        && window.matchMedia('(min-width: 901px)').matches
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        && !document.documentElement.classList.contains('sb-collapsed');
+
+    const destroySidebarParticles = () => {
+        if (!sidebarParticlesOn) return;
+        try {
+            (window.pJSDom || []).forEach(p => p.pJS.fn.vendors.destroypJS());
+            window.pJSDom = [];
+        } catch (e) { /* biarkan — bukan alasan untuk merusak halaman */ }
+        sidebarParticlesOn = false;
+    };
+
+    const initSidebarParticles = () => {
+        if (sidebarParticlesOn || !sidebarParticlesAllowed()) return;
+        particlesJS('particles-sidebar', {
+            particles: {
+                number: { value: 46, density: { enable: true, value_area: 900 } },
+                color: { value: ['#FFFFFF', '#FFDD87', '#F5B301'] },
+                shape: { type: 'circle' },
+                opacity: { value: 0.8, random: false, anim: { enable: false } },
+                size: { value: 2.6, random: true, anim: { enable: false } },
+                line_linked: { enable: true, distance: 130, color: '#8FB6F0', opacity: 0.28, width: 1 },
+                move: { enable: true, speed: 1.1, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false }
+            },
+            interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
+            retina_detect: false
+        });
+        sidebarParticlesOn = true;
+    };
+
+    function refreshSidebarParticles() {
+        destroySidebarParticles();
+        initSidebarParticles();
+    }
+
+    window.addEventListener('load', initSidebarParticles);
 
     // Poll unread notification count every 30s
     const bell = document.getElementById('bell-count');
