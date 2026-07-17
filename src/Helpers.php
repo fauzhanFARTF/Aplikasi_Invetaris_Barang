@@ -429,6 +429,36 @@ function is_personal_borrower(): bool {
 }
 
 /**
+ * Akun bawaan per-role yang disembunyikan dari daftar user & pilihan personel
+ * untuk semua role kecuali Super Admin. Akun-akun ini tetap bisa login dan
+ * riwayat peminjamannya tetap tampil apa adanya.
+ */
+function hidden_user_emails(): array {
+    return [
+        'superadmin@tangerangkab.go.id',
+        'admingudang@tangerangkab.go.id',
+        'staffapproval@tangerangkab.go.id',
+        'supervisor@tangerangkab.go.id',
+        'pemohon@tangerangkab.go.id',
+        'itstaff@tangerangkab.go.id',
+        'itstaffpembantumanajemenuser@tangerangkab.go.id',
+        'itstaffpembantumanajemenalat@tangerangkab.go.id',
+        'itstaffpembantumanajemenkategori@tangerangkab.go.id',
+    ];
+}
+
+/**
+ * Potongan SQL untuk menyembunyikan akun-akun di atas. Kosong bila yang login
+ * Super Admin — ia tetap melihat semuanya. $alias = alias tabel users di query
+ * pemanggil. Nilainya konstanta di kode, bukan input user.
+ */
+function hidden_users_sql(string $alias = 'u'): string {
+    if (Auth::hasRole('superadmin')) return '';
+    $list = implode(',', array_map(fn ($e) => db()->quote($e), hidden_user_emails()));
+    return " AND $alias.email NOT IN ($list)";
+}
+
+/**
  * User yang berperan IT Staff — baik sebagai peran utama (users.role) maupun
  * peran tambahan (user_roles). Sumber tunggal untuk pilihan "Personel yang
  * Dilibatkan" sekaligus validasinya saat peminjaman disimpan.
@@ -438,7 +468,7 @@ function is_personal_borrower(): bool {
  */
 function it_staff_users(?int $excludeUserId = null): array {
     $base = "SELECT u.id, u.name, u.unit_kerja FROM users u WHERE ";
-    $tail = " AND u.is_active = 1 AND u.deleted_at IS NULL ORDER BY u.name";
+    $tail = " AND u.is_active = 1 AND u.deleted_at IS NULL" . hidden_users_sql('u') . " ORDER BY u.name";
     try {
         $rows = db()->query($base . "(u.role = 'inventory_staff'
                 OR EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role = 'inventory_staff'))" . $tail)->fetchAll();

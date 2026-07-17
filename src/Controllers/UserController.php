@@ -5,7 +5,8 @@ declare(strict_types=1);
 function user_index(): void {
     Auth::requireRole('admin', 'administrator_pembantu_manajemen_user');
     $users = db()->query("SELECT u.*, (SELECT GROUP_CONCAT(ur.role SEPARATOR ',') FROM user_roles ur WHERE ur.user_id = u.id) AS extra_roles
-                          FROM users u WHERE u.deleted_at IS NULL ORDER BY u.updated_at DESC, u.id DESC")->fetchAll();
+                          FROM users u WHERE u.deleted_at IS NULL" . hidden_users_sql('u') . "
+                          ORDER BY u.updated_at DESC, u.id DESC")->fetchAll();
     layout('main', 'users/index', ['title' => 'Manajemen User', 'users' => $users, 'currentPath' => '/users']);
 }
 
