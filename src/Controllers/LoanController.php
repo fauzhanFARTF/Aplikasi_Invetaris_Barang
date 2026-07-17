@@ -287,7 +287,7 @@ function loan_berita_acara(string $uuid): void {
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
 
-    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number
+    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number, a.is_consumable
                                FROM loan_items li JOIN assets a ON a.id = li.asset_id
                                WHERE li.loan_id = ? ORDER BY a.name");
     $itemsStmt->execute([$id]);
@@ -297,8 +297,14 @@ function loan_berita_acara(string $uuid): void {
     $partStmt->execute([$id]);
     $participants = $partStmt->fetchAll();
 
+    // OPD memakai Berita Acara Serah Terima Barang (pihak: Diskominfo → instansi);
+    // acara tetap memakai Berita Acara Keluar (peminjam & admin gudang).
     log_audit('loan.berita_acara', 'loan', $id);
-    include APP_ROOT . '/views/loans/berita_acara.php';
+    if (($loan['loan_type'] ?? 'event') === 'opd') {
+        include APP_ROOT . '/views/loans/bast_opd.php';
+    } else {
+        include APP_ROOT . '/views/loans/berita_acara.php';
+    }
 }
 
 function loan_item_remove(string $uuid, string $itemId): void {
