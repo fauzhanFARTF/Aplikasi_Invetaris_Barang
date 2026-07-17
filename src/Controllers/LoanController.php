@@ -195,8 +195,9 @@ function loan_show(string $uuid): void {
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT . '/views/errors/404.php'; return; }
 
-    // Role authorization: pemohon & IT Staff hanya bisa melihat peminjaman miliknya
-    if (role_is_requester() && (int)$loan['requester_id'] !== Auth::id()) {
+    // Personel Luar hanya bisa melihat peminjaman miliknya; IT Staff boleh melihat
+    // semua acara yang tampil di kartu jadwal. Lihat can_view_loan().
+    if (!can_view_loan((int) $loan['requester_id'])) {
         http_response_code(403); include APP_ROOT . '/views/errors/403.php'; return;
     }
 
