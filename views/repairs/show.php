@@ -18,7 +18,7 @@
                 <tr><td class="text-slate">Status</td><td><?= status_badge($repair['status']) ?></td></tr>
                 <tr><td class="text-slate">Kode Repair</td><td class="text-mono"><?= e($repair['repair_code']) ?></td></tr>
                 <tr><td class="text-slate">Aset</td><td><?= e($repair['asset_name']) ?> (<?= e($repair['asset_code']) ?>)</td></tr>
-                <tr><td class="text-slate">No. BMN</td><td class="text-mono"><?= e($repair['bmn_number']) ?></td></tr>
+                <tr><td class="text-slate">No. BMD</td><td class="text-mono"><?= e($repair['bmn_number']) ?></td></tr>
                 <tr><td class="text-slate">Brand / Model</td><td><?= e(trim($repair['brand'].' '.$repair['model'])) ?: '—' ?></td></tr>
                 <tr><td class="text-slate">Serial</td><td class="text-mono"><?= e($repair['serial_number'] ?: '—') ?></td></tr>
                 <tr><td class="text-slate">Loan Sumber</td><td><?= e($repair['loan_code'] ?: '—') ?><?= $repair['requester_name'] ? ' · '.e($repair['requester_name']) : '' ?></td></tr>
