@@ -153,7 +153,26 @@
             <?php endforeach; endif; ?>
         </div>
         <?php endif; // showSchedule ?>
-        <div class="card-sb<?= $showSchedule ? ' mt-3' : '' ?>">
+
+        <?php if (!empty($opdOut)): ?>
+        <div class="card-sb<?= $showSchedule ? ' mt-3' : '' ?>" data-testid="card-opd-out">
+            <div class="card-title mb-2"><i class="fa-solid fa-building-columns me-2 text-slate"></i>Barang Keluar ke OPD</div>
+            <div class="text-slate small mb-2" style="margin-top:-4px;">Dipinjam tanpa batas waktu — kembali lewat penyerahan aset bila rusak.</div>
+            <?php foreach ($opdOut as $l): ?>
+                <div class="d-flex align-items-start justify-content-between py-2 border-bottom gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-mono"><a href="<?= BASE_PATH ?>/loans/<?= e($l['uuid']) ?>"><?= e($l['loan_code']) ?></a></div>
+                        <div class="fw-semibold small"><?= e($l['opd_name']) ?></div>
+                        <div class="text-slate small"><i class="fa-solid fa-boxes-stacked me-1"></i><?= (int)$l['item_count'] ?> alat · keluar <?= fmt_date($l['start_date']) ?></div>
+                        <div class="text-slate small"><i class="fa-solid fa-user me-1"></i><?= e($l['requester_name']) ?></div>
+                    </div>
+                    <span class="badge bg-info text-dark">Di OPD</span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+        <div class="card-sb<?= ($showSchedule || !empty($opdOut)) ? ' mt-3' : '' ?>">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="card-title mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-slate"></i>Perbaikan Aktif</div>
                 <?php if (role_is('admin_gudang','admin')): ?>

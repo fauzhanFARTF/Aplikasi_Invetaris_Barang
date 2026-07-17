@@ -1,8 +1,12 @@
 <?php $user = Auth::user(); ?>
 <div class="page-header">
     <div>
-        <h1>Peminjaman <span class="text-mono text-slate" style="font-size:16px;"><?= e($loan['loan_code']) ?></span></h1>
-        <p class="subtitle"><?= e($loan['event_name']) ?></p>
+        <h1>Peminjaman <span class="text-mono text-slate" style="font-size:16px;"><?= e($loan['loan_code']) ?></span>
+            <?php if (($loan['loan_type'] ?? 'event') === 'opd'): ?>
+                <span class="badge bg-info text-dark align-middle" style="font-size:11px;">Untuk OPD</span>
+            <?php endif; ?>
+        </h1>
+        <p class="subtitle"><?php if (($loan['loan_type'] ?? 'event') === 'opd'): ?>OPD: <?php endif; ?><?= e($loan['event_name']) ?></p>
         <?= audit_trail_info($loan) ?>
     </div>
     <div class="d-flex gap-2">

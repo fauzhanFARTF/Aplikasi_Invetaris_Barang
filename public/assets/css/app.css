@@ -627,3 +627,21 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     .auth-card { padding: 26px; border-radius: 16px; }
     .btn-group.w-100 .btn { font-size: 13px; padding-left: 6px; padding-right: 6px; }
 }
+
+/* Pemilih jenis peminjaman (Untuk Acara / Untuk OPD) di form /loans/create. */
+.loan-type-toggle {
+    display: flex; gap: 6px; padding: 5px;
+    background: var(--sb-surface-3); border: 1px solid var(--sb-line);
+    border-radius: var(--sb-radius-sm);
+}
+.loan-type-toggle .lt-btn {
+    flex: 1; border: 0; background: transparent; cursor: pointer;
+    padding: 9px 12px; border-radius: var(--sb-radius-xs);
+    font-family: inherit; font-size: 13.5px; font-weight: 700; color: var(--sb-ink-2);
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    transition: background 150ms var(--ease), color 150ms var(--ease), box-shadow 150ms var(--ease);
+}
+.loan-type-toggle .lt-btn:hover { color: var(--sb-ink); }
+.loan-type-toggle .lt-btn.active {
+    background: var(--sb-surface); color: var(--sb-navy); box-shadow: var(--sb-shadow-sm);
+}

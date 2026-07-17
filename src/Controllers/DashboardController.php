@@ -31,6 +31,23 @@ function dashboard_index(): void {
     // Recent activity
     $recentDamage = $pdo->query("SELECT r.*, a.name AS asset_name, a.bmn_number FROM repairs r JOIN assets a ON a.id = r.asset_id WHERE r.status != 'Completed' AND r.deleted_at IS NULL ORDER BY r.created_at DESC LIMIT 5")->fetchAll();
 
+    // Barang yang sedang keluar ke OPD (tanpa batas waktu). Belum dikembalikan =
+    // peminjaman OPD yang masih Approved/CheckedOut. Ditampilkan ke pengelola,
+    // bukan ke Personel Luar. Kolom loan_type mungkin belum ada saat migrasi awal.
+    $opdOut = [];
+    if (!is_personal_borrower()) {
+        try {
+            $stmt = $pdo->query("SELECT l.uuid, l.loan_code, l.event_name AS opd_name, l.event_location, l.start_date,
+                                        u.name AS requester_name,
+                                        (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id) AS item_count
+                                 FROM loans l JOIN users u ON u.id = l.requester_id
+                                 WHERE l.loan_type = 'opd' AND l.status IN ('Approved','CheckedOut')
+                                   AND l.deleted_at IS NULL
+                                 ORDER BY l.start_date DESC, l.id DESC LIMIT 20");
+            $opdOut = $stmt->fetchAll();
+        } catch (Throwable $e) { $opdOut = []; }
+    }
+
     // Kartu jadwal tidak ditampilkan untuk Personel Luar (pemohon murni) — peminjamannya
     // bersifat pribadi, jadi tidak perlu melihat agenda seluruh dinas. Query-nya pun
     // dilewati agar datanya tidak ikut terkirim ke halaman.
@@ -79,6 +96,7 @@ function dashboard_index(): void {
         'scheduleLoans' => $scheduleLoans,
         'pastLoans' => $pastLoans,
         'showSchedule' => $showSchedule,
+        'opdOut' => $opdOut,
         'currentPath' => '/dashboard',
     ]);
 }
