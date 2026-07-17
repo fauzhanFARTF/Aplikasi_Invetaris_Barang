@@ -55,14 +55,22 @@ function google_route_profile(array $res, array $profile): void
             redirect('/daftar/menunggu');
 
         case 'rejected':
+            unset($_SESSION['google_pending_profile']);
             flash('error', 'Pendaftaran Anda tidak disetujui oleh Administrator. Silakan hubungi Diskominfo.');
             redirect('/login');
 
         case 'inactive':
+            unset($_SESSION['google_pending_profile']);
             flash('error', 'Akun Anda dinonaktifkan. Silakan hubungi Administrator.');
             redirect('/login');
 
+        case 'deleted':
+            unset($_SESSION['google_pending_profile']);
+            flash('error', 'Akun dengan email ini pernah terdaftar lalu dihapus, jadi tidak bisa mendaftar ulang. Silakan hubungi Administrator untuk memulihkannya.');
+            redirect('/login');
+
         default:
+            unset($_SESSION['google_pending_profile']);
             flash('error', $res['message'] ?? 'Login dengan Google gagal.');
             redirect('/login');
     }
@@ -72,6 +80,13 @@ function register_form(): void
 {
     $profile = $_SESSION['google_pending_profile'] ?? null;
     if (!$profile) { flash('error', 'Silakan masuk dengan Google terlebih dahulu.'); redirect('/login'); }
+
+    // Saring ulang saat form DIBUKA, bukan hanya saat dikirim. Kalau emailnya
+    // ternyata sudah punya akun (mis. didaftarkan admin sementara tab ini nganggur),
+    // jangan biarkan orangnya mengisi form panjang untuk kemudian ditolak.
+    $res = Google::resolveProfile($profile);
+    if ($res['action'] !== 'register') { google_route_profile($res, $profile); return; }
+
     layout('auth', 'auth/register', ['title' => 'Lengkapi Pendaftaran', 'profile' => $profile]);
 }
 
@@ -89,12 +104,15 @@ function register_submit(): void
     if ($name === '')                            { flash('error', 'Nama lengkap wajib diisi.'); redirect('/daftar'); }
     if (!in_array($role, _register_roles(), true)) { flash('error', 'Role yang dipilih tidak valid.'); redirect('/daftar'); }
 
-    $pdo = db();
-    // Email/google_id bisa saja sudah terdaftar bila form dikirim dua kali.
-    $dup = $pdo->prepare("SELECT id FROM users WHERE email = ? OR google_id = ? LIMIT 1");
-    $dup->execute([$profile['email'], $profile['sub']]);
-    if ($dup->fetch()) { redirect('/daftar/menunggu'); }
+    // Saring ulang tepat sebelum menyimpan. Aturannya sama persis dengan yang
+    // dipakai saat form dibuka, jadi tidak mungkin berbeda pendapat. Ini yang
+    // menangkap form yang dikirim dua kali maupun akun yang baru dibuat admin
+    // selagi form terbuka — dan mengantar ke pesan yang tepat sesuai statusnya,
+    // bukan asal bilang "menunggu verifikasi".
+    $res = Google::resolveProfile($profile);
+    if ($res['action'] !== 'register') { google_route_profile($res, $profile); return; }
 
+    $pdo = db();
     try {
         // password_hash NULL = akun ini hanya bisa masuk lewat Google.
         // reg_status 'pending' = belum bisa login sampai Administrator menyetujui.
@@ -112,8 +130,21 @@ function register_submit(): void
             "$name ({$profile['email']}) mendaftar sebagai " . role_label($role) . '. Tinjau di menu Verifikasi Pendaftaran.',
             '/registrations');
         redirect('/daftar/menunggu');
+    } catch (PDOException $e) {
+        // Jaring terakhir: dua permintaan bersamaan bisa lolos pengecekan di atas
+        // dan baru bentrok di level database (users.email & users.google_id UNIQUE).
+        // Perlakukan sebagai "sudah terdaftar", bukan kegagalan — dan jangan
+        // menampilkan pesan SQL mentah ke pengguna.
+        if (($e->errorInfo[0] ?? '') === '23000') {
+            unset($_SESSION['google_pending_profile']);
+            redirect('/daftar/menunggu');
+        }
+        error_log('register_google gagal: ' . $e->getMessage());
+        flash('error', 'Pendaftaran gagal disimpan. Silakan coba lagi.');
+        redirect('/daftar');
     } catch (Throwable $e) {
-        flash('error', 'Pendaftaran gagal: ' . $e->getMessage());
+        error_log('register_google gagal: ' . $e->getMessage());
+        flash('error', 'Pendaftaran gagal disimpan. Silakan coba lagi.');
         redirect('/daftar');
     }
 }

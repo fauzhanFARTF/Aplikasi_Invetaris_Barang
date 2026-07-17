@@ -75,41 +75,57 @@ class Google
      *   ['action' => 'pending']                    sudah daftar, menunggu admin
      *   ['action' => 'rejected']                   pendaftarannya ditolak
      *   ['action' => 'inactive']                   akunnya dinonaktifkan admin
+     *   ['action' => 'deleted']                    akunnya sudah dihapus admin
      *   ['action' => 'error', 'message' => '...']
+     *
+     * 'register' HANYA dikembalikan bila benar-benar tidak ada akun apa pun dengan
+     * email/google_id tersebut — termasuk yang sudah di-soft-delete. Ini yang
+     * mencegah pendaftaran kedua: satu email = satu akun.
      */
     public static function resolveProfile(array $profile): array
     {
         if (!($profile['email_verified'] ?? false)) {
             return ['action' => 'error', 'message' => 'Email Google Anda belum terverifikasi oleh Google.'];
         }
-        $pdo = db();
 
-        // Cocokkan lewat google_id dulu; kalau belum ada, lewat email. Pencocokan
-        // via email aman karena Google sudah memastikan email itu milik yang login
-        // (email_verified dicek di atas) — inilah yang menyambungkan akun lama
-        // ber-password ke tombol Google tanpa perlu pendaftaran ulang.
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE google_id = ? AND deleted_at IS NULL LIMIT 1");
-        $stmt->execute([$profile['sub']]);
-        $user = $stmt->fetch();
-
-        if (!$user) {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1");
-            $stmt->execute([$profile['email']]);
-            $user = $stmt->fetch();
-            if ($user) {
-                $pdo->prepare("UPDATE users SET google_id = ? WHERE id = ?")
-                    ->execute([$profile['sub'], (int) $user['id']]);
-                $user['google_id'] = $profile['sub'];
-            }
-        }
-
+        $user = self::findAccount($profile);
         if (!$user) return ['action' => 'register', 'profile' => $profile];
+
+        // Akun terhapus tidak boleh mendaftar ulang diam-diam: email & google_id
+        // UNIQUE, jadi INSERT-nya pasti gagal. Tanpa cabang ini, orangnya mengisi
+        // form panjang lalu tersangkut di "menunggu verifikasi" selamanya —
+        // padahal barisnya tidak pernah dibuat dan admin tidak melihat apa pun.
+        if (!empty($user['deleted_at'])) return ['action' => 'deleted'];
+
+        // Sambungkan google_id ke akun lama ber-password yang emailnya sama. Aman
+        // karena Google sudah memastikan email itu milik yang login (email_verified
+        // dicek di atas) — akun lama jadi bisa memakai tombol Google tanpa daftar ulang.
+        if (empty($user['google_id'])) {
+            db()->prepare("UPDATE users SET google_id = ? WHERE id = ?")
+                ->execute([$profile['sub'], (int) $user['id']]);
+            $user['google_id'] = $profile['sub'];
+        }
 
         if (($user['reg_status'] ?? 'approved') === 'pending')  return ['action' => 'pending'];
         if (($user['reg_status'] ?? 'approved') === 'rejected') return ['action' => 'rejected'];
         if (!$user['is_active'])                                return ['action' => 'inactive'];
 
         return ['action' => 'login', 'user' => $user];
+    }
+
+    /**
+     * Akun yang cocok dengan profil Google — lewat google_id maupun email, dan
+     * SENGAJA termasuk baris yang sudah di-soft-delete. Sumber tunggal penyaring
+     * pendaftaran ganda, dipakai baik saat form dibuka maupun saat dikirim.
+     *
+     * google_id diprioritaskan bila keduanya cocok ke baris berbeda.
+     */
+    public static function findAccount(array $profile): ?array
+    {
+        $stmt = db()->prepare("SELECT * FROM users WHERE google_id = ? OR email = ?
+                               ORDER BY (google_id = ?) DESC, id ASC LIMIT 1");
+        $stmt->execute([$profile['sub'], $profile['email'], $profile['sub']]);
+        return $stmt->fetch() ?: null;
     }
 
     // ── HTTP ──────────────────────────────────────────────────────────────────
