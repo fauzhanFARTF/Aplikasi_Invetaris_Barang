@@ -420,6 +420,23 @@ function role_is_requester(): bool {
 }
 
 /**
+ * Boleh membuka detail sebuah peminjaman?
+ *
+ * Kartu "Jadwal Hari Ini & Selanjutnya" dan "Jadwal yang Telah Lewat" menampilkan
+ * seluruh acara ke semua role, jadi IT Staff perlu bisa membuka isinya — mereka
+ * bekerja bersama di lapangan. Personel Luar (pemohon murni) tetap hanya bisa
+ * melihat peminjamannya sendiri karena sifatnya pribadi.
+ *
+ * Ini murni hak LIHAT. Membatalkan acara / mengeluarkan alat tetap dijaga
+ * terpisah dan hanya boleh oleh pemohon acara itu sendiri atau admin.
+ */
+function can_view_loan(int $requesterId): bool {
+    if (!role_is_requester()) return true;              // admin, staff approval, gudang, pimpinan, superadmin
+    if (Auth::hasRole('inventory_staff')) return true;  // sesama IT Staff
+    return $requesterId === Auth::id();                 // Personel Luar: hanya miliknya
+}
+
+/**
  * Peminjam pribadi (pemohon murni) — peminjaman untuk keperluan pribadi tanpa
  * personel yang dilibatkan. IT Staff & peran lain tetap boleh melibatkan personel.
  */
