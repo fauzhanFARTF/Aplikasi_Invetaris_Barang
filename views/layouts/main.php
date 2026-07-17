@@ -31,7 +31,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
         <div class="brand">
             <div class="brand-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
             <div class="brand-text">
-                <div class="brand-title">SIMANTAP BMN</div>
+                <div class="brand-title">SIMANTAP</div>
                 <div class="brand-sub">Diskominfo · Kab. Tangerang</div>
             </div>
             <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Ciutkan menu" aria-expanded="true" title="Ciutkan menu" data-testid="btn-sidebar-toggle">

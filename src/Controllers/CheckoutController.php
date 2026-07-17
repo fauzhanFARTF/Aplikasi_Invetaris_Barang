@@ -56,10 +56,13 @@ function checkout_scan_submit(): void {
     if (!$loanId || !$barcode) json_response(['ok' => false, 'message' => 'Data tidak lengkap.'], 400);
 
     $pdo = db();
+    // Terima stiker lama (BMN-) maupun baru (BMD-) — lihat barcode_candidates().
+    $cand = barcode_candidates($barcode);
+    $in   = implode(',', array_fill(0, count($cand), '?'));
     $stmt = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.status AS asset_status
                             FROM loan_items li JOIN assets a ON a.id = li.asset_id
-                            WHERE li.loan_id = ? AND a.barcode = ?");
-    $stmt->execute([$loanId, $barcode]);
+                            WHERE li.loan_id = ? AND a.barcode IN ($in)");
+    $stmt->execute(array_merge([$loanId], $cand));
     $item = $stmt->fetch();
     if (!$item) json_response(['ok' => false, 'message' => "Barcode $barcode tidak ada di peminjaman ini."], 404);
     if ($item['item_status'] === 'CheckedOut') json_response(['ok' => false, 'message' => "Alat {$item['asset_name']} sudah diserahkan."], 409);

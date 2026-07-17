@@ -1,6 +1,6 @@
 <?php
 // ==============================================================
-//  SIMANTAP BMN — Entry Point
+//  SIMANTAP — Entry Point
 //  This file MUST use only PHP 5.x-compatible syntax so that
 //  older PHP versions can display a friendly upgrade message.
 // ==============================================================
@@ -16,7 +16,7 @@ if (version_compare(PHP_VERSION, '7.4.0', '<')) {
     echo 'code{background:#F1F5F9;padding:2px 6px;border-radius:4px;font-family:ui-monospace,monospace}';
     echo 'a{color:#0F172A;font-weight:600}</style></head><body>';
     echo '<h1>⚠️ PHP Anda terlalu lama</h1>';
-    echo '<p><strong>SIMANTAP BMN</strong> membutuhkan minimal <strong>PHP 7.4</strong>. ';
+    echo '<p><strong>SIMANTAP</strong> membutuhkan minimal <strong>PHP 7.4</strong>. ';
     echo 'Anda saat ini menggunakan <strong>PHP ' . $ver . '</strong>.</p>';
     echo '<div class="card"><h3 style="margin-top:0">🔧 Cara memperbaiki:</h3><ol>';
     echo '<li>Download <a href="https://www.apachefriends.org/download.html" target="_blank">XAMPP versi terbaru</a> (yang mengandung PHP 8.2+).</li>';

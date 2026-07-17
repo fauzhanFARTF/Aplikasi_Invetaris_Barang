@@ -5,7 +5,7 @@ class Mailer {
     public static function send(string $toEmail, string $toName, string $subject, string $htmlBody): bool {
         $mode = env('MAIL_MODE', 'log');
         $from = env('MAIL_FROM_EMAIL', 'noreply@diskominfo.tangerangkab.go.id');
-        $fromName = env('MAIL_FROM_NAME', 'SIMANTAP BMN');
+        $fromName = env('MAIL_FROM_NAME', 'SIMANTAP');
 
         if ($mode === 'log') {
             $dir = APP_ROOT . '/storage/emails';
