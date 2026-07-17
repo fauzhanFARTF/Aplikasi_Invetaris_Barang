@@ -48,6 +48,11 @@ define('JWT_TTL_SEC', (int) env('JWT_TTL_SEC', 60 * 60 * 8)); // 8 hours
 // Cloudflare Turnstile (CAPTCHA anti-bot di halaman login). Kosongkan untuk menonaktifkan.
 define('TURNSTILE_SITE_KEY', env('TURNSTILE_SITE_KEY', ''));
 define('TURNSTILE_SECRET_KEY', env('TURNSTILE_SECRET_KEY', ''));
+// Login dengan Google (OAuth 2.0). Kosongkan untuk menyembunyikan tombolnya.
+// Redirect URI harus didaftarkan persis sama di Google Cloud Console.
+define('GOOGLE_CLIENT_ID', env('GOOGLE_CLIENT_ID', ''));
+define('GOOGLE_CLIENT_SECRET', env('GOOGLE_CLIENT_SECRET', ''));
+define('GOOGLE_REDIRECT_URI', env('GOOGLE_REDIRECT_URI', rtrim(APP_URL, '/') . '/auth/google/callback'));
 define('DB_HOST', env('DB_HOST', '127.0.0.1'));
 define('DB_PORT', (int) env('DB_PORT', 3307));
 define('DB_NAME', env('DB_NAME', 'bmn_streaming'));

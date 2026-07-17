@@ -116,6 +116,21 @@ function run_pending_migrations(PDO $pdo): void {
             try { $pdo->exec("UPDATE user_roles SET role='administrator_pembantu_manajemen_alat' WHERE role='it_staff_pembantu'"); } catch (Throwable $e) {}
         }
 
+        // Login dengan Google + pendaftaran mandiri yang menunggu verifikasi admin.
+        if (!$pdo->query("SHOW COLUMNS FROM users LIKE 'google_id'")->fetch()) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN google_id VARCHAR(64) NULL UNIQUE AFTER email");
+            // Akun Google tidak punya password, jadi kolomnya harus boleh NULL.
+            // Auth::attempt() menolak baris ber-password NULL supaya akun Google
+            // tidak bisa ditembus lewat form email+password.
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL");
+            $pdo->exec("ALTER TABLE users ADD COLUMN reg_status ENUM('approved','pending','rejected') NOT NULL DEFAULT 'approved' AFTER is_active");
+            $pdo->exec("ALTER TABLE users ADD COLUMN verified_by BIGINT UNSIGNED NULL");
+            $pdo->exec("ALTER TABLE users ADD COLUMN verified_at DATETIME NULL");
+            // Seluruh akun yang sudah ada dianggap sudah terverifikasi — jangan
+            // sampai admin ikut terkunci oleh fitur baru ini.
+            $pdo->exec("UPDATE users SET reg_status = 'approved' WHERE reg_status IS NULL OR reg_status = ''");
+        }
+
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
         // Tambah kolom bila belum ada, lalu backfill baris yang uuid-nya NULL —
         // sekaligus jadi jaring pengaman kalau ada insert yang terlewat mengisi uuid.
