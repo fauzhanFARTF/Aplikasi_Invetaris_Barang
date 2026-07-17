@@ -37,8 +37,7 @@
             Masuk dengan Google
         </a>
         <div class="creds-hint text-center" data-testid="register-hint">
-            <div><strong>Belum punya akun?</strong> Daftar lewat tombol di atas sebagai</div>
-            <div class="reg-roles"><span>IT Staff</span><span>Personel Luar</span></div>
+            <div><strong>Belum punya akun?</strong> Daftar lewat tombol di atas.</div>
             <div class="reg-note">Pendaftaran ditinjau Administrator terlebih dahulu.</div>
         </div>
     <?php endif; ?>
