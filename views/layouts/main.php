@@ -17,6 +17,11 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
     <link rel="icon" type="image/png" sizes="16x16" href="<?= ASSET_PREFIX ?>/assets/img/favicon-16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="<?= ASSET_PREFIX ?>/assets/img/favicon-180.png">
     <link rel="shortcut icon" href="<?= ASSET_PREFIX ?>/assets/img/favicon.ico">
+    <script>
+        // Pasang kelas ciut SEBELUM halaman tergambar, supaya sidebar tidak
+        // berkedip lebar-lalu-menyempit saat pindah halaman.
+        try { if (localStorage.getItem('sidebarCollapsed') === '1') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}
+    </script>
 </head>
 <body>
 <div class="app-shell">
@@ -25,54 +30,57 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
         <button type="button" class="sidebar-close" id="sidebarClose" aria-label="Tutup menu" data-testid="btn-sidebar-close"><i class="fa-solid fa-xmark"></i></button>
         <div class="brand">
             <div class="brand-mark"><img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo Kominfo"></div>
-            <div>
+            <div class="brand-text">
                 <div class="brand-title">SIMANTAP BMN</div>
                 <div class="brand-sub">Diskominfo · Kab. Tangerang</div>
             </div>
+            <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Ciutkan menu" aria-expanded="true" title="Ciutkan menu" data-testid="btn-sidebar-toggle">
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
         </div>
 
         <div class="nav-section">Menu</div>
-        <a href="<?= BASE_PATH ?>/dashboard" class="nav-item <?= active('/dashboard', $currentPath) ?>" data-testid="nav-dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
-        <a href="<?= BASE_PATH ?>/loans" class="nav-item <?= active('/loans', $currentPath) ?>" data-testid="nav-loans"><i class="fa-solid fa-clipboard-list"></i> Peminjaman</a>
+        <a href="<?= BASE_PATH ?>/dashboard" class="nav-item <?= active('/dashboard', $currentPath) ?>" data-testid="nav-dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="<?= BASE_PATH ?>/loans" class="nav-item <?= active('/loans', $currentPath) ?>" data-testid="nav-loans"><i class="fa-solid fa-clipboard-list"></i><span>Peminjaman</span></a>
 
         <?php if (role_is('supervisor','admin')): ?>
-            <a href="<?= BASE_PATH ?>/approvals" class="nav-item <?= active('/approvals', $currentPath) ?>" data-testid="nav-approvals"><i class="fa-solid fa-check-double"></i> Approval</a>
+            <a href="<?= BASE_PATH ?>/approvals" class="nav-item <?= active('/approvals', $currentPath) ?>" data-testid="nav-approvals"><i class="fa-solid fa-check-double"></i><span>Approval</span></a>
         <?php endif; ?>
 
         <?php if (role_is('admin_gudang','admin')): ?>
             <div class="nav-section">Gudang</div>
-            <a href="<?= BASE_PATH ?>/checkout" class="nav-item <?= active('/checkout', $currentPath) ?>" data-testid="nav-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Penyerahan</a>
-            <a href="<?= BASE_PATH ?>/checkin" class="nav-item <?= active('/checkin', $currentPath) ?>" data-testid="nav-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i> Pengembalian</a>
-            <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i> Perbaikan</a>
+            <a href="<?= BASE_PATH ?>/checkout" class="nav-item <?= active('/checkout', $currentPath) ?>" data-testid="nav-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Penyerahan</span></a>
+            <a href="<?= BASE_PATH ?>/checkin" class="nav-item <?= active('/checkin', $currentPath) ?>" data-testid="nav-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i><span>Pengembalian</span></a>
+            <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i><span>Perbaikan</span></a>
         <?php endif; ?>
 
         <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan')): ?>
             <div class="nav-section">Master Data</div>
             <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_alat','pimpinan')): ?>
-                <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Alat / Aset</a>
+                <a href="<?= BASE_PATH ?>/inventory" class="nav-item <?= active('/inventory', $currentPath) ?>" data-testid="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i><span>Alat / Aset</span></a>
             <?php endif; ?>
             <?php if (role_is('admin_gudang','admin','supervisor')): ?>
-                <a href="<?= BASE_PATH ?>/packages" class="nav-item <?= active('/packages', $currentPath) ?>" data-testid="nav-packages"><i class="fa-solid fa-cubes"></i> Paket Alat</a>
+                <a href="<?= BASE_PATH ?>/packages" class="nav-item <?= active('/packages', $currentPath) ?>" data-testid="nav-packages"><i class="fa-solid fa-cubes"></i><span>Paket Alat</span></a>
             <?php endif; ?>
             <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_kategori')): ?>
-                <a href="<?= BASE_PATH ?>/categories" class="nav-item <?= active('/categories', $currentPath) ?>" data-testid="nav-categories"><i class="fa-solid fa-tags"></i> Kategori</a>
+                <a href="<?= BASE_PATH ?>/categories" class="nav-item <?= active('/categories', $currentPath) ?>" data-testid="nav-categories"><i class="fa-solid fa-tags"></i><span>Kategori</span></a>
             <?php endif; ?>
         <?php endif; ?>
 
         <?php if (role_is('admin','administrator_pembantu_manajemen_user')): ?>
             <div class="nav-section">Administrasi</div>
-            <a href="<?= BASE_PATH ?>/users" class="nav-item <?= active('/users', $currentPath) ?>" data-testid="nav-users"><i class="fa-solid fa-user-shield"></i> Manajemen User</a>
+            <a href="<?= BASE_PATH ?>/users" class="nav-item <?= active('/users', $currentPath) ?>" data-testid="nav-users"><i class="fa-solid fa-user-shield"></i><span>Manajemen User</span></a>
             <?php if (role_is('admin')): ?>
-                <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i> Riwayat Terhapus</a>
+                <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i><span>Riwayat Terhapus</span></a>
             <?php endif; ?>
         <?php endif; ?>
 
         <div class="nav-section">Akun</div>
-        <a href="<?= BASE_PATH ?>/profile" class="nav-item <?= active('/profile', $currentPath) ?>" data-testid="nav-profile"><i class="fa-solid fa-user"></i> Profil Saya</a>
+        <a href="<?= BASE_PATH ?>/profile" class="nav-item <?= active('/profile', $currentPath) ?>" data-testid="nav-profile"><i class="fa-solid fa-user"></i><span>Profil Saya</span></a>
         <form method="POST" action="<?= BASE_PATH ?>/logout" style="margin-top:8px;">
             <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
             <button type="submit" class="nav-item" style="border:0;background:transparent;width:100%;text-align:left;cursor:pointer;color:#F87171;" data-testid="nav-logout">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
+                <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Keluar</span>
             </button>
         </form>
     </aside>

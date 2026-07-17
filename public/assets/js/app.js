@@ -22,6 +22,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth <= 900) closeSidebar();
     }));
 
+    // Sidebar ciut/lebar (desktop). Kelasnya di <html> — sudah dipasang skrip
+    // inline di <head> sebelum paint, di sini tinggal mengurus tombolnya.
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const syncToggle = () => {
+        const collapsed = document.documentElement.classList.contains('sb-collapsed');
+        const icon = sidebarToggle?.querySelector('i');
+        if (icon) icon.className = collapsed ? 'fa-solid fa-angles-right' : 'fa-solid fa-angles-left';
+        if (sidebarToggle) {
+            const label = collapsed ? 'Lebarkan menu' : 'Ciutkan menu';
+            sidebarToggle.setAttribute('aria-label', label);
+            sidebarToggle.setAttribute('title', label);
+            sidebarToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        }
+        // Saat ciut hanya ikon yang terlihat, jadi nama menu dipindah ke title
+        // agar tetap muncul saat kursor diarahkan. Saat lebar title dilepas lagi
+        // supaya tidak ada tooltip kembar di atas label yang sudah terbaca.
+        sidebar?.querySelectorAll('.nav-item').forEach(el => {
+            const span = el.querySelector('span');
+            if (!span) return;
+            if (collapsed) el.setAttribute('title', span.textContent.trim());
+            else el.removeAttribute('title');
+        });
+    };
+    sidebarToggle?.addEventListener('click', () => {
+        const collapsed = document.documentElement.classList.toggle('sb-collapsed');
+        try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+        syncToggle();
+    });
+    syncToggle();
+
     // Poll unread notification count every 30s
     const bell = document.getElementById('bell-count');
     if (bell) {
