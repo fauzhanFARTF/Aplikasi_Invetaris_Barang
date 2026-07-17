@@ -24,6 +24,11 @@
         .ba-sign .space { height: 70px; }
         .ba-sign .nm { font-weight: 700; text-decoration: underline; }
         .ba-note { margin-top: 22px; font-size: 11px; color: #475569; }
+        /* Halaman 2 — lembar periksa. Selalu mulai di halaman baru saat dicetak. */
+        .ba-page + .ba-page { page-break-before: always; }
+        table.checklist td { padding: 10px 7px; }
+        .cek-box { display: inline-block; width: 13px; height: 13px; border: 1.5px solid #0F172A; border-radius: 2px; }
+        .ba-hint { font-size: 11px; color: #475569; margin: 6px 0 2px; }
         @media print { .no-print { display: none !important; } body { background: #fff; } }
     </style>
 </head>
@@ -95,6 +100,88 @@
 
     <div class="ba-note">
         Dokumen ini dicetak dari Sistem Informasi Manajemen Aset (SIMANTAP BMN) Diskominfo Kabupaten Tangerang pada <?= e(date('d/m/Y H:i')) ?> WIB.
+    </div>
+</div>
+
+<!-- Halaman 2 — lembar periksa untuk dibawa & dicentang petugas di lokasi acara. -->
+<div class="ba-page">
+    <div class="ba-head">
+        <img src="<?= ASSET_PREFIX ?>/assets/img/logo-kominfo-icon.png" alt="Logo" class="logo">
+        <div class="sub">PEMERINTAH KABUPATEN TANGERANG</div>
+        <h1>DINAS KOMUNIKASI DAN INFORMATIKA</h1>
+        <div class="sub">Smart Building — Diskominfo Kabupaten Tangerang</div>
+    </div>
+
+    <div class="ba-title">
+        <h2>DAFTAR PERIKSA ALAT DI LAPANGAN</h2>
+        <div class="no">Lampiran Berita Acara Nomor: <?= e($loan['loan_code']) ?></div>
+    </div>
+
+    <table class="ba-meta" style="margin-top:14px;">
+        <tr><td>Nama Acara</td><td>: <strong><?= e($loan['event_name']) ?></strong></td></tr>
+        <tr><td>Tempat / Lokasi</td><td>: <strong><?= e($loan['event_location'] ?: '—') ?></strong></td></tr>
+        <tr><td>Tanggal Kegiatan</td><td>: <?= fmt_date($loan['start_date']) ?> s/d <?= fmt_date($loan['end_date']) ?></td></tr>
+        <tr><td>Jam Acara</td><td>: <?= !empty($loan['start_time']) ? e(substr((string)$loan['start_time'],0,5)) . ' WIB' : '—' ?></td></tr>
+        <tr><td>Penanggungjawab</td><td>: <strong><?= e($loan['requester_name']) ?></strong><?= $loan['requester_phone'] ? ' ('.e($loan['requester_phone']).')' : '' ?></td></tr>
+        <?php if (!empty($participants)): ?>
+            <tr><td>Personel yang Terlibat</td><td>: <?= e(implode(', ', array_column($participants, 'name'))) ?></td></tr>
+        <?php endif; ?>
+        <?php if (!empty($loan['purpose'])): ?><tr><td>Tujuan / Keperluan</td><td>: <?= nl2br(e($loan['purpose'])) ?></td></tr><?php endif; ?>
+    </table>
+
+    <div class="ba-hint">
+        Centang kolom <strong>Berangkat</strong> saat alat dimuat menuju lokasi, dan kolom <strong>Kembali</strong> saat alat dikemas untuk dibawa pulang.
+        Tulis di kolom Keterangan bila ada alat yang kurang, rusak, atau tertinggal.
+    </div>
+
+    <table class="items checklist">
+        <thead><tr>
+            <th style="width:30px;">No</th>
+            <th>Nama Alat</th>
+            <th>Kode Aset</th>
+            <th>Brand / Model</th>
+            <th>Serial Number</th>
+            <th style="width:62px;text-align:center;">Berangkat</th>
+            <th style="width:56px;text-align:center;">Kembali</th>
+            <th style="width:110px;">Keterangan</th>
+        </tr></thead>
+        <tbody>
+            <?php foreach ($items as $i => $it): ?>
+                <tr>
+                    <td><?= $i + 1 ?></td>
+                    <td><?= e($it['asset_name']) ?></td>
+                    <td><?= e($it['asset_code']) ?></td>
+                    <td><?= e(trim(($it['brand'] ?? '').' '.($it['model'] ?? ''))) ?: '—' ?></td>
+                    <td><?= e($it['serial_number'] ?: '—') ?></td>
+                    <td style="text-align:center;"><span class="cek-box"></span></td>
+                    <td style="text-align:center;"><span class="cek-box"></span></td>
+                    <td></td>
+                </tr>
+            <?php endforeach; if (empty($items)): ?>
+                <tr><td colspan="8" style="text-align:center;">Tidak ada alat.</td></tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <p style="margin-top:10px;font-size:12px;">
+        Jumlah alat yang harus diperiksa: <strong><?= count($items) ?> item</strong>.
+    </p>
+
+    <div class="ba-sign">
+        <div class="box">
+            <div>Diperiksa di lokasi oleh,<br><strong>Petugas / Personel</strong></div>
+            <div class="space"></div>
+            <div class="nm">(…………………………)</div>
+        </div>
+        <div class="box">
+            <div>Mengetahui,<br><strong>Penanggungjawab</strong></div>
+            <div class="space"></div>
+            <div class="nm"><?= e($loan['requester_name']) ?></div>
+        </div>
+    </div>
+
+    <div class="ba-note">
+        Lembar ini adalah lampiran dari Berita Acara <?= e($loan['loan_code']) ?> — dicetak pada <?= e(date('d/m/Y H:i')) ?> WIB.
     </div>
 </div>
 </body>
