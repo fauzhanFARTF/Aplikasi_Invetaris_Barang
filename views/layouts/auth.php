@@ -54,9 +54,13 @@
                 // (ungu/hijau/merah) bertabrakan dengan panel navy.
                 color: { value: ['#FFFFFF', '#FFDD87', '#F5B301'] },
                 shape: { type: 'circle' },
-                opacity: { value: 0.5, random: true, anim: { enable: false } },
-                size: { value: 2.4, random: true, anim: { enable: false } },
-                line_linked: { enable: true, distance: 130, color: '#8FB6F0', opacity: 0.28, width: 1 },
+                // random: false — di particles.js, random: true mengacak opacity dari
+                // 0 sampai nilai ini, jadi sebagian partikel nyaris tak terlihat dan
+                // keseluruhannya terkesan redup. Nilai tetap 0.8 membuat semuanya
+                // terang merata.
+                opacity: { value: 0.8, random: false, anim: { enable: false } },
+                size: { value: 2.6, random: true, anim: { enable: false } },
+                line_linked: { enable: true, distance: 130, color: '#8FB6F0', opacity: 0.34, width: 1 },
                 // Melayang pelan (1.1, bukan 6) supaya terasa tenang, bukan gelisah.
                 move: { enable: true, speed: 1.1, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false }
             },
