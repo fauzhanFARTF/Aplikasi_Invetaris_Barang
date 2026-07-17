@@ -115,6 +115,7 @@
         </div>
     </div>
     <div class="col-lg-5">
+        <?php if ($showSchedule): // Personel Luar tidak melihat agenda dinas ?>
         <div class="card-sb">
             <div class="card-title"><i class="fa-solid fa-calendar-day me-2 text-slate"></i>Jadwal Hari Ini &amp; Selanjutnya</div>
             <?php if (empty($scheduleLoans)): ?>
@@ -151,7 +152,8 @@
                 </div>
             <?php endforeach; endif; ?>
         </div>
-        <div class="card-sb mt-3">
+        <?php endif; // showSchedule ?>
+        <div class="card-sb<?= $showSchedule ? ' mt-3' : '' ?>">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="card-title mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-slate"></i>Perbaikan Aktif</div>
                 <?php if (role_is('admin_gudang','admin')): ?>
