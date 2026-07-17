@@ -6,7 +6,7 @@
     <title>Cetak QR Code Aset · <?= e(APP_NAME) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="<?= ASSET_PREFIX ?>/assets/css/app.css">
+    <link rel="stylesheet" href="<?= asset_url("/assets/css/app.css") ?>">
     <style>
         body { background: #EEF2F8; }
         .toolbar { padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
@@ -56,7 +56,7 @@
     <?php endforeach; ?>
 </div>
 
-<script src="<?= ASSET_PREFIX ?>/assets/js/qrcode.min.js"></script>
+<script src="<?= asset_url("/assets/js/qrcode.min.js") ?>"></script>
 <script>
     // Render QR code untuk tiap alat (dipindai kamera HP atau alat pemindai QR 2D).
     // Library qrcodejs disimpan lokal (bukan CDN) agar tak rentan CDN berubah/rusak.

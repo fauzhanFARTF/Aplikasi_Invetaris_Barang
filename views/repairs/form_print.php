@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>SPK Perbaikan <?= e($repair['repair_code']) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= ASSET_PREFIX ?>/assets/css/app.css">
+    <link rel="stylesheet" href="<?= asset_url("/assets/css/app.css") ?>">
 </head>
 <body onload="window.print()">
 <div class="no-print" style="text-align:right;padding:16px;">
