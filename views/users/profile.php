@@ -71,7 +71,7 @@
     </div>
 </div>
 
-<script src="<?= ASSET_PREFIX ?>/assets/js/photo-capture.js"></script>
+<script src="<?= asset_url("/assets/js/photo-capture.js") ?>"></script>
 <script>
     initPhotoCapture({
         inputId: 'photoInput', previewWrapId: 'photoPreviewWrap', previewImgId: 'photoPreview',

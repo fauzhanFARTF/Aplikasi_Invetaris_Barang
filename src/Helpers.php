@@ -156,6 +156,20 @@ function barcode_candidates(string $scanned): array {
     return $out;
 }
 
+/**
+ * URL aset lokal + penanda versi dari waktu ubah file (mis. app.css?v=1750...).
+ *
+ * Tanpa ini, nama file tidak pernah berubah sehingga browser terus memakai versi
+ * lama dari cache setiap kali CSS/JS diperbarui — pengguna harus hard refresh
+ * manual, dan kalau tidak, halaman bisa tampil rusak (HTML baru + CSS lama).
+ * Nilai v berubah sendiri setiap file diubah, jadi cache batal secara otomatis.
+ */
+function asset_url(string $path): string {
+    $path = '/' . ltrim($path, '/');
+    $mtime = @filemtime(APP_ROOT . '/public' . $path);
+    return ASSET_PREFIX . $path . ($mtime ? '?v=' . $mtime : '');
+}
+
 /** UUID v4 acak (RFC 4122) untuk identitas publik entitas di URL. */
 function generate_uuid(): string {
     $b = random_bytes(16);
