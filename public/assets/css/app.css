@@ -432,15 +432,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* Ajakan mendaftar di bawah tombol Google — memakai pola kotak .creds-hint
    yang sudah ada di kartu auth, bukan paragraf telanjang. */
 .auth-card .creds-hint { line-height: 1.55; }
-.auth-card .creds-hint .reg-roles {
-    display: flex; justify-content: center; gap: 6px; margin: 7px 0 6px; flex-wrap: wrap;
-}
-.auth-card .creds-hint .reg-roles span {
-    background: #fff; border: 1px solid var(--sb-line); border-radius: 999px;
-    padding: 3px 10px; font-size: 11.5px; font-weight: 700; color: var(--sb-navy);
-}
 .auth-card .creds-hint .reg-note {
-    font-size: 11.5px; color: var(--sb-slate); padding-top: 6px;
+    font-size: 11.5px; color: var(--sb-slate); margin-top: 7px; padding-top: 7px;
     border-top: 1px solid var(--sb-line-soft);
 }
 
