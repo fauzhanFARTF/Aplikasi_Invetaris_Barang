@@ -11,7 +11,14 @@ function dashboard_index(): void {
     $stats = [
         'total_assets'   => (int) $pdo->query("SELECT COUNT(*) FROM assets WHERE status != 'Retired' AND deleted_at IS NULL")->fetchColumn(),
         'available'      => (int) $pdo->query("SELECT COUNT(*) FROM assets WHERE status = 'Available' AND deleted_at IS NULL")->fetchColumn(),
-        'checked_out'    => (int) $pdo->query("SELECT COUNT(*) FROM assets WHERE status = 'CheckedOut' AND deleted_at IS NULL")->fetchColumn(),
+        // "Sedang Dipinjam" = alat keluar untuk ACARA saja. Alat yang keluar ke OPD
+        // punya kartunya sendiri (Barang Keluar untuk OPD / Habis Pakai), jadi
+        // dikecualikan agar tidak terhitung dua kali.
+        'checked_out'    => (int) $pdo->query("SELECT COUNT(*) FROM assets a
+                                WHERE a.status = 'CheckedOut' AND a.deleted_at IS NULL
+                                  AND NOT EXISTS (SELECT 1 FROM loan_items li JOIN loans l ON l.id = li.loan_id
+                                                  WHERE li.asset_id = a.id AND li.item_status = 'CheckedOut'
+                                                    AND l.loan_type = 'opd' AND l.status = 'CheckedOut' AND l.deleted_at IS NULL)")->fetchColumn(),
         'damaged'        => (int) $pdo->query("SELECT COUNT(*) FROM assets WHERE status = 'Damaged' AND deleted_at IS NULL")->fetchColumn(),
         'pending_approvals' => (int) $pdo->query("SELECT COUNT(*) FROM loans WHERE status = 'Pending' AND deleted_at IS NULL")->fetchColumn(),
         'active_loans'   => (int) $pdo->query("SELECT COUNT(*) FROM loans WHERE status IN ('Approved','CheckedOut') AND deleted_at IS NULL")->fetchColumn(),
