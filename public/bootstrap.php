@@ -55,6 +55,7 @@ $routes = [
     ['POST', '#^/loans/([0-9a-f-]{36})/items/(\d+)/remove$#', 'loan_item_remove'],
     ['GET',  '#^/loans/([0-9a-f-]{36})/berita-acara$#',  'loan_berita_acara'],
     ['POST', '#^/loans/([0-9a-f-]{36})/delete$#',       'loan_delete'],
+    ['POST', '#^/loans/([0-9a-f-]{36})/edit-name$#',    'loan_edit_name'],
     ['POST', '#^/loans/delete-all$#',         'loan_delete_all'],
 
     // Approvals
