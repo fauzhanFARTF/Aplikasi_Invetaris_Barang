@@ -20,6 +20,22 @@ function dashboard_index(): void {
         'items_approved' => (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id WHERE l.status = 'Approved' AND l.deleted_at IS NULL")->fetchColumn(),
     ];
 
+    // Statistik OPD. Kolom loan_type/is_consumable mungkin belum ada saat migrasi
+    // pertama, jadi dibungkus try/catch agar dashboard tidak pernah error.
+    try {
+        // Barang di OPD (pinjam pakai): masih keluar ke OPD & NON-habis-pakai — ditunggu kembali.
+        $stats['opd_out'] = (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id
+            WHERE l.loan_type = 'opd' AND l.status = 'CheckedOut' AND l.deleted_at IS NULL
+              AND li.item_status = 'CheckedOut' AND li.is_consumable = 0")->fetchColumn();
+        // Barang habis pakai yang sudah diserahkan ke OPD (tuntas, tidak kembali).
+        $stats['opd_consumable'] = (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id
+            WHERE l.loan_type = 'opd' AND l.status IN ('CheckedOut','Returned','Completed') AND l.deleted_at IS NULL
+              AND li.item_status = 'CheckedOut' AND li.is_consumable = 1")->fetchColumn();
+    } catch (Throwable $e) {
+        $stats['opd_out'] = 0;
+        $stats['opd_consumable'] = 0;
+    }
+
     // My data (peminjaman terbaru) — requester murni hanya lihat miliknya sendiri.
     if (role_is_requester()) {
         $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.requester_id = ? AND l.deleted_at IS NULL ORDER BY l.created_at DESC LIMIT 8");
