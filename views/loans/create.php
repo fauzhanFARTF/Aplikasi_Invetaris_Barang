@@ -1,7 +1,7 @@
 <div class="page-header">
     <div>
         <h1>Ajukan Peminjaman</h1>
-        <p class="subtitle">Pilih tanggal & alat/paket yang dibutuhkan untuk acara Anda.</p>
+        <p class="subtitle">Pilih jenis kebutuhan, lalu alat/paket yang diperlukan.</p>
     </div>
     <a href="<?= BASE_PATH ?>/loans" class="btn btn-outline-navy"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
 </div>
@@ -13,17 +13,17 @@
         <div class="col-lg-5">
             <!-- Pemilih jenis peminjaman -->
             <div class="loan-type-toggle mb-3" role="tablist" data-testid="loan-type-toggle">
-                <button type="button" class="lt-btn active" data-type="event" data-testid="lt-event">
-                    <i class="fa-solid fa-calendar-day"></i> Untuk Acara
+                <button type="button" class="lt-btn active" data-type="event" data-testid="lt-event" title="Peminjaman barang untuk kebutuhan streaming / zoom meeting">
+                    <i class="fa-solid fa-video"></i> Streaming / Zoom
                 </button>
-                <button type="button" class="lt-btn" data-type="opd" data-testid="lt-opd">
-                    <i class="fa-solid fa-building-columns"></i> Untuk OPD
+                <button type="button" class="lt-btn" data-type="opd" data-testid="lt-opd" title="Peminjaman barang untuk kebutuhan jaringan">
+                    <i class="fa-solid fa-network-wired"></i> Kebutuhan Jaringan
                 </button>
             </div>
 
-            <!-- ===== Blok ACARA ===== -->
+            <!-- ===== Blok STREAMING / ZOOM ===== -->
             <div class="card-sb" id="blockEvent" data-testid="block-event">
-                <div class="card-title">Rincian Acara</div>
+                <div class="card-title">Kebutuhan Streaming / Zoom Meeting</div>
                 <div class="mb-3">
                     <label class="form-label">Nama Acara *</label>
                     <input type="text" name="event_name" class="form-control" data-req-event required placeholder="mis. Live Streaming Rapat Paripurna" data-testid="input-event-name">
@@ -74,7 +74,7 @@
 
             <!-- ===== Blok OPD ===== -->
             <div class="card-sb" id="blockOpd" style="display:none;" data-testid="block-opd">
-                <div class="card-title">Rincian Kebutuhan OPD</div>
+                <div class="card-title">Kebutuhan Jaringan</div>
                 <div class="hint-box">
                     <i class="fa-solid fa-circle-info"></i>
                     <div>Barang untuk OPD dikeluarkan <strong>tanpa batas waktu</strong>. Tanggal keluar dicatat <strong>saat barang benar-benar diserahkan dari gudang</strong>, bukan sekarang. Barang <strong>pinjam pakai</strong> tetap milik Diskominfo dan dikembalikan lewat penyerahan aset bila rusak; barang <strong>habis pakai</strong> diserahkan penuh ke OPD dan tidak dikembalikan.</div>
