@@ -430,6 +430,20 @@ function opd_options(): array {
     ];
 }
 
+/** Apakah alat ini dilacak stoknya (kabel meteran, RJ45 bungkusan)? */
+function asset_is_stock(array $asset): bool {
+    return !empty($asset['unit']);
+}
+
+/** Tampilkan stok alat berstok, mis. "250 meter" atau "40 butir". */
+function fmt_stock($qty, ?string $unit): string {
+    if ($unit === null || $unit === '') return '—';
+    $q = (float) $qty;
+    // Buang desimal .00 agar "250.00 meter" tampil "250 meter".
+    $qStr = $q == (int) $q ? (string) (int) $q : rtrim(rtrim(number_format($q, 2, '.', ''), '0'), '.');
+    return $qStr . ' ' . $unit;
+}
+
 function role_label(string $role): string {
     return [
         'superadmin' => 'Super Admin',

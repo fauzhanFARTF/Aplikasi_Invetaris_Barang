@@ -95,8 +95,11 @@ function inventory_create_post(): void {
     for ($attempt = 0; $attempt < 5; $attempt++) {
         $gen = next_asset_code((int)$data['category_id']);
         try {
-            $stmt = $pdo->prepare("INSERT INTO assets (uuid, asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
-            $stmt->execute([generate_uuid(), $gen['asset_code'], $gen['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $gen['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id()]);
+            // Alat berstok: unit terisi -> qty_initial & qty_current diisi dari input.
+            $unit = trim($_POST['unit'] ?? '') ?: null;
+            $qty  = $unit !== null && $_POST['qty'] !== '' ? (float) $_POST['qty'] : null;
+            $stmt = $pdo->prepare("INSERT INTO assets (uuid, asset_code, bmn_number, name, category_id, brand, model, serial_number, barcode, condition_note, photo, purchase_price, purchase_date, current_value, unit, qty_initial, qty_current, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Available', ?)");
+            $stmt->execute([generate_uuid(), $gen['asset_code'], $gen['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $gen['bmn_number'], $data['condition_note'], $upload['filename'], $data['purchase_price'], $data['purchase_date'], $data['current_value'], $unit, $qty, $qty, Auth::id()]);
             log_audit('asset.create', 'asset', $pdo->lastInsertId(), ['asset_code' => $gen['asset_code']] + $data);
             flash('success', "Alat berhasil ditambahkan dengan Kode {$gen['asset_code']} (BMN {$gen['bmn_number']}).");
             redirect('/inventory');
@@ -162,8 +165,12 @@ function inventory_edit_post(string $uuid): void {
     }
 
     try {
-        $pdo->prepare("UPDATE assets SET asset_code=?, bmn_number=?, name=?, category_id=?, brand=?, model=?, serial_number=?, barcode=?, condition_note=?, photo=?, purchase_price=?, purchase_date=?, current_value=?, updated_by=? WHERE id=?")
-            ->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $photo, $data['purchase_price'], $data['purchase_date'], $data['current_value'], Auth::id(), (int)$id]);
+        // Alat berstok: field "qty" pada edit = stok saat ini (admin boleh koreksi).
+        // qty_initial dipertahankan (nilai asal); baru diisi bila sebelumnya kosong.
+        $unit = trim($_POST['unit'] ?? '') ?: null;
+        $qty  = $unit !== null && $_POST['qty'] !== '' ? (float) $_POST['qty'] : null;
+        $pdo->prepare("UPDATE assets SET asset_code=?, bmn_number=?, name=?, category_id=?, brand=?, model=?, serial_number=?, barcode=?, condition_note=?, photo=?, purchase_price=?, purchase_date=?, current_value=?, unit=?, qty_current=?, qty_initial=COALESCE(qty_initial, ?), updated_by=? WHERE id=?")
+            ->execute([$data['asset_code'], $data['bmn_number'], $data['name'], $data['category_id'], $data['brand'], $data['model'], $data['serial_number'], $data['barcode'] ?: $data['bmn_number'], $data['condition_note'], $photo, $data['purchase_price'], $data['purchase_date'], $data['current_value'], $unit, $qty, $qty, Auth::id(), (int)$id]);
         log_audit('asset.update', 'asset', $id, $data);
         flash('success', 'Perubahan disimpan.');
     } catch (Throwable $e) { flash('error', $e->getMessage()); }

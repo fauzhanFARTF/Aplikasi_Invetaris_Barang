@@ -95,6 +95,23 @@
     </div>
 
     <div class="card-sb mt-3">
+        <h6 class="mb-1"><i class="fa-solid fa-layer-group"></i> Satuan &amp; Stok <span class="text-slate fw-normal small">(opsional)</span></h6>
+        <div class="form-text mb-3">Isi bila alat ini dilacak per jumlah — mis. <strong>kabel</strong> (satuan <em>meter</em>) atau <strong>RJ45</strong> (satuan <em>butir</em>, satu QR = satu bungkus). Kosongkan untuk alat satuan biasa (kamera, tripod, dll).</div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Satuan Stok</label>
+                <input type="text" name="unit" class="form-control" value="<?= e($asset['unit'] ?? '') ?>" placeholder="mis. meter / butir" list="unitList" data-testid="input-unit">
+                <datalist id="unitList"><option value="meter"><option value="butir"><option value="roll"><option value="pcs"></datalist>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label"><?= !empty($asset) ? 'Stok Saat Ini' : 'Stok Awal' ?></label>
+                <input type="number" step="0.01" min="0" name="qty" class="form-control" value="<?= e($asset['qty_current'] ?? '') ?>" placeholder="mis. 305" data-testid="input-qty">
+                <?php if (!empty($asset['qty_initial'])): ?><div class="form-text">Stok awal: <?= e(fmt_stock($asset['qty_initial'], $asset['unit'] ?? null)) ?></div><?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-sb mt-3">
         <h6 class="mb-3"><i class="fa-solid fa-money-bill-wave"></i> Informasi Harga</h6>
         <div class="row g-3">
             <div class="col-md-4">
