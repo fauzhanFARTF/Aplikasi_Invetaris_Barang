@@ -368,6 +368,27 @@ function loan_item_remove(string $uuid, string $itemId): void {
     redirect("/loans/$uuid");
 }
 
+/** Superadmin mengubah nama acara / nama OPD sebuah peminjaman. */
+function loan_edit_name(string $uuid): void {
+    Auth::requireRole('superadmin');
+    Auth::verifyCsrf();
+    $id = uuid_to_id_or_404('loans', $uuid);
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT loan_code, loan_type, event_name FROM loans WHERE id = ?");
+    $stmt->execute([$id]);
+    $loan = $stmt->fetch();
+    if (!$loan) { flash('error', 'Peminjaman tidak ditemukan.'); redirect('/loans'); }
+
+    $name = trim($_POST['event_name'] ?? '');
+    if ($name === '') { flash('error', 'Nama tidak boleh kosong.'); redirect("/loans/$uuid"); }
+
+    $pdo->prepare("UPDATE loans SET event_name = ?, updated_by = ? WHERE id = ?")->execute([$name, Auth::id(), $id]);
+    log_audit('loan.edit_name', 'loan', $id, ['dari' => $loan['event_name'], 'ke' => $name]);
+    $label = ($loan['loan_type'] ?? 'event') === 'opd' ? 'Nama OPD' : 'Nama acara';
+    flash('success', "$label {$loan['loan_code']} diperbarui.");
+    redirect("/loans/$uuid");
+}
+
 function loan_delete(string $uuid): void {
     Auth::requireRole('admin_gudang', 'admin');
     Auth::verifyCsrf();

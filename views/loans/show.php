@@ -6,7 +6,23 @@
                 <span class="badge bg-info text-dark align-middle" style="font-size:11px;">Kebutuhan Jaringan</span>
             <?php endif; ?>
         </h1>
-        <p class="subtitle"><?php if (($loan['loan_type'] ?? 'event') === 'opd'): ?>OPD: <?php endif; ?><?= e($loan['event_name']) ?></p>
+        <p class="subtitle">
+            <?php if (($loan['loan_type'] ?? 'event') === 'opd'): ?>OPD: <?php endif; ?>
+            <span data-testid="loan-name-text"><?= e($loan['event_name']) ?></span>
+            <?php if (Auth::hasRole('superadmin')): ?>
+                <button type="button" class="btn btn-sm btn-outline-navy py-0 px-1 ms-1" id="btnEditName" title="Ubah nama" data-testid="btn-edit-name"><i class="fa-solid fa-pen"></i></button>
+            <?php endif; ?>
+        </p>
+        <?php if (Auth::hasRole('superadmin')): ?>
+            <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($loan['uuid']) ?>/edit-name" id="editNameForm" class="d-none mb-2" data-testid="edit-name-form">
+                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                <div class="input-group" style="max-width:520px;">
+                    <input type="text" name="event_name" class="form-control" value="<?= e($loan['event_name']) ?>" required maxlength="200" data-testid="input-event-name">
+                    <button class="btn btn-primary" type="submit" data-testid="btn-save-name"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+                    <button class="btn btn-outline-navy" type="button" id="btnCancelName">Batal</button>
+                </div>
+            </form>
+        <?php endif; ?>
         <?= audit_trail_info($loan) ?>
     </div>
     <div class="d-flex gap-2">
@@ -176,4 +192,25 @@
         </form>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if (Auth::hasRole('superadmin')): ?>
+<script>
+(function () {
+    var edit = document.getElementById('btnEditName');
+    var form = document.getElementById('editNameForm');
+    var cancel = document.getElementById('btnCancelName');
+    var text = document.querySelector('[data-testid="loan-name-text"]');
+    if (!edit || !form) return;
+    edit.addEventListener('click', function () {
+        form.classList.remove('d-none');
+        if (text) text.style.opacity = '0.5';
+        form.querySelector('input[name=event_name]').focus();
+    });
+    cancel?.addEventListener('click', function () {
+        form.classList.add('d-none');
+        if (text) text.style.opacity = '';
+    });
+})();
+</script>
 <?php endif; ?>
