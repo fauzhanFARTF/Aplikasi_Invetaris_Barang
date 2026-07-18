@@ -137,6 +137,19 @@ function run_pending_migrations(PDO $pdo): void {
             $pdo->exec("ALTER TABLE loans ADD COLUMN loan_type ENUM('event','opd') NOT NULL DEFAULT 'event' AFTER status");
         }
 
+        // Alat berstok (kabel per meter, RJ45 per bungkus). QR tetap satu per
+        // rol/bungkus; yang dilacak jumlah stoknya. unit NULL = alat satuan biasa.
+        if (!$pdo->query("SHOW COLUMNS FROM assets LIKE 'unit'")->fetch()) {
+            $pdo->exec("ALTER TABLE assets ADD COLUMN unit VARCHAR(20) NULL AFTER status");
+            $pdo->exec("ALTER TABLE assets ADD COLUMN qty_initial DECIMAL(12,2) NULL");
+            $pdo->exec("ALTER TABLE assets ADD COLUMN qty_current DECIMAL(12,2) NULL");
+        }
+        // Status 'Habis' untuk alat berstok yang stoknya sudah 0 (tuntas dipakai).
+        $stCol = $pdo->query("SHOW COLUMNS FROM assets LIKE 'status'")->fetch();
+        if ($stCol && strpos($stCol['Type'], "'Habis'") === false) {
+            $pdo->exec("ALTER TABLE assets MODIFY COLUMN status ENUM('Available','Booked','CheckedOut','Damaged','Retired','Lost','Habis') NOT NULL DEFAULT 'Available'");
+        }
+
         // Barang habis pakai: ditandai PER BARIS peminjaman OPD (bukan sifat tetap
         // alat), dicentang saat mengajukan peminjaman Untuk OPD. Barang habis pakai
         // dianggap tuntas saat diserahkan — tidak ditunggu kembali.

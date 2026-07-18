@@ -32,6 +32,14 @@
                     <label class="form-label text-slate small" id="damageNoteLabel">Keluhan Kerusakan (wajib)</label>
                     <textarea id="damageNote" class="form-control" rows="2" placeholder="mis. Layar LCD retak, lensa berjamur..." data-testid="input-damage-note"></textarea>
                 </div>
+                <div class="mb-3" id="sisaWrap" style="display:none;" data-testid="sisa-wrap">
+                    <label class="form-label text-slate small" id="sisaLabel">Sisa stok yang kembali</label>
+                    <div class="input-group">
+                        <input type="number" step="0.01" min="0" id="sisaInput" class="form-control" placeholder="mis. 250" data-testid="input-sisa">
+                        <span class="input-group-text" id="sisaUnit">unit</span>
+                    </div>
+                    <div class="form-text" id="sisaHint">Alat berstok — isi berapa yang kembali. Kosong (0) berarti habis pakai.</div>
+                </div>
                 <div class="alert alert-dark d-flex align-items-center gap-2 py-2" id="lostValueHint" style="display:none;" data-testid="lost-value-hint">
                     <i class="fa-solid fa-circle-info"></i>
                     <span>Nilai aset akan ditampilkan otomatis (harga dulu &amp; nilai sekarang) setelah QR di-scan, untuk acuan ganti rugi.</span>
@@ -91,6 +99,28 @@
 <script>
 const loanId = <?= (int)$loan['id'] ?>;
 const csrf = "<?= e(Auth::csrfToken()) ?>";
+// Peta barcode -> info stok, untuk mendeteksi alat berstok saat di-scan.
+const stockMap = {};
+<?php foreach ($items as $it): if (!empty($it['unit'])): ?>
+stockMap["<?= e(strtoupper((string)$it['barcode'])) ?>"] = { unit: "<?= e($it['unit']) ?>", qty: <?= (float)$it['qty_current'] ?> };
+<?php endif; endforeach; ?>
+// Barcode bisa berupa awalan BMN- atau BMD-; cek keduanya.
+function stockInfo(code) {
+    const c = (code || '').trim().toUpperCase();
+    if (stockMap[c]) return stockMap[c];
+    if (c.startsWith('BMN-')) return stockMap['BMD-' + c.slice(4)] || null;
+    if (c.startsWith('BMD-')) return stockMap['BMN-' + c.slice(4)] || null;
+    return null;
+}
+let pendingStock = null; // {code, info} menunggu input sisa
+function showSisa(info) {
+    document.getElementById('sisaUnit').textContent = info.unit;
+    document.getElementById('sisaHint').textContent = 'Stok saat keluar: ' + info.qty + ' ' + info.unit + '. Isi berapa yang kembali — 0 berarti habis.';
+    document.getElementById('sisaInput').max = info.qty;
+    document.getElementById('sisaWrap').style.display = '';
+    document.getElementById('sisaInput').focus();
+}
+function hideSisa() { document.getElementById('sisaWrap').style.display = 'none'; document.getElementById('sisaInput').value = ''; pendingStock = null; }
 const logEl = document.getElementById('scannerLog');
 function log(msg, type) { const d = document.createElement('div'); d.className = 'line ' + type; d.textContent = new Date().toLocaleTimeString() + ' · ' + msg; logEl.prepend(d); }
 
@@ -103,12 +133,24 @@ document.querySelectorAll('input[name=cond]').forEach(r => r.addEventListener('c
 }));
 
 async function submitScan(code) {
+    // Alat berstok: begitu di-scan, munculkan kolom Sisa dulu. Baru kirim setelah diisi.
+    const info = stockInfo(code);
+    const sisaVal = document.getElementById('sisaInput').value.trim();
+    if (info && (!pendingStock || pendingStock.code !== code)) {
+        pendingStock = { code: code, info: info };
+        showSisa(info);
+        log('Alat berstok: ' + code + ' — isi sisa ' + info.unit + ' lalu tekan simpan.', 'info');
+        return;
+    }
+    if (info && sisaVal === '') { toast('Isi sisa ' + info.unit + ' lalu tekan simpan.', 'error'); document.getElementById('sisaInput').focus(); return; }
+
     const cond = document.querySelector('input[name=cond]:checked').value;
     const note = document.getElementById('damageNote').value.trim();
-    if (cond === 'Damaged' && !note) { toast('Keluhan kerusakan wajib diisi.', 'error'); return; }
-    if (cond === 'Lost' && !note) { toast('Keterangan kehilangan wajib diisi.', 'error'); return; }
+    if (!info && cond === 'Damaged' && !note) { toast('Keluhan kerusakan wajib diisi.', 'error'); return; }
+    if (!info && cond === 'Lost' && !note) { toast('Keterangan kehilangan wajib diisi.', 'error'); return; }
     const f = new FormData();
     f.append('loan_id', loanId); f.append('barcode', code); f.append('condition', cond); f.append('damage_note', note); f.append('_csrf', csrf);
+    if (info) f.append('sisa', sisaVal);
     try {
         const r = await fetch((window.BASE_PATH || '') + '/checkin/scan', { method: 'POST', body: f, credentials: 'same-origin' });
         const j = await r.json();
@@ -117,12 +159,22 @@ async function submitScan(code) {
             const row = document.querySelector(`[data-barcode="${CSS.escape(code)}"]`);
             if (row) {
                 row.classList.remove('done','damaged','lost');
-                const cls = j.condition === 'Good' ? 'done' : (j.condition === 'Lost' ? 'lost' : 'damaged');
-                row.classList.add(cls);
-                const badge = j.condition === 'Good' ? '<span class="badge bg-success">Baik</span>' : (j.condition === 'Lost' ? '<span class="badge bg-dark">Hilang</span>' : '<span class="badge bg-danger">Rusak</span>');
-                row.querySelector('div:last-child').innerHTML = badge;
+                if (j.stock) {
+                    row.classList.add(j.habis ? 'damaged' : 'done');
+                    row.querySelector('div:last-child').innerHTML = j.habis
+                        ? '<span class="badge bg-dark">Habis</span>'
+                        : '<span class="badge bg-info text-dark">Stok diperbarui</span>';
+                } else {
+                    const cls = j.condition === 'Good' ? 'done' : (j.condition === 'Lost' ? 'lost' : 'damaged');
+                    row.classList.add(cls);
+                    const badge = j.condition === 'Good' ? '<span class="badge bg-success">Baik</span>' : (j.condition === 'Lost' ? '<span class="badge bg-dark">Hilang</span>' : '<span class="badge bg-danger">Rusak</span>');
+                    row.querySelector('div:last-child').innerHTML = badge;
+                }
             }
-            if (j.condition === 'Lost') {
+            if (j.stock) {
+                toast(j.message, j.habis ? 'error' : 'success');
+                hideSisa();
+            } else if (j.condition === 'Lost') {
                 toast('Hilang: ' + j.asset_name + ' — Harga dulu ' + j.purchase_price_fmt + ', nilai sekarang ' + j.current_value_fmt, 'error');
             } else {
                 toast(j.condition === 'Good' ? 'Kembali baik: ' + j.asset_name : 'Rusak: ' + j.asset_name + ' — SPK akan dicetak', j.condition === 'Good' ? 'success' : 'error');
@@ -135,10 +187,16 @@ async function submitScan(code) {
 document.getElementById('btnManualScan').addEventListener('click', () => {
     const v = document.getElementById('manualBarcode').value.trim();
     if (v) { submitScan(v); document.getElementById('manualBarcode').value = ''; }
+    // Kolom barcode kosong tapi ada alat berstok menunggu sisa -> kirim ulang.
+    else if (pendingStock) { submitScan(pendingStock.code); }
     document.getElementById('manualBarcode').focus();
 });
 document.getElementById('manualBarcode').addEventListener('keydown', ev => {
     if (ev.key === 'Enter') { ev.preventDefault(); document.getElementById('btnManualScan').click(); }
+});
+// Enter di kolom Sisa -> kirim pengembalian alat berstok yang menunggu.
+document.getElementById('sisaInput').addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); if (pendingStock) submitScan(pendingStock.code); }
 });
 document.getElementById('manualBarcode').focus();
 

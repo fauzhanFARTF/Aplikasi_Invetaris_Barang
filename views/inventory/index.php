@@ -64,7 +64,7 @@
                         </a>
                     </td>
                     <td class="code"><?= e($a['asset_code']) ?></td>
-                    <td><strong><?= e($a['name']) ?></strong><?php if ($a['serial_number']): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?></td>
+                    <td><strong><?= e($a['name']) ?></strong><?php if ($a['serial_number']): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?><?php if (asset_is_stock($a)): ?><div class="small"><span class="badge bg-info text-dark" data-testid="stock-<?= (int)$a['id'] ?>"><i class="fa-solid fa-layer-group"></i> Stok: <?= e(fmt_stock($a['qty_current'], $a['unit'])) ?></span></div><?php endif; ?></td>
                     <td class="small"><?= e($a['category_name'] ?: '—') ?></td>
                     <td class="small"><?= e(trim(($a['brand'] ?? '') . ' ' . ($a['model'] ?? ''))) ?: '—' ?></td>
                     <td class="text-mono small"><?= e($a['bmn_number']) ?></td>
