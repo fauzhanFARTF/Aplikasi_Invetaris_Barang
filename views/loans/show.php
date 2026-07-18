@@ -38,6 +38,13 @@
                 <i class="fa-solid fa-file-lines"></i> <?= $isOpd ? 'Berita Acara Serah Terima' : 'Berita Acara Keluar' ?>
             </a>
         <?php endif; ?>
+
+        <?php if (Auth::hasRole('superadmin')): ?>
+            <form method="POST" action="<?= BASE_PATH ?>/loans/<?= e($loan["uuid"]) ?>/delete" data-confirm="Hapus PERMANEN acara <?= e($loan['loan_code']) ?>? Alat yang terkait dikembalikan ke Tersedia. Tindakan ini TIDAK BISA dibatalkan.">
+                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                <button type="submit" class="btn btn-outline-danger" data-testid="btn-delete-loan"><i class="fa-solid fa-trash"></i> Hapus Acara</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 
