@@ -64,6 +64,24 @@
             <div class="text-slate small">Siap diserahkan</div>
         </div>
     </div>
+    <?php if (!is_personal_borrower()): ?>
+    <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift tone-info">
+            <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="label">Barang di OPD</div>
+            <div class="value" data-testid="stat-opd-out"><?= $stats['opd_out'] ?? 0 ?></div>
+            <div class="text-slate small">Pinjam pakai — ditunggu kembali</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card hover-lift tone-navy">
+            <div class="stat-icon"><i class="fa-solid fa-fire-flame-simple"></i></div>
+            <div class="label">Barang Habis Pakai</div>
+            <div class="value" data-testid="stat-opd-consumable"><?= $stats['opd_consumable'] ?? 0 ?></div>
+            <div class="text-slate small">Diserahkan penuh ke OPD</div>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <div class="row g-3">
