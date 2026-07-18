@@ -378,9 +378,29 @@ function loan_delete(string $uuid): void {
     $loan = $stmt->fetch();
     if (!$loan) { flash('error', 'Peminjaman tidak ditemukan.'); redirect('/loans'); }
 
-    // Only allow deleting finished/historical records — never delete a loan that's
-    // still in play (Pending/Approved/CheckedOut), since that would silently strand
-    // its assets/booking state.
+    // Superadmin: boleh menghapus acara APA PUN, satu per satu (versi granular dari
+    // Reset Peminjaman). Alat yang masih Dipesan/Dipinjam dilepas dulu agar tidak
+    // nyangkut, lalu acara dihapus permanen (loan_items CASCADE, repairs SET NULL).
+    if (Auth::hasRole('superadmin')) {
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE assets SET status='Available'
+                           WHERE status IN ('Booked','CheckedOut')
+                             AND id IN (SELECT asset_id FROM loan_items WHERE loan_id = ?)")->execute([$id]);
+            $pdo->prepare("DELETE FROM loans WHERE id = ?")->execute([$id]);
+            $pdo->commit();
+            log_audit('loan.delete_super', 'loan', $id, ['code' => $loan['loan_code'], 'status' => $loan['status']]);
+            flash('success', "Acara {$loan['loan_code']} dihapus permanen. Alat yang terkait dikembalikan ke Tersedia.");
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Gagal menghapus acara: ' . $e->getMessage());
+        }
+        redirect('/loans');
+    }
+
+    // Admin/Admin Gudang: hanya boleh menghapus riwayat yang sudah selesai — jangan
+    // pernah menghapus acara yang masih berjalan (Pending/Approved/CheckedOut),
+    // karena itu akan menyisakan status alat/booking-nya menggantung.
     $finalStatuses = ['Completed', 'Rejected', 'Cancelled', 'Returned'];
     if (!in_array($loan['status'], $finalStatuses, true)) {
         flash('error', 'Hanya riwayat peminjaman yang sudah selesai/ditolak/dibatalkan yang dapat dihapus.');
