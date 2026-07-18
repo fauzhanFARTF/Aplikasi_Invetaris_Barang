@@ -20,6 +20,7 @@
         table.items th, table.items td { border: 1px solid #94A3B8; padding: 5px 7px; font-size: 12px; text-align: left; }
         table.items th { background: #F1F5F9; }
         .tag-hp { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #FDE68A; color: #7C2D12; }
+        .tag-pp { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: #E2E8F0; color: #334155; }
         .ba-sign { display: flex; justify-content: space-between; gap: 40px; margin-top: 36px; }
         .ba-sign .box { flex: 1; text-align: center; font-size: 13px; }
         .ba-sign .space { height: 70px; }
@@ -75,7 +76,7 @@
                     <td><?= e($it['bmn_number']) ?></td>
                     <td><?= e(trim(($it['brand'] ?? '').' '.($it['model'] ?? ''))) ?: '—' ?></td>
                     <td><?= e($it['serial_number'] ?: '—') ?></td>
-                    <td><?= !empty($it['is_consumable']) ? '<span class="tag-hp">Habis Pakai</span>' : 'Pinjam Pakai' ?></td>
+                    <td><?= !empty($it['is_consumable']) ? '<span class="tag-hp">Habis Pakai</span>' : '<span class="tag-pp">Pinjam Pakai</span>' ?></td>
                 </tr>
             <?php endforeach; if (empty($items)): ?>
                 <tr><td colspan="7" style="text-align:center;">Tidak ada barang.</td></tr>
@@ -84,8 +85,8 @@
     </table>
 
     <p style="margin-top:10px;">
-        Barang ber-keterangan <strong>Pinjam Pakai</strong> tetap menjadi milik Diskominfo dan dikembalikan apabila rusak / tidak digunakan lagi.
-        Barang ber-keterangan <strong>Habis Pakai</strong> diserahkan sepenuhnya kepada instansi penerima dan tidak dikembalikan.
+        Barang berketerangan <strong>Pinjam Pakai</strong> dipinjamkan tanpa batas waktu, tetap menjadi milik Diskominfo Kabupaten Tangerang, dan dikembalikan apabila rusak atau tidak digunakan lagi.
+        Barang berketerangan <strong>Habis Pakai</strong> diserahkan sepenuhnya kepada instansi penerima dan tidak dikembalikan.
     </p>
 
     <div class="ba-sign">
