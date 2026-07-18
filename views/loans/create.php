@@ -120,6 +120,15 @@
                     <div class="form-text">Boleh dikosongkan bila tidak ada personel yang perlu ikut memasang.</div>
                 </div>
                 <?php endif; ?>
+
+                <div class="mb-1">
+                    <label class="form-label">Barang Habis Pakai</label>
+                    <div class="border rounded-3 p-2" style="max-height:200px;overflow-y:auto;" data-testid="opd-consumable-box">
+                        <div id="opdConsumableList"></div>
+                        <div id="opdConsumableEmpty" class="text-slate small py-1">Pilih alat di sebelah kanan terlebih dahulu. Alat yang dipilih akan muncul di sini untuk ditandai.</div>
+                    </div>
+                    <div class="form-text">Centang barang yang <strong>habis pakai</strong> (tidak ditunggu kembali). Biarkan kosong bila semua barang dipinjam-pakai dan akan dikembalikan bila rusak.</div>
+                </div>
             </div>
         </div>
 
@@ -172,13 +181,6 @@
                                 <?php if (!empty($a['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?>
                             </div>
                             <div class="text-center" style="flex-shrink:0;"><?= status_badge($a['status']) ?></div>
-                            <?php // "Habis pakai" per barang — hanya tampil di mode OPD (diatur JS).
-                                  // onclick stopPropagation: baris ini <label> untuk checkbox pilih alat,
-                                  // jadi klik di sini tidak boleh ikut mencentang/mem-batal pilih alatnya. ?>
-                            <div class="form-check opd-consumable" style="display:none;flex-shrink:0;min-width:110px;" title="Barang habis pakai: tidak ditunggu kembali" onclick="event.stopPropagation();">
-                                <input class="form-check-input" type="checkbox" name="consumable_ids[]" value="<?= (int)$a['id'] ?>" id="cons<?= (int)$a['id'] ?>" disabled data-testid="consumable-<?= (int)$a['id'] ?>">
-                                <label class="form-check-label small" for="cons<?= (int)$a['id'] ?>" onclick="event.stopPropagation();">Habis pakai</label>
-                            </div>
                             <?php if (!empty($holders[$a['id']])): ?>
                                 <div class="small text-slate" style="min-width:150px;max-width:210px;flex-shrink:0;">
                                     <div><span class="text-slate">Pemesan:</span> <?= e($holders[$a['id']]) ?></div>
@@ -270,18 +272,58 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
             el.querySelectorAll('[data-req-' + (k === 'event' ? 'opd' : 'event') + ']').forEach(c => c.removeAttribute('required'));
         });
         buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
-
-        // Checkbox "Habis pakai" per barang hanya ada/berlaku di mode OPD. Di mode
-        // acara disembunyikan, dinonaktifkan, dan dikosongkan agar tidak terkirim.
-        const opd = type === 'opd';
-        document.querySelectorAll('.opd-consumable').forEach(box => {
-            box.style.display = opd ? '' : 'none';
-            const cb = box.querySelector('input[type=checkbox]');
-            if (cb) { cb.disabled = !opd; if (!opd) cb.checked = false; }
-        });
+        window.__loanType = type;
+        // Fungsi didefinisikan di blok berikutnya; saat setType('event') pertama
+        // dipanggil, blok itu belum jalan — jadi diguard.
+        if (window.rebuildConsumableList) window.rebuildConsumableList();
     }
     buttons.forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
+    window.__loanType = 'event';
     setType('event');
+})();
+
+// Checklist "Barang Habis Pakai" di blok OPD. Isinya alat yang SEDANG dipilih di
+// panel kanan; centang menandai barang yang tidak ditunggu kembali. Tanda disimpan
+// di Set agar tidak hilang saat daftar dibangun ulang. Hanya aktif di mode OPD.
+(function () {
+    const marked = new Set();          // asset id yang ditandai habis pakai
+    const list = document.getElementById('opdConsumableList');
+    const empty = document.getElementById('opdConsumableEmpty');
+    if (!list) return;
+
+    window.rebuildConsumableList = function () {
+        const opd = window.__loanType === 'opd';
+        // Ingat dulu centang saat ini sebelum membangun ulang.
+        list.querySelectorAll('input[type=checkbox]').forEach(cb => {
+            if (cb.checked) marked.add(cb.value); else marked.delete(cb.value);
+        });
+
+        const chosen = Array.from(document.querySelectorAll('.asset-row'))
+            .filter(r => { const c = r.querySelector('input[name="asset_ids[]"]'); return c && c.checked; });
+
+        list.innerHTML = '';
+        chosen.forEach(r => {
+            const id = r.querySelector('input[name="asset_ids[]"]').value;
+            const nameEl = r.querySelector('.fw-semibold');
+            const name = nameEl ? nameEl.textContent.trim() : ('Alat #' + id);
+            const wrap = document.createElement('div');
+            wrap.className = 'form-check';
+            // name diisi HANYA saat mode OPD supaya di mode acara tidak ikut terkirim.
+            wrap.innerHTML = '<input class="form-check-input" type="checkbox" '
+                + (opd ? 'name="consumable_ids[]" ' : '')
+                + 'value="' + id + '" id="opdcons' + id + '"' + (opd ? '' : ' disabled')
+                + (marked.has(id) ? ' checked' : '') + ' data-testid="consumable-' + id + '">'
+                + '<label class="form-check-label small" for="opdcons' + id + '">' + name + '</label>';
+            list.appendChild(wrap);
+        });
+        empty.style.display = chosen.length ? 'none' : '';
+    };
+
+    // Bangun ulang setiap pilihan alat berubah (termasuk saat centang dari panel kanan).
+    document.getElementById('assetList')?.addEventListener('change', function (e) {
+        if (e.target && e.target.matches('input[name="asset_ids[]"]')) window.rebuildConsumableList();
+    });
+    window.rebuildConsumableList();
 })();
 
 // Alat yang dicentang otomatis pindah ke atas daftar (checked-first, urutan stabil).
