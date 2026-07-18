@@ -3,7 +3,7 @@
     <div>
         <h1>Peminjaman <span class="text-mono text-slate" style="font-size:16px;"><?= e($loan['loan_code']) ?></span>
             <?php if (($loan['loan_type'] ?? 'event') === 'opd'): ?>
-                <span class="badge bg-info text-dark align-middle" style="font-size:11px;">Untuk OPD</span>
+                <span class="badge bg-info text-dark align-middle" style="font-size:11px;">Kebutuhan Jaringan</span>
             <?php endif; ?>
         </h1>
         <p class="subtitle"><?php if (($loan['loan_type'] ?? 'event') === 'opd'): ?>OPD: <?php endif; ?><?= e($loan['event_name']) ?></p>
