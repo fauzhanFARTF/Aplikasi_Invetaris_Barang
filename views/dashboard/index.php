@@ -66,20 +66,24 @@
     </div>
     <?php if (!is_personal_borrower()): ?>
     <div class="col-6 col-md-3">
-        <div class="stat-card hover-lift tone-info">
-            <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
-            <div class="label">Barang Keluar untuk OPD</div>
-            <div class="value" data-testid="stat-opd-out"><?= $stats['opd_out'] ?? 0 ?></div>
-            <div class="text-slate small">Akan dikembalikan — ditunggu kembali</div>
-        </div>
+        <a href="<?= BASE_PATH ?>/opd-items" class="text-decoration-none" data-testid="link-opd-out">
+            <div class="stat-card hover-lift tone-info">
+                <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
+                <div class="label">Barang Keluar untuk OPD</div>
+                <div class="value" data-testid="stat-opd-out"><?= $stats['opd_out'] ?? 0 ?></div>
+                <div class="text-slate small">Akan dikembalikan — ditunggu kembali</div>
+            </div>
+        </a>
     </div>
     <div class="col-6 col-md-3">
-        <div class="stat-card hover-lift tone-navy">
-            <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
-            <div class="label">Barang Tetap di OPD</div>
-            <div class="value" data-testid="stat-opd-consumable"><?= $stats['opd_consumable'] ?? 0 ?></div>
-            <div class="text-slate small">Ditempatkan permanen di OPD</div>
-        </div>
+        <a href="<?= BASE_PATH ?>/opd-items" class="text-decoration-none" data-testid="link-opd-consumable">
+            <div class="stat-card hover-lift tone-navy">
+                <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
+                <div class="label">Barang Tetap di OPD</div>
+                <div class="value" data-testid="stat-opd-consumable"><?= $stats['opd_consumable'] ?? 0 ?></div>
+                <div class="text-slate small">Menunggu — kembali bila rusak</div>
+            </div>
+        </a>
     </div>
     <?php endif; ?>
 </div>
