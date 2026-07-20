@@ -179,7 +179,7 @@
         <?php if (!empty($opdOut)): ?>
         <div class="card-sb<?= $showSchedule ? ' mt-3' : '' ?>" data-testid="card-opd-out">
             <div class="card-title mb-2"><i class="fa-solid fa-building-columns me-2 text-slate"></i>Barang Keluar ke OPD</div>
-            <div class="text-slate small mb-2" style="margin-top:-4px;">Dipinjam tanpa batas waktu — kembali lewat penyerahan aset bila rusak. Barang habis pakai tidak ditunggu kembali.</div>
+            <div class="text-slate small mb-2" style="margin-top:-4px;">Barang yang masih ditunggu kembali dari OPD. Barang yang tetap di OPD ada di menu <a href="<?= BASE_PATH ?>/opd-items">Barang di OPD</a>.</div>
             <?php foreach ($opdOut as $l): ?>
                 <div class="d-flex align-items-start justify-content-between py-2 border-bottom gap-2">
                     <div class="min-w-0">
@@ -194,7 +194,11 @@
         </div>
         <?php endif; ?>
 
-        <div class="card-sb<?= ($showSchedule || !empty($opdOut)) ? ' mt-3' : '' ?>">
+        <div class="<?= ($showSchedule || !empty($opdOut)) ? 'mt-3' : '' ?>">
+            <?php include APP_ROOT . '/views/partials/borrowed_items_card.php'; ?>
+        </div>
+
+        <div class="card-sb mt-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div class="card-title mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-slate"></i>Perbaikan Aktif</div>
                 <?php if (role_is('admin_gudang','admin')): ?>
