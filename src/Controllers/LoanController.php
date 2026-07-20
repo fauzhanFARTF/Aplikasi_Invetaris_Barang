@@ -179,15 +179,13 @@ function loan_create_post(): void {
         $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, $loanType, $willReturn, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
-        // Barang habis pakai hanya relevan untuk OPD yang barangnya ditunggu kembali
-        // (will_return). Untuk penempatan permanen di OPD semua barang jadi "Di OPD".
-        $consumableIds = ($loanType === 'opd' && $willReturn)
-            ? array_flip(array_map('intval', $_POST['consumable_ids'] ?? []))
-            : [];
-        $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status, is_consumable) VALUES (?,?,?, 'Reserved', ?)");
+        // Model OPD kini biner per pengiriman: seluruh barang "akan dikembalikan"
+        // (will_return=1, kembali pada rencana tanggal) atau "tetap di OPD"
+        // (will_return=0). Tidak ada lagi status habis pakai per barang.
+        $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status, is_consumable) VALUES (?,?,?, 'Reserved', 0)");
         $upA = $pdo->prepare("UPDATE assets SET status = 'Booked' WHERE id = ? AND status = 'Available'");
         foreach ($allAssetIds as $aid) {
-            $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null, isset($consumableIds[$aid]) ? 1 : 0]);
+            $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null]);
             $upA->execute([$aid]);
         }
 

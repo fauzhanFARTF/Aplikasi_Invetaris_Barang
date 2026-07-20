@@ -63,10 +63,12 @@
         <?php endif; ?>
         <?php if (!empty($loan['purpose'])): ?><tr><td>Tujuan / Keperluan</td><td>: <?= nl2br(e($loan['purpose'])) ?></td></tr><?php endif; ?>
         <tr><td>Tanggal Serah Terima</td><td>: <?= e($serahTanggal) ?></td></tr>
+        <?php $baWillReturn = (int)($loan['will_return'] ?? 1) === 1; ?>
+        <tr><td>Status Barang</td><td>: <strong><?= $baWillReturn ? 'Dikembalikan — rencana ' . e(date('d F Y', strtotime((string)$loan['end_date']))) : 'Tetap di OPD (tanpa batas waktu)' ?></strong></td></tr>
     </table>
 
     <table class="items">
-        <thead><tr><th style="width:32px;">No</th><th>Nama Barang</th><th>Kode Aset</th><th>No. BMD</th><th>Brand / Model</th><th>Serial Number</th><th style="width:80px;">Keterangan</th></tr></thead>
+        <thead><tr><th style="width:32px;">No</th><th>Nama Barang</th><th>Kode Aset</th><th>No. BMD</th><th>Brand / Model</th><th>Serial Number</th><th style="width:90px;">Keterangan</th></tr></thead>
         <tbody>
             <?php foreach ($items as $i => $it): ?>
                 <tr>
@@ -76,7 +78,7 @@
                     <td><?= e($it['bmn_number']) ?></td>
                     <td><?= e(trim(($it['brand'] ?? '').' '.($it['model'] ?? ''))) ?: '—' ?></td>
                     <td><?= e($it['serial_number'] ?: '—') ?></td>
-                    <td><?= !empty($it['is_consumable']) ? '<span class="tag-hp">Habis Pakai</span>' : '<span class="tag-pp">Pinjam Pakai</span>' ?></td>
+                    <td><?= $baWillReturn ? '<span class="tag-pp">Dikembalikan</span>' : '<span class="tag-hp">Tetap di OPD</span>' ?></td>
                 </tr>
             <?php endforeach; if (empty($items)): ?>
                 <tr><td colspan="7" style="text-align:center;">Tidak ada barang.</td></tr>
@@ -85,8 +87,11 @@
     </table>
 
     <p style="margin-top:10px;">
-        Barang berketerangan <strong>Pinjam Pakai</strong> dipinjamkan tanpa batas waktu, tetap menjadi milik Diskominfo Kabupaten Tangerang, dan dikembalikan apabila rusak atau tidak digunakan lagi.
-        Barang berketerangan <strong>Habis Pakai</strong> diserahkan sepenuhnya kepada instansi penerima dan tidak dikembalikan.
+        <?php if ($baWillReturn): ?>
+            Seluruh barang di atas tetap menjadi milik Diskominfo Kabupaten Tangerang dan <strong>dikembalikan</strong> sesuai rencana pada <strong><?= e(date('d F Y', strtotime((string)$loan['end_date']))) ?></strong>.
+        <?php else: ?>
+            Seluruh barang di atas diserahkan untuk ditempatkan di instansi penerima dan <strong>tetap berada di OPD tanpa batas waktu</strong>.
+        <?php endif; ?>
     </p>
 
     <div class="ba-sign">
