@@ -426,8 +426,11 @@ function loan_delete(string $uuid): void {
     if (Auth::hasRole('superadmin')) {
         $pdo->beginTransaction();
         try {
+            // 'AtOpd' WAJIB ikut: acara Kebutuhan Jaringan yang barangnya sudah
+            // "Di OPD" akan menyisakan alat tersangkut selamanya kalau dilewatkan —
+            // acaranya hilang, jadi tak ada lagi jalan melepasnya lewat UI.
             $pdo->prepare("UPDATE assets SET status='Available'
-                           WHERE status IN ('Booked','CheckedOut')
+                           WHERE status IN ('Booked','CheckedOut','AtOpd')
                              AND id IN (SELECT asset_id FROM loan_items WHERE loan_id = ?)")->execute([$id]);
             $pdo->prepare("DELETE FROM loans WHERE id = ?")->execute([$id]);
             $pdo->commit();
