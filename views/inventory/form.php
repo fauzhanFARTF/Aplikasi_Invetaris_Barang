@@ -77,7 +77,12 @@
             <?php endif; ?>
             <div class="col-md-<?= $isEdit ? '8' : '12' ?>">
                 <label class="form-label">Nama Alat *</label>
-                <input type="text" name="name" class="form-control" required value="<?= e($asset['name'] ?? '') ?>" data-testid="input-name">
+                <input type="text" name="name" id="nameField" class="form-control" required value="<?= e($asset['name'] ?? '') ?>" data-testid="input-name">
+                <div class="form-text">
+                    Terisi otomatis dari <strong>Kode Aset + Brand + Model</strong> — mis. <em>AP-001 Ubiquity U6+ UNIFI WiFi 6</em>.
+                    Boleh diketik sendiri; kalau sudah diubah manual, klik
+                    <a href="#" id="btnSyncName" data-testid="btn-sync-name">samakan otomatis</a> untuk menyusunnya ulang.
+                </div>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Brand</label>
@@ -150,6 +155,48 @@
         facingMode: 'environment', // foto alat -> kamera belakang
     });
 </script>
+<script>
+    // Nama Alat mengikuti "Kode Aset + Brand + Model" (mis. AP-001 Ubiquity U6+ UNIFI WiFi 6).
+    // Selama nama masih sama dengan hasil susunan otomatis (atau kosong), ia ikut berubah
+    // begitu kode/brand/model diubah. Sekali pengguna mengetik nama yang berbeda, isian
+    // itu dihormati dan tidak ditimpa — kecuali menekan "samakan otomatis". Karena itu,
+    // pada form Edit nama lama yang tidak mengikuti pola ini juga aman dari penimpaan.
+    (function () {
+        var nameF  = document.getElementById('nameField');
+        var codeF  = document.getElementById('assetCodeField');
+        var brandF = document.querySelector('input[name="brand"]');
+        var modelF = document.querySelector('input[name="model"]');
+        var btn    = document.getElementById('btnSyncName');
+        if (!nameF) return;
+
+        function compose() {
+            return [codeF && codeF.value, brandF && brandF.value, modelF && modelF.value]
+                .map(function (v) { return (v || '').trim(); })
+                .filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+        }
+        var auto = nameF.value.trim() === '' || nameF.value.trim() === compose();
+
+        function apply(force) {
+            if (!auto && !force) return;
+            var v = compose();
+            if (v) nameF.value = v;
+            auto = true;
+        }
+        [codeF, brandF, modelF].forEach(function (f) {
+            if (f) f.addEventListener('input', function () { apply(false); });
+        });
+        // Ketikan manual mematikan mode otomatis; mengosongkan nama menyalakannya lagi.
+        nameF.addEventListener('input', function () {
+            auto = nameF.value.trim() === '' || nameF.value.trim() === compose();
+        });
+        if (btn) btn.addEventListener('click', function (e) { e.preventDefault(); apply(true); });
+
+        // Dipanggil setelah Kode Aset selesai diambil dari server (set programatik
+        // tidak memicu event 'input', jadi harus dipanggil eksplisit).
+        window.__syncAssetName = function () { apply(false); };
+        apply(false);
+    })();
+</script>
 <?php if (!$isEdit): ?>
 <script>
     // Isi otomatis Kode Aset & No. BMD dari kode singkatan kategori terpilih.
@@ -165,7 +212,10 @@
             fetch('<?= BASE_PATH ?>/ajax/next-asset-code?category_id=' + encodeURIComponent(cid), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function (r) { return r.json(); })
                 .then(function (d) {
-                    if (d && d.ok) { codeF.value = d.asset_code; bmnF.value = d.bmn_number; }
+                    if (d && d.ok) {
+                        codeF.value = d.asset_code; bmnF.value = d.bmn_number;
+                        if (window.__syncAssetName) window.__syncAssetName();
+                    }
                     else { codeF.value = ''; bmnF.value = ''; alert(d && d.message ? d.message : 'Gagal membuat kode aset.'); }
                 })
                 .catch(function () { codeF.value = ''; bmnF.value = ''; });
