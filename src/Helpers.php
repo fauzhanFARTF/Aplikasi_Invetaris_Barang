@@ -363,6 +363,60 @@ function handle_photo_upload(string $field, ?string $oldPhoto = null, string $di
 }
 
 /**
+ * Simpan foto hasil jepretan kamera yang dikirim sebagai data URL base64
+ * (mis. "data:image/jpeg;base64,....") dari <canvas>.toDataURL().
+ * Bentuk kembaliannya sama dengan handle_photo_upload():
+ *   ['filename' => string|null, 'error' => string|null]
+ * filename null tanpa error = tidak ada foto kamera yang dikirim.
+ */
+function handle_photo_from_data_url(string $dataUrl, ?string $oldPhoto = null, string $dir = 'assets', string $prefix = 'asset'): array {
+    $dataUrl = trim($dataUrl);
+    if ($dataUrl === '') return ['filename' => null, 'error' => null];
+
+    if (!preg_match('#^data:(image/(?:jpeg|png|webp));base64,#i', $dataUrl, $m)) {
+        return ['filename' => null, 'error' => 'Foto kamera tidak valid (harus JPG, PNG, atau WEBP).'];
+    }
+    $b64 = substr($dataUrl, strlen($m[0]));
+    // strict: tolak karakter di luar alfabet base64 supaya tidak menyimpan sampah.
+    $data = base64_decode($b64, true);
+    if ($data === false || $data === '') {
+        return ['filename' => null, 'error' => 'Foto kamera gagal dibaca.'];
+    }
+
+    $maxBytes = 3 * 1024 * 1024; // 3 MB, sama dengan upload biasa
+    if (strlen($data) > $maxBytes) {
+        return ['filename' => null, 'error' => 'Ukuran foto kamera maksimal 3MB.'];
+    }
+
+    // Jangan percaya header data URL — periksa isi berkasnya sungguhan.
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    $mime = null;
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $data);
+        finfo_close($finfo);
+    } else {
+        $mime = strtolower($m[1]);
+    }
+    if (!isset($allowed[$mime])) {
+        return ['filename' => null, 'error' => 'Format foto kamera harus JPG, PNG, atau WEBP.'];
+    }
+
+    $uploadDir = APP_ROOT . '/public/uploads/' . $dir;
+    if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0775, true); }
+    $filename = $prefix . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+    if (file_put_contents($uploadDir . '/' . $filename, $data) === false) {
+        return ['filename' => null, 'error' => 'Gagal menyimpan foto kamera ke server.'];
+    }
+
+    if ($oldPhoto) {
+        $oldPath = $uploadDir . '/' . basename($oldPhoto);
+        if (is_file($oldPath)) { @unlink($oldPath); }
+    }
+    return ['filename' => $filename, 'error' => null];
+}
+
+/**
  * Hapus file foto (aset atau user) dari disk (dipakai saat user memilih "hapus foto").
  */
 function delete_photo(?string $photo, string $dir = 'assets'): void {
