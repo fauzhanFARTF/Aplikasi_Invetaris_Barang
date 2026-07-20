@@ -140,17 +140,12 @@
                 <?php endif; ?>
 
                 <div class="mb-1" id="opdConsumableSection">
-                    <label class="form-label">Status Penyerahan Barang</label>
+                    <label class="form-label">Barang akan dikembalikan</label>
                     <div class="border rounded-3 p-2" style="max-height:220px;overflow-y:auto;" data-testid="opd-consumable-box">
                         <div id="opdConsumableList"></div>
-                        <div id="opdConsumableEmpty" class="text-slate small py-1">Pilih alat di sebelah kanan terlebih dahulu. Alat yang dipilih akan muncul di sini untuk ditentukan statusnya.</div>
+                        <div id="opdConsumableEmpty" class="text-slate small py-1">Pilih alat di sebelah kanan terlebih dahulu. Alat yang dipilih akan muncul di sini.</div>
                     </div>
-                    <div class="form-text">
-                        Setiap barang bisa berstatus salah satu dari:
-                        <strong>Habis pakai</strong> — diserahkan penuh ke OPD, tidak dikembalikan (mis. kabel, konektor); atau
-                        <strong>Pinjam pakai</strong> — tetap milik Diskominfo, dikembalikan hanya bila rusak.
-                        Barang <strong>pinjam pakai</strong> adalah default; centang hanya yang <strong>habis pakai</strong>.
-                    </div>
+                    <div class="form-text">Seluruh alat yang dipilih akan dikembalikan pada <strong>Rencana Tanggal Kembali</strong> di atas.</div>
                 </div>
             </div>
         </div>
@@ -307,24 +302,16 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
     setType('event');
 })();
 
-// Checklist "Barang Habis Pakai" di blok OPD. Isinya alat yang SEDANG dipilih di
-// panel kanan; centang menandai barang yang tidak ditunggu kembali. Tanda disimpan
-// di Set agar tidak hilang saat daftar dibangun ulang. Hanya aktif di mode OPD.
+// Daftar "Barang akan dikembalikan" di blok OPD (hanya tampil saat "Barang akan
+// dikembalikan?" dicentang). Read-only: menampilkan seluruh alat yang dipilih di
+// panel kanan sebagai konfirmasi bahwa semuanya akan dikembalikan pada rencana
+// tanggal kembali. Tidak ada lagi status habis pakai / pinjam pakai.
 (function () {
-    const marked = new Set();          // asset id yang ditandai habis pakai
     const list = document.getElementById('opdConsumableList');
     const empty = document.getElementById('opdConsumableEmpty');
     if (!list) return;
 
     window.rebuildConsumableList = function () {
-        // Barang habis pakai hanya relevan bila barang ditunggu kembali (will_return).
-        // Untuk penempatan permanen di OPD semua barang berstatus "Di OPD".
-        const opd = window.__loanType === 'opd' && window.__opdWillReturn === true;
-        // Ingat dulu centang saat ini sebelum membangun ulang.
-        list.querySelectorAll('input[type=checkbox]').forEach(cb => {
-            if (cb.checked) marked.add(cb.value); else marked.delete(cb.value);
-        });
-
         const chosen = Array.from(document.querySelectorAll('.asset-row'))
             .filter(r => { const c = r.querySelector('input[name="asset_ids[]"]'); return c && c.checked; });
 
@@ -333,39 +320,15 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
             const id = r.querySelector('input[name="asset_ids[]"]').value;
             const nameEl = r.querySelector('.fw-semibold');
             const name = nameEl ? nameEl.textContent.trim() : ('Alat #' + id);
-            const isHp = marked.has(id);
-            const wrap = document.createElement('div');
-            wrap.className = 'form-check d-flex align-items-center justify-content-between gap-2 py-1';
-            // name diisi HANYA saat mode OPD supaya di mode acara tidak ikut terkirim.
-            // Badge status di kanan menjelaskan arti centang tanpa perlu menebak.
-            wrap.innerHTML =
-                '<span class="d-inline-flex align-items-center gap-2">'
-                + '<input class="form-check-input mt-0" type="checkbox" '
-                + (opd ? 'name="consumable_ids[]" ' : '')
-                + 'value="' + id + '" id="opdcons' + id + '"' + (opd ? '' : ' disabled')
-                + (isHp ? ' checked' : '') + ' data-testid="consumable-' + id + '">'
-                + '<label class="form-check-label small mb-0" for="opdcons' + id + '">' + name + '</label>'
-                + '</span>'
-                + '<span class="badge ' + (isHp ? 'bg-warning text-dark' : 'bg-secondary')
-                + '" data-status="' + id + '" style="font-weight:600;">'
-                + (isHp ? 'Habis pakai — tidak kembali' : 'Pinjam pakai — kembali bila rusak')
-                + '</span>';
-            list.appendChild(wrap);
+            const row = document.createElement('div');
+            row.className = 'd-flex align-items-center justify-content-between gap-2 py-1';
+            row.innerHTML =
+                '<span class="small"><i class="fa-solid fa-rotate-left me-1 text-slate"></i>' + name + '</span>'
+                + '<span class="badge bg-info text-dark" style="font-weight:600;">Dikembalikan</span>';
+            list.appendChild(row);
         });
         empty.style.display = chosen.length ? 'none' : '';
     };
-
-    // Perbarui badge status begitu centang berubah, tanpa membangun ulang seluruh daftar.
-    list.addEventListener('change', function (e) {
-        if (!e.target || e.target.type !== 'checkbox') return;
-        const id = e.target.value;
-        const badge = list.querySelector('[data-status="' + id + '"]');
-        if (!badge) return;
-        const hp = e.target.checked;
-        badge.className = 'badge ' + (hp ? 'bg-warning text-dark' : 'bg-secondary');
-        badge.style.fontWeight = '600';
-        badge.textContent = hp ? 'Habis pakai — tidak kembali' : 'Pinjam pakai — kembali bila rusak';
-    });
 
     // Bangun ulang setiap pilihan alat berubah (termasuk saat centang dari panel kanan).
     document.getElementById('assetList')?.addEventListener('change', function (e) {
@@ -375,9 +338,9 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
 })();
 
 // ── Kebutuhan Jaringan: "Barang akan dikembalikan?" ──────────────────────────
-// Centang -> tampil "Rencana Tanggal Kembali" (wajib) + checklist habis pakai.
-// Tidak dicentang -> barang tetap di OPD; kedua bagian itu disembunyikan & di-disable
-// agar tidak ikut terkirim / tidak menggagalkan submit (required tapi tersembunyi).
+// Centang -> tampil "Rencana Tanggal Kembali" (wajib) + daftar barang yang akan
+// dikembalikan. Tidak dicentang -> barang tetap di OPD; kedua bagian itu
+// disembunyikan & di-disable agar tidak ikut terkirim / tidak menggagalkan submit.
 (function () {
     const cb = document.getElementById('opdWillReturn');
     window.__opdWillReturn = false;
