@@ -93,20 +93,33 @@ function loan_create_post(): void {
         ? []
         : array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
 
+    $willReturn = 1; // acara selalu ditunggu kembali; OPD ditentukan di bawah
     if ($loanType === 'opd') {
-        // Barang keluar ke OPD tanpa batas waktu. event_name diisi dari Nama OPD
-        // supaya seluruh tampilan lama (daftar, jadwal, Berita Acara) langsung ikut.
-        // Tanggal keluar = hari ini; end_date dipatok jauh ke depan agar alat tetap
-        // dianggap terpinjam sampai dikembalikan (bukan bebas otomatis besok).
-        $eventName = trim($_POST['opd_name'] ?? '');
-        $location  = $location ?: $eventName; // lokasi = OPD tujuan bila kosong
-        $purpose   = trim($_POST['opd_purpose'] ?? '');
-        $start     = date('Y-m-d');
-        $end       = '2099-12-31';
-        $startTime = null;
-        if (!$eventName || (!$assetIds && !$packageIds)) {
-            flash('error', 'Lengkapi nama OPD dan pilih minimal 1 alat / paket.');
-            redirect('/loans/create');
+        // Barang keluar ke OPD. event_name diisi dari Nama OPD supaya seluruh
+        // tampilan lama (daftar, jadwal, Berita Acara) langsung ikut.
+        // Tanggal pinjam bisa diatur (default hari ini). Bila "akan dikembalikan"
+        // dicentang, end_date = rencana tanggal kembali; bila tidak, barang tetap
+        // di OPD tanpa batas waktu (end_date dipatok jauh ke depan).
+        $eventName  = trim($_POST['opd_name'] ?? '');
+        $location   = $location ?: $eventName; // lokasi = OPD tujuan bila kosong
+        $purpose    = trim($_POST['opd_purpose'] ?? '');
+        $willReturn = !empty($_POST['opd_will_return']) ? 1 : 0;
+        $start      = trim($_POST['opd_start_date'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) $start = date('Y-m-d');
+        $startTime  = null;
+        if ($willReturn) {
+            $end = trim($_POST['opd_return_date'] ?? '');
+            if (!$eventName || !$end || (!$assetIds && !$packageIds)) {
+                flash('error', 'Lengkapi nama OPD, rencana tanggal kembali, dan pilih minimal 1 alat / paket.');
+                redirect('/loans/create');
+            }
+            if ($end < $start) { flash('error', 'Rencana tanggal kembali harus sama atau setelah tanggal pinjam.'); redirect('/loans/create'); }
+        } else {
+            $end = '2099-12-31';
+            if (!$eventName || (!$assetIds && !$packageIds)) {
+                flash('error', 'Lengkapi nama OPD dan pilih minimal 1 alat / paket.');
+                redirect('/loans/create');
+            }
         }
     } else {
         $eventName = trim($_POST['event_name'] ?? '');
@@ -162,13 +175,13 @@ function loan_create_post(): void {
 
         $code = next_loan_code();
         $loanUuid = generate_uuid();
-        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, start_time, end_time, purpose, status, loan_type, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,'Pending',?,?)");
-        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, $loanType, Auth::id()]);
+        $ins = $pdo->prepare("INSERT INTO loans (uuid, loan_code, requester_id, event_name, event_location, start_date, end_date, start_time, end_time, purpose, status, loan_type, will_return, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,'Pending',?,?,?)");
+        $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, $loanType, $willReturn, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
-        // Barang habis pakai hanya relevan untuk peminjaman OPD (barang acara selalu
-        // dikembalikan). Yang dicentang di form OPD dikirim sebagai consumable_ids[].
-        $consumableIds = $loanType === 'opd'
+        // Barang habis pakai hanya relevan untuk OPD yang barangnya ditunggu kembali
+        // (will_return). Untuk penempatan permanen di OPD semua barang jadi "Di OPD".
+        $consumableIds = ($loanType === 'opd' && $willReturn)
             ? array_flip(array_map('intval', $_POST['consumable_ids'] ?? []))
             : [];
         $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status, is_consumable) VALUES (?,?,?, 'Reserved', ?)");
@@ -190,7 +203,7 @@ function loan_create_post(): void {
 
         // Notify supervisors
         $konteks = $loanType === 'opd'
-            ? "untuk OPD \"$eventName\" (tanpa batas waktu)"
+            ? ($willReturn ? "untuk OPD \"$eventName\" (rencana kembali $end)" : "untuk OPD \"$eventName\" (tetap di OPD, tanpa batas waktu)")
             : "untuk acara \"$eventName\" ($start s/d $end)";
         Notification::pushToRole('supervisor', 'Pengajuan Peminjaman Baru',
             "Pengajuan $code $konteks menunggu persetujuan Anda.",

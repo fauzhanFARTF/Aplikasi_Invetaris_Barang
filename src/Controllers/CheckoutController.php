@@ -8,7 +8,7 @@ function checkout_index(): void {
     $today = date('Y-m-d');
     $loans = $pdo->prepare("SELECT l.*, u.name AS requester_name,
                             (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id) AS total_items,
-                            (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id AND li.item_status = 'CheckedOut') AS out_items
+                            (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id AND li.item_status IN ('CheckedOut','AtOpd')) AS out_items
                             FROM loans l JOIN users u ON u.id = l.requester_id
                             WHERE l.status IN ('Approved','CheckedOut') AND l.start_date <= ?
                             HAVING out_items < total_items
@@ -65,18 +65,33 @@ function checkout_scan_submit(): void {
     $stmt->execute(array_merge([$loanId], $cand));
     $item = $stmt->fetch();
     if (!$item) json_response(['ok' => false, 'message' => "Barcode $barcode tidak ada di peminjaman ini."], 404);
-    if ($item['item_status'] === 'CheckedOut') json_response(['ok' => false, 'message' => "Alat {$item['asset_name']} sudah diserahkan."], 409);
+    if (in_array($item['item_status'], ['CheckedOut', 'AtOpd'], true)) json_response(['ok' => false, 'message' => "Alat {$item['asset_name']} sudah diserahkan."], 409);
+
+    // Kebutuhan Jaringan dengan "barang TIDAK dikembalikan" -> barang diserahkan
+    // permanen ke OPD: item & alat berstatus 'Di OPD' (AtOpd), dan begitu semua
+    // barang keluar peminjaman langsung Selesai (tidak masuk Pengembalian).
+    $lr = $pdo->prepare("SELECT loan_type, will_return FROM loans WHERE id = ?");
+    $lr->execute([$loanId]);
+    $loanRow = $lr->fetch();
+    $atOpd = $loanRow && ($loanRow['loan_type'] ?? 'event') === 'opd' && (int)($loanRow['will_return'] ?? 1) === 0;
+    $itemOut  = $atOpd ? 'AtOpd' : 'CheckedOut';
+    $assetOut = $atOpd ? 'AtOpd' : 'CheckedOut';
 
     $pdo->beginTransaction();
     try {
-        $pdo->prepare("UPDATE loan_items SET item_status='CheckedOut', checkout_by=?, checkout_at=NOW() WHERE id = ?")->execute([Auth::id(), $item['id']]);
-        $pdo->prepare("UPDATE assets SET status='CheckedOut' WHERE id = ?")->execute([$item['asset_id']]);
-        // Loan baru jadi 'CheckedOut' (Dipinjam) kalau SEMUA item sudah diserahkan.
-        // Kalau masih sebagian (mis. 2/3), status peminjaman tetap 'Approved' (Disetujui).
-        $remaining = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status != 'CheckedOut'");
+        $pdo->prepare("UPDATE loan_items SET item_status=?, checkout_by=?, checkout_at=NOW() WHERE id = ?")->execute([$itemOut, Auth::id(), $item['id']]);
+        $pdo->prepare("UPDATE assets SET status=? WHERE id = ?")->execute([$assetOut, $item['asset_id']]);
+        // Peminjaman naik status kalau SEMUA item sudah keluar gudang (tak ada lagi
+        // yang 'Reserved'). Kalau masih sebagian, status tetap 'Approved'.
+        $remaining = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status = 'Reserved'");
         $remaining->execute([$loanId]);
         if ((int) $remaining->fetchColumn() === 0) {
-            $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at=NOW(), updated_by=? WHERE id = ? AND status='Approved'")->execute([Auth::id(), $loanId]);
+            if ($atOpd) {
+                // Permanen di OPD: tuntas begitu diserahkan — langsung Selesai.
+                $pdo->prepare("UPDATE loans SET status='Completed', checkout_at=COALESCE(checkout_at,NOW()), updated_by=? WHERE id = ? AND status IN ('Approved','CheckedOut')")->execute([Auth::id(), $loanId]);
+            } else {
+                $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at=NOW(), updated_by=? WHERE id = ? AND status='Approved'")->execute([Auth::id(), $loanId]);
+            }
         }
         $pdo->commit();
     } catch (Throwable $e) {
@@ -84,8 +99,9 @@ function checkout_scan_submit(): void {
         json_response(['ok' => false, 'message' => $e->getMessage()], 500);
     }
 
-    log_audit('loan.checkout_item', 'loan_item', $item['id'], ['bmn' => $item['bmn_number']]);
-    json_response(['ok' => true, 'message' => "Berhasil diserahkan: {$item['asset_name']}", 'asset_name' => $item['asset_name'], 'bmn' => $item['bmn_number']]);
+    log_audit('loan.checkout_item', 'loan_item', $item['id'], ['bmn' => $item['bmn_number'], 'at_opd' => $atOpd]);
+    $msg = $atOpd ? "Diserahkan ke OPD (permanen): {$item['asset_name']}" : "Berhasil diserahkan: {$item['asset_name']}";
+    json_response(['ok' => true, 'message' => $msg, 'asset_name' => $item['asset_name'], 'bmn' => $item['bmn_number'], 'at_opd' => $atOpd]);
 }
 
 function checkout_finalize(string $uuid): void {
@@ -93,13 +109,19 @@ function checkout_finalize(string $uuid): void {
     Auth::verifyCsrf();
     $id = uuid_to_id_or_404('loans', $uuid);
     $pdo = db();
-    $notOut = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status != 'CheckedOut'");
+    $notOut = $pdo->prepare("SELECT COUNT(*) FROM loan_items WHERE loan_id = ? AND item_status = 'Reserved'");
     $notOut->execute([$id]);
     if ((int)$notOut->fetchColumn() > 0) {
         flash('error', 'Masih ada alat yang belum di-scan untuk penyerahan.');
         redirect("/checkout/$uuid");
     }
-    $pdo->prepare("UPDATE loans SET status='CheckedOut', checkout_at = COALESCE(checkout_at, NOW()), updated_by=? WHERE id = ?")->execute([Auth::id(), $id]);
+    // OPD permanen (tidak dikembalikan) langsung Selesai; selain itu 'Dipinjam'.
+    $lr = $pdo->prepare("SELECT loan_type, will_return FROM loans WHERE id = ?");
+    $lr->execute([$id]);
+    $loanRow = $lr->fetch();
+    $atOpd = $loanRow && ($loanRow['loan_type'] ?? 'event') === 'opd' && (int)($loanRow['will_return'] ?? 1) === 0;
+    $finalStatus = $atOpd ? 'Completed' : 'CheckedOut';
+    $pdo->prepare("UPDATE loans SET status=?, checkout_at = COALESCE(checkout_at, NOW()), updated_by=? WHERE id = ?")->execute([$finalStatus, Auth::id(), $id]);
     log_audit('loan.checkout_finalize', 'loan', $id);
     // Notify requester
     $r = $pdo->prepare("SELECT requester_id, loan_code FROM loans WHERE id = ?");
