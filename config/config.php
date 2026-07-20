@@ -53,6 +53,12 @@ define('TURNSTILE_SECRET_KEY', env('TURNSTILE_SECRET_KEY', ''));
 define('GOOGLE_CLIENT_ID', env('GOOGLE_CLIENT_ID', ''));
 define('GOOGLE_CLIENT_SECRET', env('GOOGLE_CLIENT_SECRET', ''));
 define('GOOGLE_REDIRECT_URI', env('GOOGLE_REDIRECT_URI', rtrim(APP_URL, '/') . '/auth/google/callback'));
+// Notifikasi Telegram. Kosongkan token untuk menonaktifkan fiturnya sepenuhnya
+// (menu Telegram di Profil ikut tersembunyi). Tiap user menempelkan Chat ID-nya
+// sendiri di Profil — Telegram melarang bot mengirim ke orang yang belum
+// pernah menyapa bot tersebut.
+define('TELEGRAM_BOT_TOKEN', env('TELEGRAM_BOT_TOKEN', ''));
+define('TELEGRAM_BOT_USERNAME', env('TELEGRAM_BOT_USERNAME', ''));
 define('DB_HOST', env('DB_HOST', '127.0.0.1'));
 define('DB_PORT', (int) env('DB_PORT', 3307));
 define('DB_NAME', env('DB_NAME', 'bmn_streaming'));

@@ -202,6 +202,12 @@ function run_pending_migrations(PDO $pdo): void {
         // tidak dipakai lagi, dan menghapus kolom berisiko; dibiarkan sebagai default
         // opsional. Tidak ditambahkan pada instalasi baru.
 
+        // Chat ID Telegram per user (diisi sendiri lewat menu Profil) — tujuan
+        // pengiriman notifikasi ke Telegram pribadi masing-masing.
+        if (!$pdo->query("SHOW COLUMNS FROM users LIKE 'telegram_chat_id'")->fetch()) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN telegram_chat_id VARCHAR(32) NULL AFTER phone");
+        }
+
         // Arsip notifikasi: notifikasi yang sudah tidak perlu tampil di kotak masuk
         // dipindahkan ke arsip (bukan dihapus), jadi riwayatnya tetap bisa dibuka.
         if (!$pdo->query("SHOW COLUMNS FROM notifications LIKE 'archived_at'")->fetch()) {

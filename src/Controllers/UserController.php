@@ -419,7 +419,15 @@ function notification_delete_all(): void {
 // ================ Profile ================
 function profile_get(): void {
     Auth::requireLogin();
-    layout('main', 'users/profile', ['title' => 'Profil Saya', 'user' => Auth::user(), 'currentPath' => '/profile']);
+    // Auth::user() sengaja hanya memuat kolom inti; Chat ID Telegram diambil terpisah.
+    $tg = db()->prepare("SELECT telegram_chat_id FROM users WHERE id=?");
+    $tg->execute([Auth::id()]);
+    layout('main', 'users/profile', [
+        'title'          => 'Profil Saya',
+        'user'           => Auth::user(),
+        'telegramChatId' => (string) ($tg->fetchColumn() ?: ''),
+        'currentPath'    => '/profile',
+    ]);
 }
 function profile_photo_post(): void {
     Auth::requireLogin();
@@ -446,6 +454,51 @@ function profile_photo_post(): void {
     db()->prepare("UPDATE users SET photo=?, updated_by=? WHERE id=?")->execute([$upload['filename'], $id, $id]);
     log_audit('user.photo_update', 'user', $id);
     flash('success', 'Foto profil diperbarui.');
+    redirect('/profile');
+}
+
+/** Simpan / hapus Chat ID Telegram milik user sendiri. */
+function profile_telegram_post(): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    $chatId = trim((string) ($_POST['telegram_chat_id'] ?? ''));
+
+    if ($chatId === '') {
+        db()->prepare("UPDATE users SET telegram_chat_id=NULL, updated_by=? WHERE id=?")->execute([Auth::id(), Auth::id()]);
+        log_audit('user.telegram_unlink', 'user', Auth::id());
+        flash('success', 'Telegram diputuskan. Notifikasi tidak lagi dikirim ke Telegram Anda.');
+        redirect('/profile');
+    }
+    if (!Telegram::isValidChatId($chatId)) {
+        flash('error', 'Chat ID Telegram harus berupa angka (boleh diawali tanda minus untuk grup).');
+        redirect('/profile');
+    }
+
+    db()->prepare("UPDATE users SET telegram_chat_id=?, updated_by=? WHERE id=?")->execute([$chatId, Auth::id(), Auth::id()]);
+    log_audit('user.telegram_link', 'user', Auth::id());
+    flash('success', 'Chat ID Telegram disimpan. Gunakan "Kirim Tes" untuk memastikan pesannya sampai.');
+    redirect('/profile');
+}
+
+/** Kirim pesan uji ke Telegram user, supaya sambungannya bisa dipastikan sendiri. */
+function profile_telegram_test(): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    $stmt = db()->prepare("SELECT name, telegram_chat_id FROM users WHERE id=?");
+    $stmt->execute([Auth::id()]);
+    $u = $stmt->fetch();
+
+    if (empty($u['telegram_chat_id'])) {
+        flash('error', 'Isi dan simpan Chat ID Telegram terlebih dahulu.');
+        redirect('/profile');
+    }
+    [$ok, $msg] = Telegram::send(
+        (string) $u['telegram_chat_id'],
+        'Tes Notifikasi SIMANTAP',
+        "Halo {$u['name']}, sambungan Telegram Anda berhasil. Notifikasi SIMANTAP akan dikirim ke sini.",
+        '/dashboard'
+    );
+    flash($ok ? 'success' : 'error', $msg);
     redirect('/profile');
 }
 
