@@ -69,16 +69,24 @@
         <div class="card-sb">
             <div class="card-title">Ringkasan</div>
             <table class="table table-sm mb-0">
-                <?php $isOpd = ($loan['loan_type'] ?? 'event') === 'opd'; $willReturn = (int)($loan['will_return'] ?? 1) === 1; ?>
+                <?php
+                    $isOpd = ($loan['loan_type'] ?? 'event') === 'opd';
+                    if ($isOpd) {
+                        $opdRet   = array_filter($items, fn($i) => (int)($i['will_return'] ?? 1) === 1);
+                        $opdStay  = array_filter($items, fn($i) => (int)($i['will_return'] ?? 1) === 0);
+                        $opdDates = array_values(array_filter(array_map(fn($i) => $i['expected_return_date'] ?? null, $opdRet)));
+                    }
+                ?>
                 <tr><td class="text-slate">Status</td><td><?= status_badge($loan['status']) ?></td></tr>
                 <tr><td class="text-slate">Pemohon</td><td><?= e($loan['requester_name']) ?><br><span class="small text-slate"><?= e($loan['requester_unit']) ?></span></td></tr>
                 <?php if ($isOpd): ?>
                     <tr><td class="text-slate">Tanggal Pinjam</td><td><?= fmt_date($loan['start_date']) ?></td></tr>
                     <tr><td class="text-slate">Pengembalian</td><td>
-                        <?php if ($willReturn): ?>
-                            Rencana kembali: <strong><?= fmt_date($loan['end_date']) ?></strong>
-                        <?php else: ?>
-                            <span class="badge bg-info text-dark">Tetap di OPD</span> <span class="small text-slate">tanpa batas waktu</span>
+                        <?php if (!empty($opdRet)): ?>
+                            <div><span class="badge bg-info text-dark">Dikembalikan</span> <?= count($opdRet) ?> barang<?php if ($opdDates): ?> · paling lambat <strong><?= fmt_date(max($opdDates)) ?></strong><?php endif; ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($opdStay)): ?>
+                            <div class="mt-1"><span class="badge bg-secondary">Tetap di OPD</span> <?= count($opdStay) ?> barang <span class="small text-slate">tanpa batas waktu</span></div>
                         <?php endif; ?>
                     </td></tr>
                 <?php else: ?>
@@ -138,7 +146,16 @@
                                 <?php if ($bm !== ''): ?><div class="text-slate small"><?= e($bm) ?></div><?php endif; ?>
                                 <?php if (!empty($it['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($it['serial_number']) ?></div><?php endif; ?>
                             </td>
-                            <td><?= status_badge($it['item_status']) ?></td>
+                            <td>
+                                <?= status_badge($it['item_status']) ?>
+                                <?php if ($isOpd): ?>
+                                    <?php if ((int)($it['will_return'] ?? 1) === 1): ?>
+                                        <div class="small text-slate mt-1"><i class="fa-solid fa-rotate-left me-1"></i>Dikembalikan<?php if (!empty($it['expected_return_date'])): ?> · <?= fmt_date($it['expected_return_date']) ?><?php endif; ?></div>
+                                    <?php else: ?>
+                                        <div class="small text-slate mt-1"><i class="fa-solid fa-building-columns me-1"></i>Tetap di OPD</div>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            </td>
                             <td class="small">
                                 <div><i class="fa-solid fa-user me-1 text-slate"></i><?= e($loan['requester_name']) ?></div>
                                 <?php if ($participantNames !== ''): ?><div class="text-slate"><i class="fa-solid fa-users me-1"></i><?= e($participantNames) ?></div><?php endif; ?>

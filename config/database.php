@@ -166,6 +166,13 @@ function run_pending_migrations(PDO $pdo): void {
         if (!$pdo->query("SHOW COLUMNS FROM loans LIKE 'will_return'")->fetch()) {
             $pdo->exec("ALTER TABLE loans ADD COLUMN will_return TINYINT(1) NOT NULL DEFAULT 1 AFTER loan_type");
         }
+        // Keputusan kembali PER BARANG (per loan_item): apakah barang ini dikembalikan
+        // dan bila ya, rencana tanggalnya. loans.will_return dipertahankan sebagai
+        // ringkasan (1 bila ADA barang yang dikembalikan).
+        if (!$pdo->query("SHOW COLUMNS FROM loan_items LIKE 'will_return'")->fetch()) {
+            $pdo->exec("ALTER TABLE loan_items ADD COLUMN will_return TINYINT(1) NOT NULL DEFAULT 1");
+            $pdo->exec("ALTER TABLE loan_items ADD COLUMN expected_return_date DATE NULL");
+        }
         // Status 'AtOpd' (Di OPD) untuk alat yang diserahkan permanen ke OPD.
         $stColOpd = $pdo->query("SHOW COLUMNS FROM assets LIKE 'status'")->fetch();
         if ($stColOpd && strpos($stColOpd['Type'], "'AtOpd'") === false) {

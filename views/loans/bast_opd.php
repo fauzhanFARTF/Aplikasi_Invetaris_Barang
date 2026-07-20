@@ -63,8 +63,14 @@
         <?php endif; ?>
         <?php if (!empty($loan['purpose'])): ?><tr><td>Tujuan / Keperluan</td><td>: <?= nl2br(e($loan['purpose'])) ?></td></tr><?php endif; ?>
         <tr><td>Tanggal Serah Terima</td><td>: <?= e($serahTanggal) ?></td></tr>
-        <?php $baWillReturn = (int)($loan['will_return'] ?? 1) === 1; ?>
-        <tr><td>Status Barang</td><td>: <strong><?= $baWillReturn ? 'Dikembalikan — rencana ' . e(date('d F Y', strtotime((string)$loan['end_date']))) : 'Tetap di OPD (tanpa batas waktu)' ?></strong></td></tr>
+        <?php
+            $baRet  = array_filter($items, fn($i) => (int)($i['will_return'] ?? 1) === 1);
+            $baStay = array_filter($items, fn($i) => (int)($i['will_return'] ?? 1) === 0);
+            $baParts = [];
+            if ($baRet)  $baParts[] = count($baRet) . ' barang dikembalikan';
+            if ($baStay) $baParts[] = count($baStay) . ' barang tetap di OPD';
+        ?>
+        <tr><td>Status Barang</td><td>: <strong><?= e(implode(', ', $baParts) ?: '—') ?></strong></td></tr>
     </table>
 
     <table class="items">
@@ -78,7 +84,7 @@
                     <td><?= e($it['bmn_number']) ?></td>
                     <td><?= e(trim(($it['brand'] ?? '').' '.($it['model'] ?? ''))) ?: '—' ?></td>
                     <td><?= e($it['serial_number'] ?: '—') ?></td>
-                    <td><?= $baWillReturn ? '<span class="tag-pp">Dikembalikan</span>' : '<span class="tag-hp">Tetap di OPD</span>' ?></td>
+                    <td><?php if ((int)($it['will_return'] ?? 1) === 1): ?><span class="tag-pp">Dikembalikan<?php if (!empty($it['expected_return_date'])): ?> <?= e(date('d/m/Y', strtotime((string)$it['expected_return_date']))) ?><?php endif; ?></span><?php else: ?><span class="tag-hp">Tetap di OPD</span><?php endif; ?></td>
                 </tr>
             <?php endforeach; if (empty($items)): ?>
                 <tr><td colspan="7" style="text-align:center;">Tidak ada barang.</td></tr>
@@ -87,11 +93,8 @@
     </table>
 
     <p style="margin-top:10px;">
-        <?php if ($baWillReturn): ?>
-            Seluruh barang di atas tetap menjadi milik Diskominfo Kabupaten Tangerang dan <strong>dikembalikan</strong> sesuai rencana pada <strong><?= e(date('d F Y', strtotime((string)$loan['end_date']))) ?></strong>.
-        <?php else: ?>
-            Seluruh barang di atas diserahkan untuk ditempatkan di instansi penerima dan <strong>tetap berada di OPD tanpa batas waktu</strong>.
-        <?php endif; ?>
+        Barang berketerangan <strong>Dikembalikan</strong> tetap menjadi milik Diskominfo Kabupaten Tangerang dan dikembalikan sesuai tanggal rencana pada keterangan.
+        Barang berketerangan <strong>Tetap di OPD</strong> ditempatkan di instansi penerima tanpa batas waktu.
     </p>
 
     <div class="ba-sign">
