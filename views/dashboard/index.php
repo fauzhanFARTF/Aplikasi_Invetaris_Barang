@@ -70,15 +70,15 @@
             <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
             <div class="label">Barang Keluar untuk OPD</div>
             <div class="value" data-testid="stat-opd-out"><?= $stats['opd_out'] ?? 0 ?></div>
-            <div class="text-slate small">Pinjam pakai — pengelolaan aset masih di Diskominfo</div>
+            <div class="text-slate small">Akan dikembalikan — ditunggu kembali</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card hover-lift tone-navy">
-            <div class="stat-icon"><i class="fa-solid fa-fire-flame-simple"></i></div>
-            <div class="label">Barang Habis Pakai</div>
+            <div class="stat-icon"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="label">Barang Tetap di OPD</div>
             <div class="value" data-testid="stat-opd-consumable"><?= $stats['opd_consumable'] ?? 0 ?></div>
-            <div class="text-slate small">Barang yang bersifat permanen</div>
+            <div class="text-slate small">Ditempatkan permanen di OPD</div>
         </div>
     </div>
     <?php endif; ?>
