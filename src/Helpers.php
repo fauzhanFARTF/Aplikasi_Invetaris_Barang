@@ -533,6 +533,56 @@ function is_personal_borrower(): bool {
 }
 
 /**
+ * Alat yang MASIH DIPINJAM (sudah keluar gudang, belum kembali) beserta
+ * penanggung jawab (pemohon) dan personel yang dilibatkan.
+ *
+ * Sengaja hanya item_status 'CheckedOut'. Barang "Di OPD" (AtOpd) TIDAK ikut —
+ * barang itu punya halaman sendiri (Barang di OPD) dan tidak digabung dengan
+ * alat lain, sesuai alur Kebutuhan Jaringan.
+ *
+ * @param array|null $userIds Bila diisi, hanya alat yang dipegang orang-orang ini
+ *                            (sebagai pemohon ATAU personel yang dilibatkan).
+ * @param int|null   $excludeLoanId Lewati peminjaman ini (mis. yang sedang dipindai).
+ */
+function borrowed_items(?array $userIds = null, ?int $excludeLoanId = null): array {
+    $where  = ["li.item_status = 'CheckedOut'", 'l.deleted_at IS NULL'];
+    $params = [];
+    if ($excludeLoanId !== null) { $where[] = 'l.id <> ?'; $params[] = $excludeLoanId; }
+    if ($userIds !== null) {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
+        if (!$userIds) return [];
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        $where[] = "(l.requester_id IN ($in) OR EXISTS (SELECT 1 FROM loan_participants lp
+                        WHERE lp.loan_id = l.id AND lp.user_id IN ($in)))";
+        $params = array_merge($params, $userIds, $userIds);
+    }
+    $sql = "SELECT a.name AS asset_name, a.asset_code, a.bmn_number,
+                   l.uuid AS loan_uuid, l.loan_code, l.event_name, l.loan_type,
+                   l.checkout_at, l.end_date, li.expected_return_date,
+                   u.name AS requester_name,
+                   (SELECT GROUP_CONCAT(pu.name ORDER BY pu.name SEPARATOR ', ')
+                      FROM loan_participants lp JOIN users pu ON pu.id = lp.user_id
+                     WHERE lp.loan_id = l.id) AS personnel
+            FROM loan_items li
+            JOIN loans l  ON l.id = li.loan_id
+            JOIN assets a ON a.id = li.asset_id
+            JOIN users u  ON u.id = l.requester_id
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY l.checkout_at DESC, a.name";
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+/** Pemohon + personel yang dilibatkan pada sebuah peminjaman (untuk borrowed_items). */
+function loan_people_ids(int $loanId): array {
+    $stmt = db()->prepare("SELECT requester_id AS id FROM loans WHERE id = ?
+                           UNION SELECT user_id FROM loan_participants WHERE loan_id = ?");
+    $stmt->execute([$loanId, $loanId]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+}
+
+/**
  * Akun bawaan per-role yang disembunyikan dari daftar user & pilihan personel
  * untuk semua role kecuali Super Admin. Akun-akun ini tetap bisa login dan
  * riwayat peminjamannya tetap tampil apa adanya.
