@@ -156,6 +156,25 @@ function run_pending_migrations(PDO $pdo): void {
         if (!$pdo->query("SHOW COLUMNS FROM loan_items LIKE 'is_consumable'")->fetch()) {
             $pdo->exec("ALTER TABLE loan_items ADD COLUMN is_consumable TINYINT(1) NOT NULL DEFAULT 0");
         }
+
+        // Kebutuhan Jaringan: keputusan "barang akan dikembalikan?" per pengiriman.
+        // will_return=1 (default, juga untuk acara): barang ditunggu kembali —
+        //   rencana tanggal kembali disimpan di end_date.
+        // will_return=0: barang tetap di OPD tanpa batas waktu. Setelah diserahkan,
+        //   alat berstatus 'AtOpd' (Di OPD) & peminjaman langsung Selesai, tidak
+        //   pernah muncul di Pengembalian.
+        if (!$pdo->query("SHOW COLUMNS FROM loans LIKE 'will_return'")->fetch()) {
+            $pdo->exec("ALTER TABLE loans ADD COLUMN will_return TINYINT(1) NOT NULL DEFAULT 1 AFTER loan_type");
+        }
+        // Status 'AtOpd' (Di OPD) untuk alat yang diserahkan permanen ke OPD.
+        $stColOpd = $pdo->query("SHOW COLUMNS FROM assets LIKE 'status'")->fetch();
+        if ($stColOpd && strpos($stColOpd['Type'], "'AtOpd'") === false) {
+            $pdo->exec("ALTER TABLE assets MODIFY COLUMN status ENUM('Available','Booked','CheckedOut','Damaged','Retired','Lost','Habis','AtOpd') NOT NULL DEFAULT 'Available'");
+        }
+        $liColOpd = $pdo->query("SHOW COLUMNS FROM loan_items LIKE 'item_status'")->fetch();
+        if ($liColOpd && strpos($liColOpd['Type'], "'AtOpd'") === false) {
+            $pdo->exec("ALTER TABLE loan_items MODIFY COLUMN item_status ENUM('Reserved','CheckedOut','ReturnedGood','ReturnedDamaged','ReturnedLost','InRepair','Restored','AtOpd') NOT NULL DEFAULT 'Reserved'");
+        }
         // Kolom assets.is_consumable (pendekatan lama) dipertahankan bila sudah ada —
         // tidak dipakai lagi, dan menghapus kolom berisiko; dibiarkan sebagai default
         // opsional. Tidak ditambahkan pada instalasi baru.
