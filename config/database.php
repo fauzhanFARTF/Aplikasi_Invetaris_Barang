@@ -202,6 +202,13 @@ function run_pending_migrations(PDO $pdo): void {
         // tidak dipakai lagi, dan menghapus kolom berisiko; dibiarkan sebagai default
         // opsional. Tidak ditambahkan pada instalasi baru.
 
+        // Arsip notifikasi: notifikasi yang sudah tidak perlu tampil di kotak masuk
+        // dipindahkan ke arsip (bukan dihapus), jadi riwayatnya tetap bisa dibuka.
+        if (!$pdo->query("SHOW COLUMNS FROM notifications LIKE 'archived_at'")->fetch()) {
+            $pdo->exec("ALTER TABLE notifications ADD COLUMN archived_at DATETIME NULL");
+            $pdo->exec("ALTER TABLE notifications ADD INDEX idx_notif_user_archived (user_id, archived_at)");
+        }
+
         // Kolom uuid untuk 6 entitas (dipakai di URL, id integer tetap internal).
         // Tambah kolom bila belum ada, lalu backfill baris yang uuid-nya NULL —
         // sekaligus jadi jaring pengaman kalau ada insert yang terlewat mengisi uuid.

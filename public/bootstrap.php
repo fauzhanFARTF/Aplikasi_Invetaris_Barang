@@ -146,6 +146,10 @@ $routes = [
 
     // Notifications
     ['GET',  '#^/notifications$#',            'notification_index'],
+    ['GET',  '#^/notifications/arsip$#',      'notification_archive_index'],
+    ['POST', '#^/notifications/(\d+)/arsip$#',      'notification_archive'],
+    ['POST', '#^/notifications/(\d+)/kembalikan$#', 'notification_unarchive'],
+    ['POST', '#^/notifications/arsip-semua$#',      'notification_archive_all'],
     ['POST', '#^/notifications/(\d+)/read$#', 'notification_mark_read'],
     ['POST', '#^/notifications/read-all$#',   'notification_mark_all_read'],
     ['POST', '#^/notifications/(\d+)/delete$#', 'notification_delete'],
