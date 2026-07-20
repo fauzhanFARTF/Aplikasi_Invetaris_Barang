@@ -132,6 +132,10 @@ function checkout_finalize(string $uuid): void {
     $row = $r->fetch();
     if ($row) {
         Notification::push((int)$row['requester_id'], 'Alat Telah Diserahkan', "Semua alat pada peminjaman {$row['loan_code']} telah diserahkan kepada Anda. Mohon dijaga & dikembalikan tepat waktu.", "/loans/$uuid");
+        // Personel yang dilibatkan ikut diberi tahu bahwa alatnya sudah keluar gudang.
+        Notification::pushToParticipants((int)$id, 'Alat Peminjaman Anda Telah Diserahkan',
+            "Semua alat pada peminjaman {$row['loan_code']} sudah keluar gudang.",
+            "/loans/$uuid", (int)$row['requester_id']);
     }
     flash('success', 'Penyerahan selesai.');
     redirect("/loans/$uuid");

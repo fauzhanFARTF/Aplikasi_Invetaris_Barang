@@ -74,10 +74,20 @@ function dashboard_index(): void {
         $stats['opd_consumable'] = 0;
     }
 
-    // My data (peminjaman terbaru) — requester murni hanya lihat miliknya sendiri.
+    // My data (peminjaman terbaru). Requester murni melihat peminjaman miliknya
+    // SENDIRI maupun yang MELIBATKAN dirinya sebagai personel — supaya personel
+    // yang ditugaskan tetap menemukannya di dashboardnya sendiri, bukan hanya tahu
+    // dari pemohonnya. is_mine dipakai view untuk menandai mana yang ia ajukan.
     if (role_is_requester()) {
-        $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.requester_id = ? AND l.deleted_at IS NULL ORDER BY l.created_at DESC LIMIT 8");
-        $stmt->execute([$uid]);
+        $stmt = $pdo->prepare("SELECT l.*, u.name AS requester_name,
+                                      (l.requester_id = ?) AS is_mine
+                               FROM loans l JOIN users u ON u.id = l.requester_id
+                               WHERE l.deleted_at IS NULL
+                                 AND (l.requester_id = ?
+                                      OR EXISTS (SELECT 1 FROM loan_participants lp
+                                                 WHERE lp.loan_id = l.id AND lp.user_id = ?))
+                               ORDER BY l.created_at DESC LIMIT 8");
+        $stmt->execute([$uid, $uid, $uid]);
         $myLoans = $stmt->fetchAll();
     } else {
         $myLoans = $pdo->query("SELECT l.*, u.name AS requester_name FROM loans l JOIN users u ON u.id = l.requester_id WHERE l.deleted_at IS NULL ORDER BY l.created_at DESC LIMIT 8")->fetchAll();
