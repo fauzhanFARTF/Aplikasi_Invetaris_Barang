@@ -93,33 +93,37 @@ function loan_create_post(): void {
         ? []
         : array_values(array_unique(array_filter(array_map('intval', $_POST['participant_ids'] ?? []))));
 
-    $willReturn = 1; // acara selalu ditunggu kembali; OPD ditentukan di bawah
+    $willReturn = 1; // acara selalu ditunggu kembali; OPD ditentukan per barang
+    $returnMap = []; // asset_id => tanggal kembali (khusus OPD, barang yang dikembalikan)
     if ($loanType === 'opd') {
         // Barang keluar ke OPD. event_name diisi dari Nama OPD supaya seluruh
-        // tampilan lama (daftar, jadwal, Berita Acara) langsung ikut.
-        // Tanggal pinjam bisa diatur (default hari ini). Bila "akan dikembalikan"
-        // dicentang, end_date = rencana tanggal kembali; bila tidak, barang tetap
-        // di OPD tanpa batas waktu (end_date dipatok jauh ke depan).
+        // tampilan lama (daftar, jadwal, Berita Acara) langsung ikut. Keputusan
+        // "dikembalikan / tetap di OPD" ditentukan PER BARANG (return_ids[] +
+        // return_date[<assetId>]). end_date loan = tanggal kembali paling akhir di
+        // antara barang yang dikembalikan; bila tak ada, dipatok jauh ke depan.
         $eventName  = trim($_POST['opd_name'] ?? '');
         $location   = $location ?: $eventName; // lokasi = OPD tujuan bila kosong
         $purpose    = trim($_POST['opd_purpose'] ?? '');
-        $willReturn = !empty($_POST['opd_will_return']) ? 1 : 0;
         $start      = trim($_POST['opd_start_date'] ?? '');
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) $start = date('Y-m-d');
         $startTime  = null;
-        if ($willReturn) {
-            $end = trim($_POST['opd_return_date'] ?? '');
-            if (!$eventName || !$end || (!$assetIds && !$packageIds)) {
-                flash('error', 'Lengkapi nama OPD, rencana tanggal kembali, dan pilih minimal 1 alat / paket.');
+
+        $returnIds   = array_map('intval', $_POST['return_ids'] ?? []);
+        $returnDates = is_array($_POST['return_date'] ?? null) ? $_POST['return_date'] : [];
+        foreach ($returnIds as $rid) {
+            $d = trim((string)($returnDates[$rid] ?? ''));
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                flash('error', 'Isi tanggal kembali untuk setiap barang yang ditandai Dikembalikan.');
                 redirect('/loans/create');
             }
-            if ($end < $start) { flash('error', 'Rencana tanggal kembali harus sama atau setelah tanggal pinjam.'); redirect('/loans/create'); }
-        } else {
-            $end = '2099-12-31';
-            if (!$eventName || (!$assetIds && !$packageIds)) {
-                flash('error', 'Lengkapi nama OPD dan pilih minimal 1 alat / paket.');
-                redirect('/loans/create');
-            }
+            if ($d < $start) { flash('error', 'Tanggal kembali barang harus sama atau setelah tanggal pinjam.'); redirect('/loans/create'); }
+            $returnMap[$rid] = $d;
+        }
+        $willReturn = $returnMap ? 1 : 0;
+        $end = $returnMap ? max($returnMap) : '2099-12-31';
+        if (!$eventName || (!$assetIds && !$packageIds)) {
+            flash('error', 'Lengkapi nama OPD dan pilih minimal 1 alat / paket.');
+            redirect('/loans/create');
         }
     } else {
         $eventName = trim($_POST['event_name'] ?? '');
@@ -179,13 +183,18 @@ function loan_create_post(): void {
         $ins->execute([$loanUuid, $code, Auth::id(), $eventName, $location, $start, $end, $startTime, $endTime, $purpose, $loanType, $willReturn, Auth::id()]);
         $loanId = (int) $pdo->lastInsertId();
 
-        // Model OPD kini biner per pengiriman: seluruh barang "akan dikembalikan"
-        // (will_return=1, kembali pada rencana tanggal) atau "tetap di OPD"
-        // (will_return=0). Tidak ada lagi status habis pakai per barang.
-        $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status, is_consumable) VALUES (?,?,?, 'Reserved', 0)");
+        // Keputusan kembali per barang (OPD): barang di returnMap dikembalikan pada
+        // tanggalnya; sisanya tetap di OPD. Barang acara selalu dikembalikan.
+        $itemIns = $pdo->prepare("INSERT INTO loan_items (loan_id, asset_id, package_id, item_status, is_consumable, will_return, expected_return_date) VALUES (?,?,?, 'Reserved', 0, ?, ?)");
         $upA = $pdo->prepare("UPDATE assets SET status = 'Booked' WHERE id = ? AND status = 'Available'");
         foreach ($allAssetIds as $aid) {
-            $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null]);
+            if ($loanType === 'opd') {
+                $iwr   = isset($returnMap[$aid]) ? 1 : 0;
+                $idate = $returnMap[$aid] ?? null;
+            } else {
+                $iwr = 1; $idate = null;
+            }
+            $itemIns->execute([$loanId, $aid, $packageMap[$aid] ?? null, $iwr, $idate]);
             $upA->execute([$aid]);
         }
 
@@ -200,8 +209,9 @@ function loan_create_post(): void {
         log_audit('loan.create', 'loan', $loanId, ['code' => $code, 'items' => count($allAssetIds)]);
 
         // Notify supervisors
+        $retCount = count($returnMap);
         $konteks = $loanType === 'opd'
-            ? ($willReturn ? "untuk OPD \"$eventName\" (rencana kembali $end)" : "untuk OPD \"$eventName\" (tetap di OPD, tanpa batas waktu)")
+            ? ("untuk OPD \"$eventName\" (" . ($retCount ? "$retCount barang dikembalikan s/d $end" : 'semua tetap di OPD') . ')')
             : "untuk acara \"$eventName\" ($start s/d $end)";
         Notification::pushToRole('supervisor', 'Pengajuan Peminjaman Baru',
             "Pengajuan $code $konteks menunggu persetujuan Anda.",
@@ -303,7 +313,7 @@ function loan_berita_acara(string $uuid): void {
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
 
-    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number, li.is_consumable
+    $itemsStmt = $pdo->prepare("SELECT a.name AS asset_name, a.asset_code, a.bmn_number, a.brand, a.model, a.serial_number, li.is_consumable, li.will_return, li.expected_return_date
                                FROM loan_items li JOIN assets a ON a.id = li.asset_id
                                WHERE li.loan_id = ? ORDER BY a.name");
     $itemsStmt->execute([$id]);
