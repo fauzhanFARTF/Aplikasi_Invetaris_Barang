@@ -182,15 +182,17 @@
                             <div class="flex-grow-1">
                                 <div class="fw-semibold small"><?= e($a['name']) ?></div>
                                 <div class="text-slate small text-mono"><?= e($a['asset_code']) ?></div>
-                                <?php if ($isStock): ?>
-                                    <?php // Alat berstok (kabel per meter, RJ45 per bungkus): tampilkan sisa stoknya
-                                          // supaya pemohon tahu jumlah yang tersisa sebelum memilih. Semua role. ?>
-                                    <div class="small"><span class="badge bg-info text-dark" data-testid="loan-stock-<?= (int)$a['id'] ?>"><i class="fa-solid fa-layer-group"></i> Stok: <?= e($stockTxt) ?></span></div>
-                                <?php endif; ?>
                                 <?php if (!empty($a['category_name'])): ?><div class="text-slate small"><?= e($a['category_name']) ?></div><?php endif; ?>
                                 <?php if ($brandModel !== ''): ?><div class="text-slate small"><?= e($brandModel) ?></div><?php endif; ?>
                                 <?php if (!empty($a['serial_number'])): ?><div class="text-slate small text-mono">SN: <?= e($a['serial_number']) ?></div><?php endif; ?>
                             </div>
+                            <?php if ($isStock): ?>
+                                <?php // Alat berstok (kabel per meter, RJ45 per bungkus): sisa stok ditaruh
+                                      // di antara nama alat dan status supaya langsung terbaca sebaris. ?>
+                                <div class="text-center" style="flex-shrink:0;">
+                                    <span class="badge bg-info text-dark" data-testid="loan-stock-<?= (int)$a['id'] ?>"><i class="fa-solid fa-layer-group"></i> Stok: <?= e($stockTxt) ?></span>
+                                </div>
+                            <?php endif; ?>
                             <div class="text-center" style="flex-shrink:0;"><?= status_badge($a['status']) ?></div>
                             <?php if (!empty($holders[$a['id']])): ?>
                                 <div class="small text-slate" style="min-width:150px;max-width:210px;flex-shrink:0;">
