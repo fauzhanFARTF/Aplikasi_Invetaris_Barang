@@ -628,6 +628,36 @@ function borrowed_items(?array $userIds = null, ?int $excludeLoanId = null): arr
     return $stmt->fetchAll();
 }
 
+/**
+ * Hitung ulang status peminjaman dari status barang-barangnya. Dipakai setelah
+ * superadmin mengoreksi data (batal penyerahan / batal pengembalian / lepas dari OPD)
+ * supaya status acara tidak menggantung tidak sesuai isinya.
+ *
+ * Aturannya mengikuti alur normal: selama masih ada barang 'Reserved' acara belum
+ * 'Dipinjam'; kalau semua sudah keluar -> 'Dipinjam'; kalau semua sudah tuntas ->
+ * 'Selesai' (bila semua kembali baik) atau 'Dikembalikan'. Status final yang bukan
+ * hasil alur barang (Pending/Rejected/Cancelled) tidak disentuh.
+ */
+function recompute_loan_status(int $loanId): void {
+    $pdo = db();
+    $stmt = $pdo->prepare("SELECT COUNT(*) total,
+                                  SUM(item_status = 'Reserved') res,
+                                  SUM(item_status IN ('CheckedOut','AtOpd')) out_now,
+                                  SUM(item_status = 'ReturnedGood') good
+                           FROM loan_items WHERE loan_id = ?");
+    $stmt->execute([$loanId]);
+    $r = $stmt->fetch();
+    if (!$r || (int) $r['total'] === 0) return;
+
+    if ((int) $r['res'] > 0)          $status = 'Approved';
+    elseif ((int) $r['out_now'] > 0)  $status = 'CheckedOut';
+    else                              $status = ((int) $r['good'] === (int) $r['total']) ? 'Completed' : 'Returned';
+
+    $pdo->prepare("UPDATE loans SET status = ?, updated_by = ?
+                   WHERE id = ? AND status NOT IN ('Pending','Rejected','Cancelled')")
+        ->execute([$status, Auth::id(), $loanId]);
+}
+
 /** Pemohon + personel yang dilibatkan pada sebuah peminjaman (untuk borrowed_items). */
 function loan_people_ids(int $loanId): array {
     $stmt = db()->prepare("SELECT requester_id AS id FROM loans WHERE id = ?

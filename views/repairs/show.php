@@ -60,5 +60,28 @@
                 </form>
             </div>
         <?php endif; ?>
+
+        <?php if (Auth::hasRole('superadmin')): ?>
+            <div class="card-sb mt-3" data-testid="repair-superadmin-edit">
+                <div class="card-title"><i class="fa-solid fa-pen me-2 text-slate"></i>Koreksi Data (Super Admin)</div>
+                <p class="text-slate small">Perbaiki keluhan atau status yang salah input. Status alat ikut menyesuaikan: <strong>Selesai</strong> mengembalikan alat ke Tersedia, status lain menandai alat Rusak.</p>
+                <form method="POST" action="<?= BASE_PATH ?>/sa/repairs/<?= e($repair['uuid']) ?>/edit" data-testid="repair-edit-form">
+                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                    <div class="mb-3">
+                        <label class="form-label">Keluhan *</label>
+                        <textarea name="complaint" class="form-control" rows="4" required data-testid="input-edit-complaint"><?= e($repair['complaint']) ?></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status *</label>
+                        <select name="status" class="form-select" data-testid="input-edit-status">
+                            <?php foreach (['Open' => 'Baru', 'FormPrinted' => 'SPK Dicetak', 'InRepair' => 'Diperbaiki', 'Completed' => 'Selesai'] as $val => $lbl): ?>
+                                <option value="<?= $val ?>" <?= $repair['status'] === $val ? 'selected' : '' ?>><?= e($lbl) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary w-100" data-testid="btn-edit-repair"><i class="fa-solid fa-floppy-disk"></i> Simpan Koreksi</button>
+                </form>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
