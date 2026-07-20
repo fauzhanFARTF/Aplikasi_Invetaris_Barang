@@ -387,6 +387,8 @@ function status_badge(string $status): string {
         'Damaged'    => ['bg-danger', 'Rusak / Perbaikan'],
         'Retired'    => ['bg-dark', 'Dihapus'],
         'Lost'       => ['bg-dark', 'Hilang'],
+        'Habis'      => ['bg-dark', 'Habis'],
+        'AtOpd'      => ['bg-info text-dark', 'Di OPD'],
         // Repair
         'Open'        => ['bg-warning text-dark', 'Baru'],
         'FormPrinted' => ['bg-info text-dark', 'SPK Dicetak'],

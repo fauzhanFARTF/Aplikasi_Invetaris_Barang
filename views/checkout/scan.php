@@ -36,7 +36,7 @@
             <div class="card-title">Progress Alat (<?= count($items) ?>)</div>
             <div id="itemList" data-testid="item-progress-list">
                 <?php foreach ($items as $it): $itPhoto = asset_photo_url($it['photo'] ?? null); ?>
-                    <div class="item-progress <?= $it['item_status'] === 'CheckedOut' ? 'done' : '' ?>" data-barcode="<?= e($it['barcode']) ?>" data-testid="item-<?= (int)$it['id'] ?>">
+                    <div class="item-progress <?= in_array($it['item_status'], ['CheckedOut','AtOpd'], true) ? 'done' : '' ?>" data-barcode="<?= e($it['barcode']) ?>" data-testid="item-<?= (int)$it['id'] ?>">
                         <div class="d-flex align-items-center gap-2">
                             <img src="<?= e($itPhoto) ?>" alt="Foto <?= e($it['asset_name']) ?>" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid #E2E8F0;background:#fff;">
                             <div>
@@ -45,7 +45,7 @@
                             </div>
                         </div>
                         <div>
-                            <?php if ($it['item_status'] === 'CheckedOut'): ?>
+                            <?php if (in_array($it['item_status'], ['CheckedOut','AtOpd'], true)): ?>
                                 <span class="badge bg-success"><i class="fa-solid fa-check"></i> Sudah</span>
                             <?php else: ?>
                                 <span class="badge bg-warning text-dark">Belum</span>

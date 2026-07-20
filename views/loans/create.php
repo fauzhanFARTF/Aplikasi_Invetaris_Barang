@@ -104,6 +104,24 @@
                     <label class="form-label">Tujuan / Keperluan</label>
                     <textarea name="opd_purpose" rows="3" class="form-control" disabled placeholder="Jelaskan singkat kebutuhan / penempatan alat di OPD" data-testid="input-opd-purpose"></textarea>
                 </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label">Tanggal Pinjam *</label>
+                        <input type="date" name="opd_start_date" class="form-control" data-req-opd disabled value="<?= date('Y-m-d') ?>" data-testid="input-opd-start-date">
+                    </div>
+                    <div class="col-6" id="opdReturnDateWrap" style="display:none;">
+                        <label class="form-label">Rencana Tanggal Kembali *</label>
+                        <input type="date" name="opd_return_date" class="form-control" disabled min="<?= date('Y-m-d') ?>" data-testid="input-opd-return-date">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="opd_will_return" id="opdWillReturn" value="1" disabled data-testid="input-opd-will-return">
+                        <label class="form-check-label" for="opdWillReturn"><strong>Barang akan dikembalikan?</strong></label>
+                    </div>
+                    <div class="form-text">Centang bila barang dipinjam sementara dan akan dikembalikan pada tanggal tertentu (isi <strong>Rencana Tanggal Kembali</strong>). Bila tidak dicentang, barang dianggap <strong>tetap berada di OPD</strong> tanpa batas waktu — setelah diserahkan, alat berstatus <strong>Di OPD</strong> dan tidak masuk proses Pengembalian.</div>
+                </div>
                 <?php if (!is_personal_borrower() && !empty($itStaff)): ?>
                 <div class="mb-3">
                     <label class="form-label">Personel yang Dilibatkan dalam Instalasi</label>
@@ -121,7 +139,7 @@
                 </div>
                 <?php endif; ?>
 
-                <div class="mb-1">
+                <div class="mb-1" id="opdConsumableSection">
                     <label class="form-label">Status Penyerahan Barang</label>
                     <div class="border rounded-3 p-2" style="max-height:220px;overflow-y:auto;" data-testid="opd-consumable-box">
                         <div id="opdConsumableList"></div>
@@ -279,8 +297,10 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
         buttons.forEach(b => b.classList.toggle('active', b.dataset.type === type));
         window.__loanType = type;
         // Fungsi didefinisikan di blok berikutnya; saat setType('event') pertama
-        // dipanggil, blok itu belum jalan — jadi diguard.
-        if (window.rebuildConsumableList) window.rebuildConsumableList();
+        // dipanggil, blok itu belum jalan — jadi diguard. syncOpdReturn() sendiri
+        // memanggil rebuildConsumableList(), jadi cukup salah satunya.
+        if (window.syncOpdReturn) window.syncOpdReturn();
+        else if (window.rebuildConsumableList) window.rebuildConsumableList();
     }
     buttons.forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
     window.__loanType = 'event';
@@ -297,7 +317,9 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
     if (!list) return;
 
     window.rebuildConsumableList = function () {
-        const opd = window.__loanType === 'opd';
+        // Barang habis pakai hanya relevan bila barang ditunggu kembali (will_return).
+        // Untuk penempatan permanen di OPD semua barang berstatus "Di OPD".
+        const opd = window.__loanType === 'opd' && window.__opdWillReturn === true;
         // Ingat dulu centang saat ini sebelum membangun ulang.
         list.querySelectorAll('input[type=checkbox]').forEach(cb => {
             if (cb.checked) marked.add(cb.value); else marked.delete(cb.value);
@@ -350,6 +372,36 @@ document.getElementById('end_date')?.addEventListener('change', refreshAvail);
         if (e.target && e.target.matches('input[name="asset_ids[]"]')) window.rebuildConsumableList();
     });
     window.rebuildConsumableList();
+})();
+
+// ── Kebutuhan Jaringan: "Barang akan dikembalikan?" ──────────────────────────
+// Centang -> tampil "Rencana Tanggal Kembali" (wajib) + checklist habis pakai.
+// Tidak dicentang -> barang tetap di OPD; kedua bagian itu disembunyikan & di-disable
+// agar tidak ikut terkirim / tidak menggagalkan submit (required tapi tersembunyi).
+(function () {
+    const cb = document.getElementById('opdWillReturn');
+    window.__opdWillReturn = false;
+    window.syncOpdReturn = function () {
+        const opd = window.__loanType === 'opd';
+        const on  = opd && cb && cb.checked;
+        window.__opdWillReturn = !!on;
+
+        const wrap = document.getElementById('opdReturnDateWrap');
+        const rd   = document.querySelector('input[name="opd_return_date"]');
+        if (wrap) wrap.style.display = on ? '' : 'none';
+        if (rd) {
+            // Aktif & wajib hanya saat OPD + akan dikembalikan. Di kondisi lain
+            // di-disable supaya tidak terkirim dan tidak memblok submit.
+            rd.disabled = !on;
+            if (on) rd.setAttribute('required', ''); else rd.removeAttribute('required');
+        }
+        const sec = document.getElementById('opdConsumableSection');
+        if (sec) sec.style.display = on ? '' : 'none';
+
+        if (window.rebuildConsumableList) window.rebuildConsumableList();
+    };
+    cb?.addEventListener('change', window.syncOpdReturn);
+    window.syncOpdReturn();
 })();
 
 // Alat yang dicentang otomatis pindah ke atas daftar (checked-first, urutan stabil).
