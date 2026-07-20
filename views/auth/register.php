@@ -17,8 +17,44 @@
         </div>
     </div>
 
-    <form method="POST" action="<?= BASE_PATH ?>/daftar" data-testid="register-form" class="text-start">
+    <form method="POST" action="<?= BASE_PATH ?>/daftar" enctype="multipart/form-data" data-testid="register-form" class="text-start">
         <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+
+        <div class="mb-3">
+            <label class="form-label">Foto Profil</label>
+            <div class="d-flex align-items-center gap-3">
+                <img id="photoPreview" alt="Pratinjau foto"
+                     src="<?= e($profile['picture'] ?: (ASSET_PREFIX . '/assets/img/logo-kominfo-icon.png')) ?>"
+                     style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:1px solid var(--sb-border,#E2E8F0);background:#fff;flex-shrink:0;"
+                     data-default="<?= e($profile['picture'] ?: (ASSET_PREFIX . '/assets/img/logo-kominfo-icon.png')) ?>"
+                     data-testid="register-photo-preview">
+                <div class="flex-grow-1 min-w-0">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <label class="btn btn-sm btn-outline-navy mb-0">
+                            <i class="fa-solid fa-upload"></i> Upload Foto
+                            <input type="file" name="photo" id="photoFile" accept="image/jpeg,image/png,image/webp" hidden data-testid="register-photo-file">
+                        </label>
+                        <button type="button" class="btn btn-sm btn-outline-navy" id="btnCamera" data-testid="register-photo-camera">
+                            <i class="fa-solid fa-camera"></i> Ambil dari Kamera
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-navy d-none" id="btnResetPhoto" data-testid="register-photo-reset">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+                    <div class="form-text mb-0">JPG/PNG/WEBP, maksimal 3MB. Bila dikosongkan, foto akun Google yang dipakai.</div>
+                </div>
+            </div>
+
+            <div id="cameraBox" class="mt-2 border rounded-3 p-2" style="display:none;">
+                <video id="cameraVideo" autoplay playsinline muted style="width:100%;max-height:260px;border-radius:8px;background:#000;"></video>
+                <div class="d-flex gap-2 mt-2">
+                    <button type="button" class="btn btn-sm btn-primary" id="btnCapture" data-testid="register-photo-capture"><i class="fa-solid fa-camera"></i> Jepret</button>
+                    <button type="button" class="btn btn-sm btn-outline-navy" id="btnCloseCamera">Tutup</button>
+                </div>
+            </div>
+            <div class="form-text text-danger" id="cameraErr" style="display:none;"></div>
+            <input type="hidden" name="photo_camera" id="photoCamera">
+        </div>
 
         <div class="mb-3">
             <label class="form-label">Nama Lengkap *</label>
@@ -86,6 +122,85 @@
             }
             sel.addEventListener('change', sync);
             sync();
+        })();
+
+        // Foto profil: upload berkas ATAU jepret lewat kamera. Hasil jepretan
+        // dikirim sebagai data URL base64 di input tersembunyi photo_camera,
+        // supaya tidak bergantung pada dukungan DataTransfer di peramban.
+        (function () {
+            var preview = document.getElementById('photoPreview');
+            var file    = document.getElementById('photoFile');
+            var camInput= document.getElementById('photoCamera');
+            var btnCam  = document.getElementById('btnCamera');
+            var btnCap  = document.getElementById('btnCapture');
+            var btnClose= document.getElementById('btnCloseCamera');
+            var btnReset= document.getElementById('btnResetPhoto');
+            var box     = document.getElementById('cameraBox');
+            var video   = document.getElementById('cameraVideo');
+            var errBox  = document.getElementById('cameraErr');
+            if (!preview || !file || !camInput) return;
+            var stream = null;
+
+            function showErr(m) { errBox.textContent = m; errBox.style.display = m ? '' : 'none'; }
+            function markChanged() { btnReset.classList.remove('d-none'); }
+            function stopCam() {
+                if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+                video.srcObject = null;
+                box.style.display = 'none';
+            }
+
+            // Upload berkas -> pratinjau, batalkan foto kamera.
+            file.addEventListener('change', function () {
+                var f = file.files && file.files[0];
+                if (!f) return;
+                if (f.size > 3 * 1024 * 1024) { showErr('Ukuran foto maksimal 3MB.'); file.value = ''; return; }
+                showErr('');
+                camInput.value = '';
+                var r = new FileReader();
+                r.onload = function (e) { preview.src = e.target.result; markChanged(); };
+                r.readAsDataURL(f);
+            });
+
+            btnCam.addEventListener('click', function () {
+                showErr('');
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    showErr('Kamera tidak didukung peramban ini. Silakan pakai Upload Foto.');
+                    return;
+                }
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+                    .then(function (s) { stream = s; video.srcObject = s; box.style.display = ''; })
+                    .catch(function () {
+                        // Paling sering: izin ditolak, atau halaman bukan HTTPS.
+                        showErr('Tidak bisa membuka kamera. Pastikan izin kamera diberikan dan situs diakses lewat HTTPS. Anda tetap bisa memakai Upload Foto.');
+                    });
+            });
+
+            btnCap.addEventListener('click', function () {
+                if (!video.videoWidth) { showErr('Kamera belum siap, coba sesaat lagi.'); return; }
+                // Perkecil ke maks 640px agar base64-nya ringan (jauh di bawah 3MB).
+                var max = 640, w = video.videoWidth, h = video.videoHeight;
+                var scale = Math.min(1, max / Math.max(w, h));
+                var c = document.createElement('canvas');
+                c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+                c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+                var data = c.toDataURL('image/jpeg', 0.85);
+                camInput.value = data;
+                preview.src = data;
+                file.value = '';       // jepretan kamera menang atas berkas
+                markChanged();
+                showErr('');
+                stopCam();
+            });
+
+            btnClose.addEventListener('click', stopCam);
+            btnReset.addEventListener('click', function () {
+                camInput.value = ''; file.value = '';
+                preview.src = preview.dataset.default;
+                btnReset.classList.add('d-none');
+                showErr('');
+                stopCam();
+            });
+            window.addEventListener('pagehide', stopCam);
         })();
     </script>
 </div>
