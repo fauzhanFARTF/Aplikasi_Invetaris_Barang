@@ -35,6 +35,22 @@ class Notification {
         }
     }
 
+    /**
+     * Kirim ke seluruh PERSONEL yang dilibatkan pada sebuah peminjaman.
+     * $exclude dipakai untuk melewati pemohonnya sendiri — ia sudah menerima
+     * notifikasi versinya sendiri, jangan sampai dapat dua kali untuk hal yang sama.
+     */
+    public static function pushToParticipants(int $loanId, string $title, string $body = '', ?string $link = null, ?int $exclude = null): void {
+        $stmt = db()->prepare("SELECT lp.user_id FROM loan_participants lp
+                               JOIN users u ON u.id = lp.user_id
+                               WHERE lp.loan_id = ? AND u.is_active = 1 AND u.deleted_at IS NULL");
+        $stmt->execute([$loanId]);
+        foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $uid) {
+            if ($exclude !== null && (int) $uid === $exclude) continue;
+            self::push((int) $uid, $title, $body, $link);
+        }
+    }
+
     public static function pushToRole(string $role, string $title, string $body = '', ?string $link = null): void {
         $stmt = db()->prepare("SELECT id FROM users WHERE role = ? AND is_active = 1");
         $stmt->execute([$role]);

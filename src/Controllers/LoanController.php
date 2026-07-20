@@ -217,6 +217,18 @@ function loan_create_post(): void {
             "Pengajuan $code $konteks menunggu persetujuan Anda.",
             "/loans/$loanUuid");
 
+        // Tanda terima untuk pemohon sendiri — sebelumnya hanya supervisor yang
+        // diberi tahu, sehingga pemohon tidak punya jejak bahwa pengajuannya masuk.
+        $pemohon = Auth::user()['name'] ?? 'Pemohon';
+        Notification::push(Auth::id(), 'Peminjaman Berhasil Diajukan',
+            "Pengajuan $code $konteks sudah terkirim dan sedang menunggu persetujuan atasan.",
+            "/loans/$loanUuid");
+
+        // Personel yang dilibatkan perlu tahu sejak awal, bukan baru saat hari-H.
+        Notification::pushToParticipants($loanId, 'Anda Dilibatkan dalam Peminjaman',
+            "$pemohon melibatkan Anda pada $code $konteks.",
+            "/loans/$loanUuid", Auth::id());
+
         flash('success', "Peminjaman $code berhasil diajukan. Menunggu persetujuan atasan.");
         redirect("/loans/$loanUuid");
     } catch (Throwable $e) {
@@ -549,6 +561,13 @@ function _loan_decide(int $id, string $decision): void {
             $decision === 'Approved' ? 'Peminjaman Anda Disetujui' : 'Peminjaman Anda Ditolak',
             "Peminjaman {$loan['loan_code']} telah $decision oleh Kepala Bagian." . ($note ? "\nCatatan: $note" : ''),
             "/loans/{$loan['uuid']}");
+        // Personel yang dilibatkan ikut diberi tahu keputusannya — pemohon dilewati
+        // karena sudah menerima notifikasi di atas.
+        Notification::pushToParticipants($id,
+            $decision === 'Approved' ? 'Peminjaman yang Melibatkan Anda Disetujui' : 'Peminjaman yang Melibatkan Anda Ditolak',
+            "Peminjaman {$loan['loan_code']} ({$loan['event_name']}) telah $decision." . ($note ? "\nCatatan: $note" : ''),
+            "/loans/{$loan['uuid']}", (int) $loan['requester_id']);
+
         if ($decision === 'Approved') {
             Notification::pushToRole('admin_gudang', 'Peminjaman Siap Diserahkan',
                 "Peminjaman {$loan['loan_code']} ({$loan['event_name']}) sudah disetujui. Siapkan alat untuk diserahkan.",
