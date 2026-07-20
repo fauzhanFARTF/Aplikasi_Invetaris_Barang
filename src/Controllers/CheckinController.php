@@ -7,7 +7,7 @@ function checkin_index(): void {
     $pdo = db();
     $loans = $pdo->query("SELECT l.*, u.name AS requester_name,
                             (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id) AS total_items,
-                            (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id AND li.item_status IN ('ReturnedGood','ReturnedDamaged','ReturnedLost','InRepair','Restored')) AS in_items
+                            (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id AND li.item_status IN ('ReturnedGood','ReturnedDamaged','ReturnedLost','InRepair','Restored','AtOpd')) AS in_items
                             FROM loans l JOIN users u ON u.id = l.requester_id
                             WHERE l.status IN ('CheckedOut','Returned')
                             HAVING in_items < total_items
@@ -28,7 +28,8 @@ function checkin_scan_page(string $uuid): void {
     $stmt->execute([$id]);
     $loan = $stmt->fetch();
     if (!$loan) { http_response_code(404); include APP_ROOT.'/views/errors/404.php'; return; }
-    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.barcode, a.purchase_price, a.current_value, a.unit, a.qty_current FROM loan_items li JOIN assets a ON a.id = li.asset_id WHERE li.loan_id = ? ORDER BY li.id");
+    // Barang yang tetap di OPD (AtOpd) tidak dikembalikan, jadi tidak ikut dipindai.
+    $items = $pdo->prepare("SELECT li.*, a.name AS asset_name, a.bmn_number, a.barcode, a.purchase_price, a.current_value, a.unit, a.qty_current FROM loan_items li JOIN assets a ON a.id = li.asset_id WHERE li.loan_id = ? AND li.item_status <> 'AtOpd' ORDER BY li.id");
     $items->execute([$id]);
     $items = $items->fetchAll();
 
