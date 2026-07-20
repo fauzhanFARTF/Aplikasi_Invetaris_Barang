@@ -69,9 +69,21 @@
         <div class="card-sb">
             <div class="card-title">Ringkasan</div>
             <table class="table table-sm mb-0">
+                <?php $isOpd = ($loan['loan_type'] ?? 'event') === 'opd'; $willReturn = (int)($loan['will_return'] ?? 1) === 1; ?>
                 <tr><td class="text-slate">Status</td><td><?= status_badge($loan['status']) ?></td></tr>
                 <tr><td class="text-slate">Pemohon</td><td><?= e($loan['requester_name']) ?><br><span class="small text-slate"><?= e($loan['requester_unit']) ?></span></td></tr>
-                <tr><td class="text-slate">Tanggal</td><td><?= fmt_date($loan['start_date']) ?> — <?= fmt_date($loan['end_date']) ?></td></tr>
+                <?php if ($isOpd): ?>
+                    <tr><td class="text-slate">Tanggal Pinjam</td><td><?= fmt_date($loan['start_date']) ?></td></tr>
+                    <tr><td class="text-slate">Pengembalian</td><td>
+                        <?php if ($willReturn): ?>
+                            Rencana kembali: <strong><?= fmt_date($loan['end_date']) ?></strong>
+                        <?php else: ?>
+                            <span class="badge bg-info text-dark">Tetap di OPD</span> <span class="small text-slate">tanpa batas waktu</span>
+                        <?php endif; ?>
+                    </td></tr>
+                <?php else: ?>
+                    <tr><td class="text-slate">Tanggal</td><td><?= fmt_date($loan['start_date']) ?> — <?= fmt_date($loan['end_date']) ?></td></tr>
+                <?php endif; ?>
                 <?php if (!empty($loan['start_time'])): ?>
                     <tr><td class="text-slate">Jam Acara</td><td><?= e(substr((string)$loan['start_time'], 0, 5)) ?></td></tr>
                 <?php endif; ?>
