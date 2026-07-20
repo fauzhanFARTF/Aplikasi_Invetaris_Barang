@@ -61,6 +61,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
             <div class="nav-section">Gudang</div>
             <a href="<?= BASE_PATH ?>/checkout" class="nav-item <?= active('/checkout', $currentPath) ?>" data-testid="nav-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Penyerahan</span></a>
             <a href="<?= BASE_PATH ?>/checkin" class="nav-item <?= active('/checkin', $currentPath) ?>" data-testid="nav-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i><span>Pengembalian</span></a>
+            <a href="<?= BASE_PATH ?>/opd-items" class="nav-item <?= active('/opd-items', $currentPath) ?>" data-testid="nav-opd-items"><i class="fa-solid fa-building-columns"></i><span>Barang di OPD</span></a>
             <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i><span>Perbaikan</span></a>
         <?php endif; ?>
 

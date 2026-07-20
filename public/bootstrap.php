@@ -75,6 +75,10 @@ $routes = [
     ['POST', '#^/checkin/scan$#',             'checkin_scan_submit'],
     ['POST', '#^/checkin/([0-9a-f-]{36})/finalize$#',   'checkin_finalize'],
 
+    // Barang di OPD (Kebutuhan Jaringan) — daftar & tarik kembali bila rusak
+    ['GET',  '#^/opd-items$#',                'opd_items_index'],
+    ['POST', '#^/opd-items/(\d+)/return$#',   'opd_item_return'],
+
     // Repairs
     ['GET',  '#^/repairs$#',                  'repair_index'],
     ['GET',  '#^/repairs/([0-9a-f-]{36})$#',            'repair_show'],
