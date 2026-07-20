@@ -566,15 +566,26 @@ function role_is_requester(): bool {
  * Kartu "Jadwal Hari Ini & Selanjutnya" dan "Jadwal yang Telah Lewat" menampilkan
  * seluruh acara ke semua role, jadi IT Staff perlu bisa membuka isinya — mereka
  * bekerja bersama di lapangan. Personel Luar (pemohon murni) tetap hanya bisa
- * melihat peminjamannya sendiri karena sifatnya pribadi.
+ * melihat peminjamannya sendiri karena sifatnya pribadi — DITAMBAH acara yang
+ * melibatkan dirinya sebagai personel (butuh $loanId untuk diperiksa).
  *
  * Ini murni hak LIHAT. Membatalkan acara / mengeluarkan alat tetap dijaga
  * terpisah dan hanya boleh oleh pemohon acara itu sendiri atau admin.
  */
-function can_view_loan(int $requesterId): bool {
+function can_view_loan(int $requesterId, ?int $loanId = null): bool {
     if (!role_is_requester()) return true;              // admin, staff approval, gudang, pimpinan, superadmin
     if (Auth::hasRole('inventory_staff')) return true;  // sesama IT Staff
-    return $requesterId === Auth::id();                 // Personel Luar: hanya miliknya
+    if ($requesterId === Auth::id()) return true;       // pemohon acara itu sendiri
+
+    // Personel yang DILIBATKAN pada acara ini juga boleh membukanya. Tanpa ini,
+    // notifikasi "Anda Dilibatkan dalam Peminjaman" menaut ke halaman yang justru
+    // ditolak 403 saat dibuka — tautannya harus benar-benar bisa diakses.
+    if ($loanId !== null && Auth::id() !== null) {
+        $stmt = db()->prepare("SELECT 1 FROM loan_participants WHERE loan_id = ? AND user_id = ? LIMIT 1");
+        $stmt->execute([$loanId, Auth::id()]);
+        if ($stmt->fetchColumn()) return true;
+    }
+    return false;
 }
 
 /**

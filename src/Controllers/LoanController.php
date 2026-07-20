@@ -256,7 +256,7 @@ function loan_show(string $uuid): void {
 
     // Personel Luar hanya bisa melihat peminjaman miliknya; IT Staff boleh melihat
     // semua acara yang tampil di kartu jadwal. Lihat can_view_loan().
-    if (!can_view_loan((int) $loan['requester_id'])) {
+    if (!can_view_loan((int) $loan['requester_id'], (int) $loan['id'])) {
         http_response_code(403); include APP_ROOT . '/views/errors/403.php'; return;
     }
 
