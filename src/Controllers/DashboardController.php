@@ -27,6 +27,37 @@ function dashboard_index(): void {
         'items_approved' => (int) $pdo->query("SELECT COUNT(*) FROM loan_items li JOIN loans l ON l.id = li.loan_id WHERE l.status = 'Approved' AND l.deleted_at IS NULL")->fetchColumn(),
     ];
 
+    // Rincian alat yang TIDAK tersedia — menjelaskan selisih antara "Total Aset"
+    // dan "Tersedia" (mis. "3 di OPD · 1 rusak"), supaya angka yang tampak tidak
+    // cocok jadi bisa ditelusuri sendiri tanpa menebak. Urutannya sengaja tetap.
+    $assetBreakdown = [];
+    try {
+        $labels = [
+            'Booked'     => 'dipesan',
+            'CheckedOut' => 'dipinjam',
+            'AtOpd'      => 'di OPD',
+            'Damaged'    => 'rusak',
+            'Lost'       => 'hilang',
+            'Habis'      => 'habis',
+        ];
+        $counts = [];
+        foreach ($pdo->query("SELECT status, COUNT(*) c FROM assets
+                              WHERE deleted_at IS NULL AND status NOT IN ('Available','Retired')
+                              GROUP BY status") as $row) {
+            $counts[$row['status']] = (int) $row['c'];
+        }
+        foreach ($labels as $status => $label) {
+            if (!empty($counts[$status])) $assetBreakdown[] = $counts[$status] . ' ' . $label;
+        }
+        // Status tak terduga (mis. nilai enum baru) tetap ditampilkan apa adanya
+        // supaya tidak ada alat yang "hilang" diam-diam dari penjelasan ini.
+        foreach ($counts as $status => $c) {
+            if (!isset($labels[$status])) $assetBreakdown[] = $c . ' ' . strtolower((string) $status);
+        }
+    } catch (Throwable $e) {
+        $assetBreakdown = [];
+    }
+
     // Statistik OPD. Kolom loan_type/is_consumable mungkin belum ada saat migrasi
     // pertama, jadi dibungkus try/catch agar dashboard tidak pernah error.
     try {
@@ -133,6 +164,7 @@ function dashboard_index(): void {
         'showSchedule' => $showSchedule,
         'opdOut' => $opdOut,
         'borrowedItems' => $borrowedItems,
+        'assetBreakdown' => $assetBreakdown,
         'currentPath' => '/dashboard',
     ]);
 }

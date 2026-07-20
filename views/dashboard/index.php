@@ -30,6 +30,12 @@
             <div class="label">Tersedia</div>
             <div class="value" data-testid="stat-available"><?= $stats['available'] ?></div>
             <div class="text-slate small">Siap dipinjam</div>
+            <?php if (!empty($assetBreakdown)): ?>
+                <div class="text-slate small" style="margin-top:2px;opacity:.85;" data-testid="stat-available-breakdown"
+                     title="Alat yang tidak terhitung Tersedia">
+                    <i class="fa-solid fa-circle-info me-1"></i><?= e(implode(' · ', $assetBreakdown)) ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     <div class="col-6 col-md-3">
