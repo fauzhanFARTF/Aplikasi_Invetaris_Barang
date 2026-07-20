@@ -68,6 +68,48 @@
                 <button class="btn btn-primary" data-testid="btn-save-profile"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
             </form>
         </div>
+
+        <?php if (Telegram::enabled()): $tgId = $telegramChatId ?? ''; ?>
+        <div class="card-sb mt-3" data-testid="telegram-card">
+            <div class="card-title"><i class="fa-brands fa-telegram me-2" style="color:#229ED9;"></i>Notifikasi Telegram</div>
+            <?php if ($tgId !== ''): ?>
+                <p class="mb-2"><span class="badge bg-success"><i class="fa-solid fa-check"></i> Tersambung</span>
+                   <span class="text-slate small ms-1">Chat ID: <span class="text-mono"><?= e($tgId) ?></span></span></p>
+                <p class="text-slate small">Notifikasi SIMANTAP juga dikirim ke Telegram Anda. Kosongkan isian di bawah lalu simpan untuk memutus sambungan.</p>
+            <?php else: ?>
+                <p class="text-slate small mb-2">Terima notifikasi langsung di Telegram. Cukup sekali atur:</p>
+                <ol class="text-slate small ps-3 mb-3">
+                    <li>Buka Telegram, cari bot
+                        <?php if (TELEGRAM_BOT_USERNAME !== ''): ?>
+                            <a href="https://t.me/<?= e(ltrim(TELEGRAM_BOT_USERNAME, '@')) ?>" target="_blank" rel="noopener"><strong>@<?= e(ltrim(TELEGRAM_BOT_USERNAME, '@')) ?></strong></a>
+                        <?php else: ?>
+                            <strong>bot SIMANTAP</strong>
+                        <?php endif; ?>
+                        lalu tekan <strong>START</strong>. Tanpa langkah ini Telegram melarang bot mengirim pesan kepada Anda.</li>
+                    <li>Cari bot <a href="https://t.me/userinfobot" target="_blank" rel="noopener"><strong>@userinfobot</strong></a>, tekan START — ia akan membalas <em>Id: 123456789</em>.</li>
+                    <li>Tempel angka Id itu di bawah, lalu Simpan dan Kirim Tes.</li>
+                </ol>
+            <?php endif; ?>
+
+            <form method="POST" action="<?= BASE_PATH ?>/profile/telegram" class="mb-2" data-testid="telegram-form">
+                <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                <label class="form-label">Chat ID Telegram</label>
+                <div class="input-group">
+                    <input type="text" name="telegram_chat_id" class="form-control" value="<?= e($tgId) ?>"
+                           placeholder="mis. 123456789" inputmode="numeric" data-testid="input-telegram-chat-id">
+                    <button class="btn btn-primary" data-testid="btn-save-telegram"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+                </div>
+                <div class="form-text">Angka saja. Kosongkan lalu Simpan untuk berhenti menerima notifikasi Telegram.</div>
+            </form>
+
+            <?php if ($tgId !== ''): ?>
+                <form method="POST" action="<?= BASE_PATH ?>/profile/telegram/test">
+                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                    <button class="btn btn-outline-navy" data-testid="btn-test-telegram"><i class="fa-solid fa-paper-plane"></i> Kirim Tes</button>
+                </form>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
