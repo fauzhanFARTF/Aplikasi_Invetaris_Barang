@@ -83,6 +83,26 @@ function repair_delete(string $uuid): void {
     $repair = $stmt->fetch();
     if (!$repair) { flash('error', 'Data perbaikan tidak ditemukan.'); redirect('/repairs'); }
 
+    // Superadmin boleh menghapus tiket APA PUN (termasuk yang masih berjalan) sebagai
+    // koreksi data — alat dilepas dari status Rusak supaya tidak tersangkut tanpa tiket.
+    if (Auth::hasRole('superadmin')) {
+        try {
+            $pdo->beginTransaction();
+            soft_delete('repairs', $id);
+            if ($repair['status'] !== 'Completed') {
+                $pdo->prepare("UPDATE assets SET status='Available' WHERE id=? AND status='Damaged'")
+                    ->execute([(int) $repair['asset_id']]);
+            }
+            $pdo->commit();
+            log_audit('repair.delete_super', 'repair', $id, ['code' => $repair['repair_code'], 'status' => $repair['status']]);
+            flash('success', "Perbaikan {$repair['repair_code']} dihapus." . ($repair['status'] !== 'Completed' ? ' Alat dikembalikan ke Tersedia.' : ''));
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Gagal menghapus perbaikan: ' . $e->getMessage());
+        }
+        redirect('/repairs');
+    }
+
     // Only allow deleting finished repair history — active/in-progress repairs must
     // stay so the asset's repair trail isn't silently lost mid-process.
     if ($repair['status'] !== 'Completed') {

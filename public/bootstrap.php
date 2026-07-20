@@ -79,6 +79,13 @@ $routes = [
     ['GET',  '#^/opd-items$#',                'opd_items_index'],
     ['POST', '#^/opd-items/(\d+)/return$#',   'opd_item_return'],
 
+    // Koreksi data operasional oleh superadmin (edit / batalkan / hapus)
+    ['POST', '#^/sa/checkout-item/(\d+)/undo$#',   'sa_checkout_undo'],
+    ['POST', '#^/sa/checkin-item/(\d+)/undo$#',    'sa_checkin_undo'],
+    ['POST', '#^/sa/opd-item/(\d+)/edit$#',        'sa_opd_item_edit'],
+    ['POST', '#^/sa/opd-item/(\d+)/delete$#',      'sa_opd_item_delete'],
+    ['POST', '#^/sa/repairs/([0-9a-f-]{36})/edit$#', 'sa_repair_edit'],
+
     // Repairs
     ['GET',  '#^/repairs$#',                  'repair_index'],
     ['GET',  '#^/repairs/([0-9a-f-]{36})$#',            'repair_show'],

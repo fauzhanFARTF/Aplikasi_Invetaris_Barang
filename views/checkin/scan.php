@@ -73,7 +73,7 @@
                             <div class="text-slate small text-mono"><?= e($it['bmn_number']) ?></div>
                             <div class="text-slate small">Dulu: <?= fmt_rupiah($it['purchase_price'] ?? null) ?> · Sekarang: <?= fmt_rupiah($it['current_value'] ?? null) ?></div>
                         </div>
-                        <div>
+                        <div class="d-flex align-items-center gap-2">
                             <?php if ($it['item_status'] === 'CheckedOut'): ?>
                                 <span class="badge bg-warning text-dark">Menunggu</span>
                             <?php elseif ($lost): ?>
@@ -84,6 +84,13 @@
                                 <span class="badge bg-success">Baik</span>
                             <?php else: ?>
                                 <span class="badge bg-secondary"><?= e($it['item_status']) ?></span>
+                            <?php endif; ?>
+                            <?php if ($done && Auth::hasRole('superadmin')): ?>
+                                <form method="POST" action="<?= BASE_PATH ?>/sa/checkin-item/<?= (int)$it['id'] ?>/undo"
+                                      data-confirm="Batalkan pengembalian &quot;<?= e($it['asset_name']) ?>&quot;? Alat kembali berstatus Dipinjam dan tiket perbaikannya (bila ada) dihapus.">
+                                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Batalkan pengembalian (Super Admin)" data-testid="btn-undo-checkin-<?= (int)$it['id'] ?>"><i class="fa-solid fa-rotate-left"></i></button>
+                                </form>
                             <?php endif; ?>
                         </div>
                     </div>

@@ -44,9 +44,16 @@
                                 <div class="text-slate small text-mono"><?= e($it['bmn_number']) ?></div>
                             </div>
                         </div>
-                        <div>
+                        <div class="d-flex align-items-center gap-2">
                             <?php if (in_array($it['item_status'], ['CheckedOut','AtOpd'], true)): ?>
                                 <span class="badge bg-success"><i class="fa-solid fa-check"></i> Sudah</span>
+                                <?php if (Auth::hasRole('superadmin')): ?>
+                                    <form method="POST" action="<?= BASE_PATH ?>/sa/checkout-item/<?= (int)$it['id'] ?>/undo"
+                                          data-confirm="Batalkan penyerahan &quot;<?= e($it['asset_name']) ?>&quot;? Alat kembali berstatus Dipesan dan harus discan ulang.">
+                                        <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Batalkan penyerahan (Super Admin)" data-testid="btn-undo-checkout-<?= (int)$it['id'] ?>"><i class="fa-solid fa-rotate-left"></i></button>
+                                    </form>
+                                <?php endif; ?>
                             <?php else: ?>
                                 <span class="badge bg-warning text-dark">Belum</span>
                             <?php endif; ?>

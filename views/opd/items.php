@@ -51,16 +51,33 @@
                     </td>
                     <?php if ($canReturn): ?>
                     <td class="text-nowrap">
-                        <?php if ($atOpd): ?>
-                            <button type="button" class="btn btn-sm btn-outline-danger btn-return-opd"
-                                    data-action="<?= BASE_PATH ?>/opd-items/<?= (int)$r['item_id'] ?>/return"
-                                    data-name="<?= e($r['asset_name']) ?>" data-opd="<?= e($r['opd_name']) ?>"
-                                    data-testid="btn-return-opd-<?= (int)$r['item_id'] ?>">
-                                <i class="fa-solid fa-rotate-left"></i> Kembalikan
-                            </button>
-                        <?php else: ?>
-                            <span class="text-slate small">lewat Pengembalian</span>
-                        <?php endif; ?>
+                        <div class="d-flex gap-1">
+                            <?php if ($atOpd): ?>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-return-opd"
+                                        data-action="<?= BASE_PATH ?>/opd-items/<?= (int)$r['item_id'] ?>/return"
+                                        data-name="<?= e($r['asset_name']) ?>" data-opd="<?= e($r['opd_name']) ?>"
+                                        data-testid="btn-return-opd-<?= (int)$r['item_id'] ?>">
+                                    <i class="fa-solid fa-rotate-left"></i> Kembalikan
+                                </button>
+                            <?php else: ?>
+                                <span class="text-slate small align-self-center">lewat Pengembalian</span>
+                            <?php endif; ?>
+                            <?php if (Auth::hasRole('superadmin')): ?>
+                                <button type="button" class="btn btn-sm btn-outline-navy btn-edit-opd"
+                                        data-action="<?= BASE_PATH ?>/sa/opd-item/<?= (int)$r['item_id'] ?>/edit"
+                                        data-name="<?= e($r['asset_name']) ?>"
+                                        data-will-return="<?= (int)($r['will_return'] ?? 1) ?>"
+                                        data-date="<?= e($r['expected_return_date'] ?? '') ?>"
+                                        title="Ubah rencana (Super Admin)" data-testid="btn-edit-opd-<?= (int)$r['item_id'] ?>">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <form method="POST" action="<?= BASE_PATH ?>/sa/opd-item/<?= (int)$r['item_id'] ?>/delete"
+                                      data-confirm="Hapus &quot;<?= e($r['asset_name']) ?>&quot; dari OPD <?= e($r['opd_name']) ?>? Barang dilepas dari acara dan alat kembali Tersedia.">
+                                    <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus dari OPD (Super Admin)" data-testid="btn-delete-opd-<?= (int)$r['item_id'] ?>"><i class="fa-solid fa-trash"></i></button>
+                                </form>
+                            <?php endif; ?>
+                        </div>
                     </td>
                     <?php endif; ?>
                 </tr>
@@ -102,6 +119,65 @@
         </form>
     </div>
 </div>
+<?php if (Auth::hasRole('superadmin')): ?>
+<div class="modal fade" id="editOpdModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" id="editOpdForm" data-testid="edit-opd-form">
+            <input type="hidden" name="_csrf" value="<?= e(Auth::csrfToken()) ?>">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ubah Rencana Barang</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">Barang: <strong id="editOpdName">—</strong></p>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="will_return" value="1" id="editOpdWillReturn" data-testid="edit-opd-will-return">
+                        <label class="form-check-label" for="editOpdWillReturn"><strong>Barang akan dikembalikan?</strong></label>
+                    </div>
+                    <div id="editOpdDateWrap" style="display:none;">
+                        <label class="form-label">Rencana Tanggal Kembali *</label>
+                        <input type="date" name="expected_return_date" id="editOpdDate" class="form-control" data-testid="edit-opd-date">
+                    </div>
+                    <div class="form-text mt-2">Dicentang &rarr; barang berstatus <strong>Dipinjam</strong> dan masuk menu Pengembalian. Tidak dicentang &rarr; berstatus <strong>Di OPD</strong> (menunggu, kembali bila rusak).</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-navy" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary" data-testid="btn-edit-opd-save"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function () {
+    var el = document.getElementById('editOpdModal');
+    if (!el || !window.bootstrap) return;
+    var modal = new bootstrap.Modal(el);
+    var form = document.getElementById('editOpdForm');
+    var cb   = document.getElementById('editOpdWillReturn');
+    var wrap = document.getElementById('editOpdDateWrap');
+    var date = document.getElementById('editOpdDate');
+    function sync() {
+        wrap.style.display = cb.checked ? '' : 'none';
+        date.disabled = !cb.checked;
+        if (cb.checked) date.setAttribute('required', ''); else date.removeAttribute('required');
+    }
+    cb.addEventListener('change', sync);
+    document.querySelectorAll('.btn-edit-opd').forEach(function (b) {
+        b.addEventListener('click', function () {
+            form.action = b.dataset.action;
+            document.getElementById('editOpdName').textContent = b.dataset.name;
+            cb.checked = b.dataset.willReturn === '1';
+            date.value = b.dataset.date || '';
+            sync();
+            modal.show();
+        });
+    });
+})();
+</script>
+<?php endif; ?>
+
 <script>
 (function () {
     var modalEl = document.getElementById('returnOpdModal');
