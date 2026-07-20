@@ -39,10 +39,15 @@ function checkout_scan_page(string $uuid): void {
     $items->execute([$id]);
     $items = $items->fetchAll();
 
+    // Alat lain yang masih dipegang penanggung jawab & personel peminjaman ini,
+    // supaya admin gudang tahu tanggungan mereka sebelum menyerahkan alat baru.
+    $borrowedItems = borrowed_items(loan_people_ids($id), $id);
+
     layout('main', 'checkout/scan', [
         'title' => 'Scan Penyerahan — ' . $loan['loan_code'],
         'loan' => $loan,
         'items' => $items,
+        'borrowedItems' => $borrowedItems,
         'currentPath' => '/checkout',
     ]);
 }

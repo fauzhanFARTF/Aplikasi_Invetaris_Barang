@@ -33,10 +33,14 @@ function checkin_scan_page(string $uuid): void {
     $items->execute([$id]);
     $items = $items->fetchAll();
 
+    // Alat lain yang masih dipegang penanggung jawab & personel peminjaman ini.
+    $borrowedItems = borrowed_items(loan_people_ids($id), $id);
+
     layout('main', 'checkin/scan', [
         'title' => 'Pengembalian — ' . $loan['loan_code'],
         'loan' => $loan,
         'items' => $items,
+        'borrowedItems' => $borrowedItems,
         'currentPath' => '/checkin',
     ]);
 }

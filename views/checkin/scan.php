@@ -93,6 +93,15 @@
     </div>
 </div>
 
+<div class="mt-3">
+    <?php
+        $borrowedTitle = 'Alat yang Masih Dipinjam Orang Ini';
+        $borrowedSubtitle = 'Alat dari peminjaman LAIN yang masih dipegang penanggung jawab / personel peminjaman ini dan belum dikembalikan.';
+        $borrowedEmpty = 'Tidak ada tanggungan alat lain dari penanggung jawab maupun personel peminjaman ini.';
+        include APP_ROOT . '/views/partials/borrowed_items_card.php';
+    ?>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"
     onerror="this.onerror=null;var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';s.onerror=function(){var s2=document.createElement('script');s2.src='https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js';document.head.appendChild(s2);};document.head.appendChild(s);"></script>
 <script src="<?= asset_url("/assets/js/scanner.js") ?>"></script>

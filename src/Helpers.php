@@ -363,6 +363,60 @@ function handle_photo_upload(string $field, ?string $oldPhoto = null, string $di
 }
 
 /**
+ * Simpan foto hasil jepretan kamera yang dikirim sebagai data URL base64
+ * (mis. "data:image/jpeg;base64,....") dari <canvas>.toDataURL().
+ * Bentuk kembaliannya sama dengan handle_photo_upload():
+ *   ['filename' => string|null, 'error' => string|null]
+ * filename null tanpa error = tidak ada foto kamera yang dikirim.
+ */
+function handle_photo_from_data_url(string $dataUrl, ?string $oldPhoto = null, string $dir = 'assets', string $prefix = 'asset'): array {
+    $dataUrl = trim($dataUrl);
+    if ($dataUrl === '') return ['filename' => null, 'error' => null];
+
+    if (!preg_match('#^data:(image/(?:jpeg|png|webp));base64,#i', $dataUrl, $m)) {
+        return ['filename' => null, 'error' => 'Foto kamera tidak valid (harus JPG, PNG, atau WEBP).'];
+    }
+    $b64 = substr($dataUrl, strlen($m[0]));
+    // strict: tolak karakter di luar alfabet base64 supaya tidak menyimpan sampah.
+    $data = base64_decode($b64, true);
+    if ($data === false || $data === '') {
+        return ['filename' => null, 'error' => 'Foto kamera gagal dibaca.'];
+    }
+
+    $maxBytes = 3 * 1024 * 1024; // 3 MB, sama dengan upload biasa
+    if (strlen($data) > $maxBytes) {
+        return ['filename' => null, 'error' => 'Ukuran foto kamera maksimal 3MB.'];
+    }
+
+    // Jangan percaya header data URL — periksa isi berkasnya sungguhan.
+    $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+    $mime = null;
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $data);
+        finfo_close($finfo);
+    } else {
+        $mime = strtolower($m[1]);
+    }
+    if (!isset($allowed[$mime])) {
+        return ['filename' => null, 'error' => 'Format foto kamera harus JPG, PNG, atau WEBP.'];
+    }
+
+    $uploadDir = APP_ROOT . '/public/uploads/' . $dir;
+    if (!is_dir($uploadDir)) { @mkdir($uploadDir, 0775, true); }
+    $filename = $prefix . '_' . date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+    if (file_put_contents($uploadDir . '/' . $filename, $data) === false) {
+        return ['filename' => null, 'error' => 'Gagal menyimpan foto kamera ke server.'];
+    }
+
+    if ($oldPhoto) {
+        $oldPath = $uploadDir . '/' . basename($oldPhoto);
+        if (is_file($oldPath)) { @unlink($oldPath); }
+    }
+    return ['filename' => $filename, 'error' => null];
+}
+
+/**
  * Hapus file foto (aset atau user) dari disk (dipakai saat user memilih "hapus foto").
  */
 function delete_photo(?string $photo, string $dir = 'assets'): void {
@@ -530,6 +584,56 @@ function can_view_loan(int $requesterId): bool {
 function is_personal_borrower(): bool {
     return Auth::hasRole('pemohon')
         && !Auth::hasRole('inventory_staff', 'admin', 'supervisor', 'admin_gudang', 'pimpinan', 'superadmin');
+}
+
+/**
+ * Alat yang MASIH DIPINJAM (sudah keluar gudang, belum kembali) beserta
+ * penanggung jawab (pemohon) dan personel yang dilibatkan.
+ *
+ * Sengaja hanya item_status 'CheckedOut'. Barang "Di OPD" (AtOpd) TIDAK ikut —
+ * barang itu punya halaman sendiri (Barang di OPD) dan tidak digabung dengan
+ * alat lain, sesuai alur Kebutuhan Jaringan.
+ *
+ * @param array|null $userIds Bila diisi, hanya alat yang dipegang orang-orang ini
+ *                            (sebagai pemohon ATAU personel yang dilibatkan).
+ * @param int|null   $excludeLoanId Lewati peminjaman ini (mis. yang sedang dipindai).
+ */
+function borrowed_items(?array $userIds = null, ?int $excludeLoanId = null): array {
+    $where  = ["li.item_status = 'CheckedOut'", 'l.deleted_at IS NULL'];
+    $params = [];
+    if ($excludeLoanId !== null) { $where[] = 'l.id <> ?'; $params[] = $excludeLoanId; }
+    if ($userIds !== null) {
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds))));
+        if (!$userIds) return [];
+        $in = implode(',', array_fill(0, count($userIds), '?'));
+        $where[] = "(l.requester_id IN ($in) OR EXISTS (SELECT 1 FROM loan_participants lp
+                        WHERE lp.loan_id = l.id AND lp.user_id IN ($in)))";
+        $params = array_merge($params, $userIds, $userIds);
+    }
+    $sql = "SELECT a.name AS asset_name, a.asset_code, a.bmn_number,
+                   l.uuid AS loan_uuid, l.loan_code, l.event_name, l.loan_type,
+                   l.checkout_at, l.end_date, li.expected_return_date,
+                   u.name AS requester_name,
+                   (SELECT GROUP_CONCAT(pu.name ORDER BY pu.name SEPARATOR ', ')
+                      FROM loan_participants lp JOIN users pu ON pu.id = lp.user_id
+                     WHERE lp.loan_id = l.id) AS personnel
+            FROM loan_items li
+            JOIN loans l  ON l.id = li.loan_id
+            JOIN assets a ON a.id = li.asset_id
+            JOIN users u  ON u.id = l.requester_id
+            WHERE " . implode(' AND ', $where) . "
+            ORDER BY l.checkout_at DESC, a.name";
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+/** Pemohon + personel yang dilibatkan pada sebuah peminjaman (untuk borrowed_items). */
+function loan_people_ids(int $loanId): array {
+    $stmt = db()->prepare("SELECT requester_id AS id FROM loans WHERE id = ?
+                           UNION SELECT user_id FROM loan_participants WHERE loan_id = ?");
+    $stmt->execute([$loanId, $loanId]);
+    return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
 }
 
 /**
