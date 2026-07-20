@@ -307,12 +307,75 @@ function category_delete(string $uuid): void {
 
 // ================ Notifications ================
 
+/**
+ * Kotak masuk notifikasi (belum diarsipkan). Berlaku sama untuk semua role —
+ * notifikasi memang milik masing-masing user.
+ */
 function notification_index(): void {
     Auth::requireLogin();
-    $stmt = db()->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 100");
-    $stmt->execute([Auth::id()]);
+    _notification_list(false);
+}
+
+/** Arsip notifikasi: yang sudah disingkirkan dari kotak masuk, tetap bisa dibuka. */
+function notification_archive_index(): void {
+    Auth::requireLogin();
+    _notification_list(true);
+}
+
+function _notification_list(bool $archived): void {
+    $pdo = db();
+    $uid = Auth::id();
+    $cond = $archived ? 'archived_at IS NOT NULL' : 'archived_at IS NULL';
+    $stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? AND $cond ORDER BY created_at DESC LIMIT 100");
+    $stmt->execute([$uid]);
     $notifs = $stmt->fetchAll();
-    layout('main', 'notifications/index', ['title' => 'Notifikasi', 'notifs' => $notifs, 'currentPath' => '/notifications']);
+
+    // Jumlah di tab lawan, supaya pengguna tahu ada isinya tanpa harus membuka.
+    $other = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND "
+        . ($archived ? 'archived_at IS NULL' : 'archived_at IS NOT NULL'));
+    $other->execute([$uid]);
+
+    layout('main', 'notifications/index', [
+        'title'       => $archived ? 'Arsip Notifikasi' : 'Notifikasi',
+        'notifs'      => $notifs,
+        'isArchive'   => $archived,
+        'otherCount'  => (int) $other->fetchColumn(),
+        'currentPath' => '/notifications',
+    ]);
+}
+
+/** Pindahkan satu notifikasi ke arsip (sekaligus ditandai dibaca). */
+function notification_archive(string $id): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    // Selalu dibatasi user_id: seseorang hanya bisa mengarsip notifikasinya sendiri.
+    db()->prepare("UPDATE notifications SET archived_at=NOW(), is_read=1 WHERE id=? AND user_id=? AND archived_at IS NULL")
+        ->execute([(int) $id, Auth::id()]);
+    flash('success', 'Notifikasi dipindahkan ke arsip.');
+    redirect('/notifications');
+}
+
+/** Kembalikan satu notifikasi dari arsip ke kotak masuk. */
+function notification_unarchive(string $id): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    db()->prepare("UPDATE notifications SET archived_at=NULL WHERE id=? AND user_id=? AND archived_at IS NOT NULL")
+        ->execute([(int) $id, Auth::id()]);
+    flash('success', 'Notifikasi dikembalikan ke kotak masuk.');
+    redirect('/notifications/arsip');
+}
+
+/** Arsipkan seluruh isi kotak masuk sekaligus. */
+function notification_archive_all(): void {
+    Auth::requireLogin();
+    Auth::verifyCsrf();
+    $pdo = db();
+    $stmt = $pdo->prepare("UPDATE notifications SET archived_at=NOW(), is_read=1 WHERE user_id=? AND archived_at IS NULL");
+    $stmt->execute([Auth::id()]);
+    $n = $stmt->rowCount();
+    if ($n === 0) flash('error', 'Tidak ada notifikasi di kotak masuk untuk diarsipkan.');
+    else          flash('success', "$n notifikasi dipindahkan ke arsip.");
+    redirect('/notifications');
 }
 function notification_mark_read(string $id): void {
     Auth::requireLogin();
@@ -324,7 +387,8 @@ function notification_mark_read(string $id): void {
 function notification_mark_all_read(): void {
     Auth::requireLogin();
     Auth::verifyCsrf();
-    db()->prepare("UPDATE notifications SET is_read=1 WHERE user_id=?")->execute([Auth::id()]);
+    // Dibatasi ke kotak masuk saja — yang di arsip tidak ikut tersentuh.
+    db()->prepare("UPDATE notifications SET is_read=1 WHERE user_id=? AND archived_at IS NULL")->execute([Auth::id()]);
     flash('success', 'Semua notifikasi ditandai dibaca.');
     redirect('/notifications');
 }
