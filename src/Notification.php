@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/Mailer.php';
+require_once __DIR__ . '/Telegram.php';
 
 class Notification {
     public static function push(int $userId, string $title, string $body = '', ?string $link = null, bool $sendEmail = true): void {
@@ -8,13 +9,28 @@ class Notification {
         $stmt->execute([$userId, $title, $body, $link]);
 
         if ($sendEmail) {
-            $u = db()->prepare("SELECT email,name FROM users WHERE id = ?");
-            $u->execute([$userId]);
-            $user = $u->fetch();
+            // telegram_chat_id mungkin belum ada di DB lama (migrasi berjalan saat
+            // request pertama), jadi pengambilannya tidak boleh mematikan notifikasi.
+            try {
+                $u = db()->prepare("SELECT email, name, telegram_chat_id FROM users WHERE id = ?");
+                $u->execute([$userId]);
+                $user = $u->fetch();
+            } catch (Throwable $e) {
+                $u = db()->prepare("SELECT email, name FROM users WHERE id = ?");
+                $u->execute([$userId]);
+                $user = $u->fetch();
+            }
             if ($user) {
                 $absLink = $link ? (APP_URL . $link) : APP_URL;
                 $html = self::htmlTemplate($title, $body, $absLink);
                 Mailer::send($user['email'], $user['name'], "[SIMANTAP] " . $title, $html);
+
+                // Kanal ketiga: Telegram pribadi user (kalau Chat ID-nya sudah diisi).
+                // Kegagalan hanya dicatat di dalam Telegram::send — tidak pernah
+                // menggagalkan aksi utama yang memicu notifikasi ini.
+                if (!empty($user['telegram_chat_id']) && Telegram::enabled()) {
+                    Telegram::send((string) $user['telegram_chat_id'], $title, $body, $link);
+                }
             }
         }
     }
