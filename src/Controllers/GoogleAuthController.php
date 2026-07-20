@@ -112,6 +112,19 @@ function register_submit(): void
     $res = Google::resolveProfile($profile);
     if ($res['action'] !== 'register') { google_route_profile($res, $profile); return; }
 
+    // Foto profil: jepretan kamera diutamakan, lalu file yang diupload. Bila
+    // keduanya kosong, pakai foto akun Google seperti sebelumnya.
+    $photo = $profile['picture'] ?: null;
+    $cam = handle_photo_from_data_url((string) ($_POST['photo_camera'] ?? ''), null, 'users', 'user');
+    if ($cam['error']) { flash('error', $cam['error']); redirect('/daftar'); }
+    if ($cam['filename']) {
+        $photo = $cam['filename'];
+    } else {
+        $up = handle_photo_upload('photo', null, 'users', 'user');
+        if ($up['error']) { flash('error', $up['error']); redirect('/daftar'); }
+        if ($up['filename']) $photo = $up['filename'];
+    }
+
     $pdo = db();
     try {
         // password_hash NULL = akun ini hanya bisa masuk lewat Google.
@@ -120,7 +133,7 @@ function register_submit(): void
                                VALUES (?,?,?,?,NULL,?,?,?,?,1,'pending')");
         $stmt->execute([
             generate_uuid(), $name, $profile['email'], $profile['sub'],
-            $role, $phone ?: null, $unit ?: null, $profile['picture'] ?: null,
+            $role, $phone ?: null, $unit ?: null, $photo,
         ]);
         $newId = (int) $pdo->lastInsertId();
         unset($_SESSION['google_pending_profile']);

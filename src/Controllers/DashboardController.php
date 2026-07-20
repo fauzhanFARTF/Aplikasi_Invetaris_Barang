@@ -77,6 +77,12 @@ function dashboard_index(): void {
         } catch (Throwable $e) { $opdOut = []; }
     }
 
+    // Alat yang masih dipinjam + penanggung jawab & personel yang dilibatkan.
+    // Peminjam pribadi hanya melihat alat yang dia pegang sendiri.
+    try {
+        $borrowedItems = is_personal_borrower() ? borrowed_items([$uid]) : borrowed_items();
+    } catch (Throwable $e) { $borrowedItems = []; }
+
     // Kartu jadwal tidak ditampilkan untuk Personel Luar (pemohon murni) — peminjamannya
     // bersifat pribadi, jadi tidak perlu melihat agenda seluruh dinas. Query-nya pun
     // dilewati agar datanya tidak ikut terkirim ke halaman.
@@ -126,6 +132,7 @@ function dashboard_index(): void {
         'pastLoans' => $pastLoans,
         'showSchedule' => $showSchedule,
         'opdOut' => $opdOut,
+        'borrowedItems' => $borrowedItems,
         'currentPath' => '/dashboard',
     ]);
 }
