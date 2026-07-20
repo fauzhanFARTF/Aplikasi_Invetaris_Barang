@@ -5,9 +5,14 @@ declare(strict_types=1);
 // hanya meloloskan superadmin). Semua reset = hard delete (termasuk data yang
 // sedang di-soft-delete), dengan urutan yang aman terhadap foreign key.
 
-/** Lepas status alat yang tersangkut peminjaman (Booked/CheckedOut -> Available). */
+/**
+ * Lepas status alat yang tersangkut peminjaman (Booked/CheckedOut/AtOpd -> Available).
+ * 'AtOpd' (Di OPD) ikut karena peminjamannya dihapus — tanpa ini alatnya tersangkut
+ * selamanya dan tidak pernah kembali terhitung Tersedia.
+ * 'Habis' TIDAK ikut: stoknya memang nol, bukan tersangkut peminjaman.
+ */
 function _reset_release_assets(PDO $pdo): void {
-    $pdo->exec("UPDATE assets SET status='Available' WHERE status IN ('Booked','CheckedOut')");
+    $pdo->exec("UPDATE assets SET status='Available' WHERE status IN ('Booked','CheckedOut','AtOpd')");
 }
 
 function reset_loans(): void {

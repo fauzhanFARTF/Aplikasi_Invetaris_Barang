@@ -182,6 +182,22 @@ function run_pending_migrations(PDO $pdo): void {
         if ($liColOpd && strpos($liColOpd['Type'], "'AtOpd'") === false) {
             $pdo->exec("ALTER TABLE loan_items MODIFY COLUMN item_status ENUM('Reserved','CheckedOut','ReturnedGood','ReturnedDamaged','ReturnedLost','InRepair','Restored','AtOpd') NOT NULL DEFAULT 'Reserved'");
         }
+
+        // Pemulihan: alat berstatus 'Di OPD' yang peminjamannya sudah TIDAK ADA lagi
+        // (acaranya dihapus superadmin / kena Reset Peminjaman sebelum perbaikan ini)
+        // tersangkut selamanya — tidak pernah terhitung "Tersedia" lagi dan tidak bisa
+        // dilepas lewat UI karena acaranya hilang. Lepaskan yang benar-benar yatim saja;
+        // yang masih menempel pada peminjaman hidup TIDAK disentuh.
+        $orphanSql = "FROM assets a
+                      WHERE a.status = 'AtOpd' AND a.deleted_at IS NULL
+                        AND NOT EXISTS (SELECT 1 FROM loan_items li
+                                        JOIN loans l ON l.id = li.loan_id AND l.deleted_at IS NULL
+                                        WHERE li.asset_id = a.id AND li.item_status = 'AtOpd')";
+        $orphan = (int) $pdo->query("SELECT COUNT(*) $orphanSql")->fetchColumn();
+        if ($orphan > 0) {
+            $pdo->exec("UPDATE assets a SET a.status = 'Available' " . substr($orphanSql, strlen('FROM assets a')));
+            error_log("[simassta-bmn] $orphan alat 'Di OPD' yatim dikembalikan ke Tersedia.");
+        }
         // Kolom assets.is_consumable (pendekatan lama) dipertahankan bila sudah ada —
         // tidak dipakai lagi, dan menghapus kolom berisiko; dibiarkan sebagai default
         // opsional. Tidak ditambahkan pada instalasi baru.
