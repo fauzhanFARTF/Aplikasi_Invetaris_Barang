@@ -686,10 +686,6 @@ function hidden_user_emails(): array {
     return [
         'superadmin@tangerangkab.go.id',
         'admingudang@tangerangkab.go.id',
-        // Domainnya memang terbalik (kabtangerang, bukan tangerangkab) — ini akun
-        // yang benar-benar ada di server, bukan salah ketik. Versi di atas
-        // dipertahankan: mendaftarkan email yang tidak ada tidak berefek apa pun.
-        'admingudang@kabtangerang.go.id',
         'staffapproval@tangerangkab.go.id',
         'supervisor@tangerangkab.go.id',
         'pemohon@tangerangkab.go.id',
@@ -701,14 +697,17 @@ function hidden_user_emails(): array {
 }
 
 /**
- * Potongan SQL untuk menyembunyikan akun-akun di atas. Kosong bila yang login
- * Super Admin — ia tetap melihat semuanya. $alias = alias tabel users di query
- * pemanggil. Nilainya konstanta di kode, bukan input user.
+ * Potongan SQL untuk menyembunyikan akun-akun di atas, DITAMBAH seluruh akun
+ * berdomain @kabtangerang.go.id (domainnya memang terbalik — kabtangerang,
+ * bukan tangerangkab — ini akun-akun yang benar-benar ada di server, bukan
+ * salah ketik). Kosong bila yang login Super Admin — ia tetap melihat semuanya.
+ * $alias = alias tabel users di query pemanggil. Nilainya konstanta di kode,
+ * bukan input user.
  */
 function hidden_users_sql(string $alias = 'u'): string {
     if (Auth::hasRole('superadmin')) return '';
     $list = implode(',', array_map(fn ($e) => db()->quote($e), hidden_user_emails()));
-    return " AND $alias.email NOT IN ($list)";
+    return " AND $alias.email NOT IN ($list) AND $alias.email NOT LIKE '%@kabtangerang.go.id'";
 }
 
 /**
