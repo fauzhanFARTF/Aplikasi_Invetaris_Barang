@@ -88,6 +88,7 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
             </a>
             <?php if (role_is('admin')): ?>
                 <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i><span>Riwayat Terhapus</span></a>
+                <a href="<?= BASE_PATH ?>/notifications/log" class="nav-item <?= active('/notifications/log', $currentPath) ?>" data-testid="nav-notif-log"><i class="fa-solid fa-list-check"></i><span>Log Notifikasi</span></a>
             <?php endif; ?>
         <?php endif; ?>
 
