@@ -122,10 +122,13 @@ function checkin_scan_submit(): void {
         $pdo->prepare("UPDATE assets SET status=? WHERE id=?")->execute([$assetStatus, $item['asset_id']]);
 
         $repairId = null;
+        $repairUuid = null;
+        $repairCode = null;
         if ($condition === 'Damaged') {
-            $code = generate_code('RP', 'repairs', 'repair_code');
+            $repairCode = generate_code('RP', 'repairs', 'repair_code');
+            $repairUuid = generate_uuid();
             $r = $pdo->prepare("INSERT INTO repairs (uuid, repair_code, asset_id, loan_item_id, complaint, status, created_by) VALUES (?,?,?,?,?, 'Open', ?)");
-            $r->execute([generate_uuid(), $code, $item['asset_id'], $item['id'], $note, Auth::id()]);
+            $r->execute([$repairUuid, $repairCode, $item['asset_id'], $item['id'], $note, Auth::id()]);
             $repairId = (int)$pdo->lastInsertId();
             $pdo->prepare("UPDATE loan_items SET item_status='InRepair' WHERE id=?")->execute([$item['id']]);
         }
@@ -151,6 +154,10 @@ function checkin_scan_submit(): void {
             Notification::pushToRole('admin', 'Alat Dilaporkan Hilang', $lostMsg, "/inventory");
             Notification::pushToRole('admin_gudang', 'Alat Dilaporkan Hilang', $lostMsg, "/inventory");
             $message = "Hilang: {$item['asset_name']} — nilai perolehan " . fmt_rupiah($item['purchase_price']) . ", nilai sekarang " . fmt_rupiah($item['current_value']);
+        }
+        if ($condition === 'Damaged') {
+            $damagedMsg = "{$item['asset_name']} ({$item['bmn_number']}) dilaporkan rusak saat pengembalian. Tiket perbaikan $repairCode dibuat.";
+            Notification::pushToRole('admin_gudang', 'Tiket Perbaikan Baru', $damagedMsg, "/repairs/$repairUuid");
         }
 
         json_response([
