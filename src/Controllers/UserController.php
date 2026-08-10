@@ -333,7 +333,7 @@ function notification_archive_index(): void {
  * karena hasil pengiriman per-pesan tidak disimpan (lihat Telegram::send()).
  */
 function notification_log_index(): void {
-    Auth::requireRole('admin');
+    Auth::requireRole('admin', 'pimpinan');
     $pdo = db();
     $notifs = $pdo->query("SELECT n.*, u.name AS user_name, u.role AS user_role, u.telegram_chat_id
                            FROM notifications n JOIN users u ON u.id = n.user_id

@@ -3,7 +3,7 @@ declare(strict_types=1);
 // Alur pengembalian — pindai saat alat dikembalikan, tandai kondisi Baik / Rusak
 
 function checkin_index(): void {
-    Auth::requireRole('admin_gudang', 'admin');
+    Auth::requireRole('admin_gudang', 'admin', 'pimpinan');
     $pdo = db();
     $loans = $pdo->query("SELECT l.*, u.name AS requester_name,
                             (SELECT COUNT(*) FROM loan_items li WHERE li.loan_id = l.id) AS total_items,

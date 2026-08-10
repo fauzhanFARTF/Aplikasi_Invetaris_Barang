@@ -53,16 +53,18 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
         <a href="<?= BASE_PATH ?>/dashboard" class="nav-item <?= active('/dashboard', $currentPath) ?>" data-testid="nav-dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
         <a href="<?= BASE_PATH ?>/loans" class="nav-item <?= active('/loans', $currentPath) ?>" data-testid="nav-loans"><i class="fa-solid fa-clipboard-list"></i><span>Peminjaman</span></a>
 
-        <?php if (role_is('supervisor','admin')): ?>
+        <?php if (role_is('supervisor','admin','pimpinan')): ?>
             <a href="<?= BASE_PATH ?>/approvals" class="nav-item <?= active('/approvals', $currentPath) ?>" data-testid="nav-approvals"><i class="fa-solid fa-check-double"></i><span>Approval</span></a>
         <?php endif; ?>
 
-        <?php if (role_is('admin_gudang','admin')): ?>
+        <?php if (role_is('admin_gudang','admin','pimpinan')): ?>
             <div class="nav-section">Gudang</div>
             <a href="<?= BASE_PATH ?>/checkout" class="nav-item <?= active('/checkout', $currentPath) ?>" data-testid="nav-checkout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Penyerahan</span></a>
             <a href="<?= BASE_PATH ?>/checkin" class="nav-item <?= active('/checkin', $currentPath) ?>" data-testid="nav-checkin"><i class="fa-solid fa-arrow-right-to-bracket"></i><span>Pengembalian</span></a>
-            <a href="<?= BASE_PATH ?>/opd-items" class="nav-item <?= active('/opd-items', $currentPath) ?>" data-testid="nav-opd-items"><i class="fa-solid fa-building-columns"></i><span>Barang di OPD</span></a>
-            <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i><span>Perbaikan</span></a>
+            <?php if (role_is('admin_gudang','admin')): ?>
+                <a href="<?= BASE_PATH ?>/opd-items" class="nav-item <?= active('/opd-items', $currentPath) ?>" data-testid="nav-opd-items"><i class="fa-solid fa-building-columns"></i><span>Barang di OPD</span></a>
+                <a href="<?= BASE_PATH ?>/repairs" class="nav-item <?= active('/repairs', $currentPath) ?>" data-testid="nav-repairs"><i class="fa-solid fa-screwdriver-wrench"></i><span>Perbaikan</span></a>
+            <?php endif; ?>
         <?php endif; ?>
 
         <?php if (role_is('admin_gudang','admin','supervisor','administrator_pembantu_manajemen_alat','administrator_pembantu_manajemen_kategori','pimpinan')): ?>
@@ -88,8 +90,12 @@ $unread = $user ? Notification::unreadCount((int)$user['id']) : 0;
             </a>
             <?php if (role_is('admin')): ?>
                 <a href="<?= BASE_PATH ?>/trash" class="nav-item <?= active('/trash', $currentPath) ?>" data-testid="nav-trash"><i class="fa-solid fa-trash-can"></i><span>Riwayat Terhapus</span></a>
-                <a href="<?= BASE_PATH ?>/notifications/log" class="nav-item <?= active('/notifications/log', $currentPath) ?>" data-testid="nav-notif-log"><i class="fa-solid fa-list-check"></i><span>Log Notifikasi</span></a>
             <?php endif; ?>
+        <?php endif; ?>
+
+        <?php if (role_is('admin','pimpinan')): ?>
+            <div class="nav-section">Notifikasi</div>
+            <a href="<?= BASE_PATH ?>/notifications/log" class="nav-item <?= active('/notifications/log', $currentPath) ?>" data-testid="nav-notif-log"><i class="fa-solid fa-list-check"></i><span>Log Notifikasi</span></a>
         <?php endif; ?>
 
         <div class="nav-section">Akun</div>

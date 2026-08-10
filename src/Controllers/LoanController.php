@@ -507,7 +507,7 @@ function loan_delete_all(): void {
 // ============ APPROVALS =============
 
 function approval_index(): void {
-    Auth::requireRole('supervisor', 'admin');
+    Auth::requireRole('supervisor', 'admin', 'pimpinan');
     $pdo = db();
     $pending = $pdo->query("SELECT l.*, u.name AS requester_name, u.unit_kerja AS requester_unit
                             FROM loans l JOIN users u ON u.id = l.requester_id
