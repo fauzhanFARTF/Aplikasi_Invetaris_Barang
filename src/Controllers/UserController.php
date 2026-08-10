@@ -322,6 +322,30 @@ function notification_archive_index(): void {
     _notification_list(true);
 }
 
+/**
+ * Log notifikasi lintas-user — KHUSUS admin/superadmin. Beda dari kotak masuk
+ * pribadi di atas (yang selalu dibatasi ke user login sendiri), di sini SEMUA
+ * notifikasi ke SELURUH user terlihat — approval oleh Staff Approval, tiket ke
+ * Admin Gudang, peminjaman ke pemohon, dst — supaya admin bisa memantau apakah
+ * suatu kejadian benar-benar terkirim, baik ke Kotak Masuk web maupun Telegram.
+ * "Terkirim ke Telegram" di sini berarti Chat ID penerima sudah terisi saat
+ * notifikasi dibuat (kanal itu dicoba) — bukan konfirmasi Telegram menerimanya,
+ * karena hasil pengiriman per-pesan tidak disimpan (lihat Telegram::send()).
+ */
+function notification_log_index(): void {
+    Auth::requireRole('admin');
+    $pdo = db();
+    $notifs = $pdo->query("SELECT n.*, u.name AS user_name, u.role AS user_role, u.telegram_chat_id
+                           FROM notifications n JOIN users u ON u.id = n.user_id
+                           ORDER BY n.created_at DESC LIMIT 300")->fetchAll();
+
+    layout('main', 'notifications/log', [
+        'title'       => 'Log Notifikasi',
+        'notifs'      => $notifs,
+        'currentPath' => '/notifications/log',
+    ]);
+}
+
 function _notification_list(bool $archived): void {
     $pdo = db();
     $uid = Auth::id();
