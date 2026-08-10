@@ -101,9 +101,13 @@ function reset_repairs(): void {
     $pdo = db();
     try {
         $n = (int) $pdo->query("SELECT COUNT(*) FROM repairs")->fetchColumn();
+        // Alat yang statusnya Damaged karena tiket-tiket ini harus dilepas balik ke
+        // Available — tanpa ini kartu "Dalam Perbaikan" di dashboard tidak akan
+        // pernah kembali ke 0 walau seluruh riwayat perbaikan sudah dihapus.
+        $pdo->exec("UPDATE assets SET status='Available' WHERE status='Damaged'");
         $pdo->exec("DELETE FROM repairs");
         log_audit('reset.repairs', 'repair', null, ['count' => $n]);
-        flash('success', "Reset perbaikan: $n catatan perbaikan dihapus permanen.");
+        flash('success', "Reset perbaikan: $n catatan perbaikan dihapus permanen. Status alat rusak dikembalikan ke Tersedia.");
     } catch (Throwable $e) { flash('error', 'Gagal reset: ' . $e->getMessage()); }
     redirect('/repairs');
 }
