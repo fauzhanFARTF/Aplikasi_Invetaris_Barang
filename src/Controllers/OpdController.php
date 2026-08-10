@@ -72,10 +72,13 @@ function opd_item_return(string $itemId): void {
             ->execute([$itemStatus, Auth::id(), $condition, $note ?: null, $itemId]);
         $pdo->prepare("UPDATE assets SET status=? WHERE id=?")->execute([$assetStatus, $item['asset_id']]);
 
+        $repairUuid = null;
+        $repairCode = null;
         if ($condition === 'Damaged') {
-            $code = generate_code('RP', 'repairs', 'repair_code');
+            $repairCode = generate_code('RP', 'repairs', 'repair_code');
+            $repairUuid = generate_uuid();
             $pdo->prepare("INSERT INTO repairs (uuid, repair_code, asset_id, loan_item_id, complaint, status, created_by) VALUES (?,?,?,?,?, 'Open', ?)")
-                ->execute([generate_uuid(), $code, $item['asset_id'], $itemId, $note, Auth::id()]);
+                ->execute([$repairUuid, $repairCode, $item['asset_id'], $itemId, $note, Auth::id()]);
             $pdo->prepare("UPDATE loan_items SET item_status='InRepair' WHERE id=?")->execute([$itemId]);
         }
 
@@ -92,6 +95,10 @@ function opd_item_return(string $itemId): void {
             $msg = "{$item['asset_name']} ({$item['bmn_number']}) dari OPD dilaporkan hilang.";
             Notification::pushToRole('admin', 'Barang OPD Hilang', $msg, '/inventory');
             Notification::pushToRole('admin_gudang', 'Barang OPD Hilang', $msg, '/inventory');
+        }
+        if ($condition === 'Damaged') {
+            $damagedMsg = "{$item['asset_name']} ({$item['bmn_number']}) dari OPD dilaporkan rusak. Tiket perbaikan $repairCode dibuat.";
+            Notification::pushToRole('admin_gudang', 'Tiket Perbaikan Baru (OPD)', $damagedMsg, "/repairs/$repairUuid");
         }
         $label = $condition === 'Good' ? 'ditarik (kondisi baik)' : ($condition === 'Damaged' ? 'ditarik karena rusak dan masuk perbaikan' : 'dilaporkan hilang');
         flash('success', "{$item['asset_name']} $label.");
