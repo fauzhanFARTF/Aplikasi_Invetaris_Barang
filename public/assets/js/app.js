@@ -6,6 +6,19 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => el.remove(), 4600);
     });
 
+    // Toggle lihat/sembunyi password — <button data-toggle-password="idInputPassword">
+    document.querySelectorAll('[data-toggle-password]').forEach(btn => {
+        const input = document.getElementById(btn.getAttribute('data-toggle-password'));
+        const icon = btn.querySelector('i');
+        if (!input) return;
+        btn.addEventListener('click', () => {
+            const showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            if (icon) icon.className = showing ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+            btn.setAttribute('aria-label', showing ? 'Tampilkan password' : 'Sembunyikan password');
+        });
+    });
+
     // Mobile sidebar toggle
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
