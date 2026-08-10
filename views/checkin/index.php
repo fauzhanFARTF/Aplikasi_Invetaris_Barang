@@ -21,7 +21,7 @@
                     <td class="small"><?= fmt_date($l['start_date']) ?> — <?= fmt_date($l['end_date']) ?></td>
                     <td class="small"><span class="fw-bold"><?= (int)$l['in_items'] ?></span> / <?= (int)$l['total_items'] ?> alat</td>
                     <td><?= status_badge($l['status']) ?></td>
-                    <td><a href="<?= BASE_PATH ?>/checkin/<?= e($l["uuid"]) ?>" class="btn btn-sm btn-amber" data-testid="btn-scan-in-<?= (int)$l['id'] ?>"><i class="fa-solid fa-barcode"></i> Scan</a></td>
+                    <td><?php if (role_is('admin_gudang','admin')): ?><a href="<?= BASE_PATH ?>/checkin/<?= e($l["uuid"]) ?>" class="btn btn-sm btn-amber" data-testid="btn-scan-in-<?= (int)$l['id'] ?>"><i class="fa-solid fa-barcode"></i> Scan</a><?php endif; ?></td>
                 </tr>
             <?php endforeach; if (empty($loans)): ?>
                 <tr><td colspan="7" class="text-center text-slate py-4">Tidak ada peminjaman yang menunggu pengembalian.</td></tr>
