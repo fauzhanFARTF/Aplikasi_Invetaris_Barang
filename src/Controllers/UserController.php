@@ -22,6 +22,9 @@ function user_create_post(): void {
     if (!$d['name'] || !$d['email'] || !$d['role'] || empty($_POST['password'])) {
         flash('error', 'Nama, email, role, dan password wajib.'); redirect('/users/create');
     }
+    if ($_POST['password'] !== ($_POST['password_confirmation'] ?? '')) {
+        flash('error', 'Konfirmasi password tidak cocok.'); redirect('/users/create');
+    }
     if (!_user_role_assignable($d['role'])) {
         flash('error', 'Role tidak valid / tidak berwenang memberikan role tersebut.'); redirect('/users/create');
     }
@@ -67,6 +70,10 @@ function user_edit_post(string $uuid): void {
     $id = uuid_to_id_or_404('users', $uuid);
     _user_guard_target((int)$id);
     $d = _user_capture();
+    if (!empty($_POST['password']) && $_POST['password'] !== ($_POST['password_confirmation'] ?? '')) {
+        flash('error', 'Konfirmasi password tidak cocok.');
+        redirect('/users/' . $uuid . '/edit');
+    }
     if (!_user_role_assignable($d['role'])) {
         flash('error', 'Role tidak valid / tidak berwenang memberikan role tersebut.');
         redirect('/users/' . $uuid . '/edit');

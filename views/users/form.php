@@ -87,7 +87,21 @@
             </div>
             <div class="col-md-6">
                 <label class="form-label">Password <?= $isEdit ? '(kosongkan jika tidak diubah)' : '*' ?></label>
-                <input type="password" name="password" class="form-control" <?= $isEdit ? '' : 'required' ?> data-testid="input-password">
+                <div class="input-group">
+                    <input type="password" name="password" id="userPassword" class="form-control" <?= $isEdit ? '' : 'required' ?> data-testid="input-password">
+                    <button type="button" class="input-group-text" data-toggle-password="userPassword" aria-label="Tampilkan password" style="cursor:pointer;">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Konfirmasi Password <?= $isEdit ? '' : '*' ?></label>
+                <div class="input-group">
+                    <input type="password" name="password_confirmation" id="userPasswordConfirm" class="form-control" <?= $isEdit ? '' : 'required' ?> data-testid="input-password-confirm">
+                    <button type="button" class="input-group-text" data-toggle-password="userPasswordConfirm" aria-label="Tampilkan password" style="cursor:pointer;">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
