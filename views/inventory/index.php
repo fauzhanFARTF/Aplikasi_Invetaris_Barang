@@ -1,8 +1,14 @@
-<?php $user = Auth::user(); ?>
+<?php $user = Auth::user(); $pimpinanOnly = $pimpinanOnly ?? false; ?>
 <div class="page-header">
     <div>
         <h1>Manajemen Alat / Aset</h1>
-        <p class="subtitle">Inventaris aset streaming BMN — total <?= count($assets) ?> item ditampilkan.</p>
+        <p class="subtitle">
+            <?php if ($pimpinanOnly): ?>
+                Alat yang sedang dipinjam — total <?= count($assets) ?> item ditampilkan.
+            <?php else: ?>
+                Inventaris aset streaming BMN — total <?= count($assets) ?> item ditampilkan.
+            <?php endif; ?>
+        </p>
     </div>
     <?php if (role_is('admin_gudang','admin','administrator_pembantu_manajemen_alat')): ?>
         <div class="d-flex gap-2">
@@ -33,6 +39,7 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <?php if (!$pimpinanOnly): ?>
         <div class="col-md-4">
             <select class="form-select" data-ls-filter="status" data-testid="filter-status">
                 <option value="">— Semua Status —</option>
@@ -41,6 +48,7 @@
                 <?php endforeach; ?>
             </select>
         </div>
+        <?php endif; ?>
     </div>
 
     <div class="table-responsive">

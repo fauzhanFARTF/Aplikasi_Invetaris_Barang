@@ -3,7 +3,7 @@ declare(strict_types=1);
 // Alur penyerahan — Admin Gudang memindai barcode untuk menyerahkan aset
 
 function checkout_index(): void {
-    Auth::requireRole('admin_gudang', 'admin');
+    Auth::requireRole('admin_gudang', 'admin', 'pimpinan');
     $pdo = db();
     $today = date('Y-m-d');
     $loans = $pdo->prepare("SELECT l.*, u.name AS requester_name,

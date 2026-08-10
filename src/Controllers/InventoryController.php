@@ -9,6 +9,13 @@ function inventory_index(): void {
     $status = $_GET['status'] ?? '';
     $categoryId = (int) ($_GET['category_id'] ?? 0);
 
+    // Pimpinan: peran pengawas, bukan pengelola gudang — dibatasi hanya melihat
+    // alat yang SEDANG dipinjam (CheckedOut), bukan seluruh katalog aset. Filter
+    // status dari query string diabaikan supaya batasan ini tidak bisa dilewati.
+    $pimpinanOnly = Auth::hasRole('pimpinan')
+        && !Auth::hasRole('superadmin', 'admin', 'admin_gudang', 'administrator_pembantu_manajemen_alat');
+    if ($pimpinanOnly) $status = 'CheckedOut';
+
     $where = ["a.deleted_at IS NULL"];
     $params = [];
     if ($q) { $where[] = "(a.name LIKE ? OR a.bmn_number LIKE ? OR a.asset_code LIKE ?)"; $params[] = "%$q%"; $params[] = "%$q%"; $params[] = "%$q%"; }
@@ -30,6 +37,7 @@ function inventory_index(): void {
         'q' => $q,
         'currentStatus' => $status,
         'currentCategoryId' => $categoryId,
+        'pimpinanOnly' => $pimpinanOnly,
         'currentPath' => '/inventory',
     ]);
 }
