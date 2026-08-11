@@ -11,12 +11,12 @@
         <div>Pendaftar <strong>belum bisa masuk</strong> sampai Anda menyetujui. Setelah disetujui, yang bersangkutan masuk lewat tombol <strong>Masuk dengan Google</strong> — mereka tidak punya password. Pendaftar yang ditolak tidak bisa masuk dan tidak bisa mendaftar ulang dengan akun Google yang sama.</div>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive" data-livetable>
         <table class="table table-sb align-middle" data-testid="registrations-table">
             <thead><tr><th></th><th>Nama</th><th>Email</th><th>Role Diminta</th><th>Unit Kerja</th><th>Telepon</th><th>Mendaftar</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($rows as $u): $photoUrl = user_avatar_url($u['photo'] ?? null); ?>
-                <tr data-testid="reg-row-<?= (int)$u['id'] ?>">
+                <tr data-ls-row data-testid="reg-row-<?= (int)$u['id'] ?>">
                     <td>
                         <?php if ($photoUrl): ?>
                             <img src="<?= e($photoUrl) ?>" alt="Foto <?= e($u['name']) ?>" style="width:36px;height:36px;object-fit:cover;border-radius:50%;border:1px solid #E2E8F0;">

@@ -54,7 +54,7 @@
                         <option value="<?= (int)$c['id'] ?>" data-prefix="<?= e($c['code_prefix'] ?? '') ?>" <?= ($asset['category_id'] ?? 0) == $c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?><?= !empty($c['code_prefix']) ? ' ('.e($c['code_prefix']).')' : '' ?></option>
                     <?php endforeach; ?>
                 </select>
-                <?php if (!$isEdit): ?><div class="form-text">Kode Aset & No. BMD dibuat otomatis dari kode singkatan kategori.</div><?php endif; ?>
+                <?php if (!$isEdit): ?><div class="form-text">Kode Aset & No. DISKOMINFO dibuat otomatis dari kode singkatan kategori.</div><?php endif; ?>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Kode Aset <?= $isEdit ? '*' : '' ?></label>
@@ -72,7 +72,7 @@
             <?php if ($isEdit): ?>
             <div class="col-md-4">
                 <label class="form-label">Nilai QR Code</label>
-                <input type="text" name="barcode" class="form-control" value="<?= e($asset['barcode'] ?? '') ?>" placeholder="Kosongkan → sama dengan No. BMD" data-testid="input-barcode">
+                <input type="text" name="barcode" class="form-control" value="<?= e($asset['barcode'] ?? '') ?>" placeholder="Kosongkan → sama dengan No. DISKOMINFO" data-testid="input-barcode">
             </div>
             <?php endif; ?>
             <div class="col-md-<?= $isEdit ? '8' : '12' ?>">
@@ -199,7 +199,7 @@
 </script>
 <?php if (!$isEdit): ?>
 <script>
-    // Isi otomatis Kode Aset & No. BMD dari kode singkatan kategori terpilih.
+    // Isi otomatis Kode Aset & No. DISKOMINFO dari kode singkatan kategori terpilih.
     (function () {
         var sel = document.getElementById('categorySelect');
         var codeF = document.getElementById('assetCodeField');
