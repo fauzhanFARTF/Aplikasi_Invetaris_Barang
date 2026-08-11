@@ -120,12 +120,17 @@ const stockMap = {};
 <?php foreach ($items as $it): if (!empty($it['unit'])): ?>
 stockMap["<?= e(strtoupper((string)$it['barcode'])) ?>"] = { unit: "<?= e($it['unit']) ?>", qty: <?= (float)$it['qty_current'] ?> };
 <?php endif; endforeach; ?>
-// Barcode bisa berupa awalan BMN- atau BMD-; cek keduanya.
+// Barcode bisa berupa awalan lama BMN-/BMD- maupun yang baru DISKOMINFO-; cek semua.
 function stockInfo(code) {
     const c = (code || '').trim().toUpperCase();
     if (stockMap[c]) return stockMap[c];
-    if (c.startsWith('BMN-')) return stockMap['BMD-' + c.slice(4)] || null;
-    if (c.startsWith('BMD-')) return stockMap['BMN-' + c.slice(4)] || null;
+    const prefixes = ['BMN-', 'BMD-', 'DISKOMINFO-'];
+    const hit = prefixes.find(p => c.startsWith(p));
+    if (!hit) return null;
+    const rest = c.slice(hit.length);
+    for (const p of prefixes) {
+        if (p !== hit && stockMap[p + rest]) return stockMap[p + rest];
+    }
     return null;
 }
 let pendingStock = null; // {code, info} menunggu input sisa

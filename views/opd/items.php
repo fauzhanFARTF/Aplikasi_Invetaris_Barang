@@ -32,7 +32,7 @@
                         <div class="text-slate small text-mono"><?= e($r['loan_code']) ?></div>
                     </td>
                     <td><?= e($r['asset_name']) ?></td>
-                    <td class="text-mono small"><?= e($r['asset_code']) ?><?php if (!empty($r['bmn_number'])): ?><div class="text-slate">No. BMD: <?= e($r['bmn_number']) ?></div><?php endif; ?></td>
+                    <td class="text-mono small"><?= e($r['asset_code']) ?><?php if (!empty($r['bmn_number'])): ?><div class="text-slate">No. DISKOMINFO: <?= e($r['bmn_number']) ?></div><?php endif; ?></td>
                     <td class="small">
                         <?= $model !== '' ? e($model) : '<span class="text-slate">—</span>' ?>
                         <?php if (!empty($r['serial_number'])): ?><div class="text-slate text-mono">SN: <?= e($r['serial_number']) ?></div><?php endif; ?>
