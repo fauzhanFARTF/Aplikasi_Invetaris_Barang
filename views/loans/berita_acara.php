@@ -66,7 +66,7 @@
     </table>
 
     <table class="items">
-        <thead><tr><th style="width:32px;">No</th><th>Nama Alat</th><th>Kode Aset</th><th>No. BMD</th><th>Brand / Model</th><th>Serial Number</th></tr></thead>
+        <thead><tr><th style="width:32px;">No</th><th>Nama Alat</th><th>Kode Aset</th><th>No. DISKOMINFO</th><th>Brand / Model</th><th>Serial Number</th></tr></thead>
         <tbody>
             <?php foreach ($items as $i => $it): ?>
                 <tr>
