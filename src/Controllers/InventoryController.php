@@ -79,9 +79,9 @@ function inventory_create_post(): void {
         flash('error', 'Nama alat wajib diisi.');
         redirect('/inventory/create');
     }
-    // Kode Aset & No. BMD dibuat otomatis dari kode singkatan kategori.
+    // Kode Aset & No. DISKOMINFO dibuat otomatis dari kode singkatan kategori.
     if (!$data['category_id']) {
-        flash('error', 'Kategori wajib dipilih (Kode Aset & No. BMD dibuat dari kode singkatan kategori).');
+        flash('error', 'Kategori wajib dipilih (Kode Aset & No. DISKOMINFO dibuat dari kode singkatan kategori).');
         redirect('/inventory/create');
     }
     if (!next_asset_code((int)$data['category_id'])) {

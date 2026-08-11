@@ -109,8 +109,8 @@ function generate_code(string $prefix, string $table, string $col = 'loan_code')
  * Mengembalikan null kalau tidak ada foto.
  */
 /**
- * Buat Kode Aset & No. BMD otomatis dari kode singkatan kategori.
- * Contoh: prefix CAMVIDEO -> asset_code "CAMVIDEO-001", bmd "BMD-2026-CAMVIDEO-001".
+ * Buat Kode Aset & No. DISKOMINFO otomatis dari kode singkatan kategori.
+ * Contoh: prefix CAMVIDEO -> asset_code "CAMVIDEO-001", nomor "DISKOMINFO-2026-CAMVIDEO-001".
  * Nomor urut = angka tertinggi yang sudah ada untuk prefix tsb + 1 (menghindari
  * tabrakan meski ada aset yang terhapus). Mengembalikan null jika kategori tidak
  * punya kode singkatan.
@@ -136,23 +136,31 @@ function next_asset_code(int $categoryId): ?array {
         'prefix'     => $prefix,
         'seq'        => $seq,
         'asset_code' => "$prefix-$pad",
-        'bmn_number' => 'BMD-' . date('Y') . "-$prefix-$pad",
+        'bmn_number' => 'DISKOMINFO-' . date('Y') . "-$prefix-$pad",
     ];
 }
 
 /**
- * Cocokkan hasil pindai QR dengan alat, menerima awalan BMN- maupun BMD-.
+ * Cocokkan hasil pindai QR dengan alat, menerima awalan lama BMN-/BMD- maupun
+ * yang baru DISKOMINFO-.
  *
- * Nomor BMN sudah diganti jadi BMD, tapi stiker QR yang terlanjur tertempel di
- * alat masih berisi "BMN-...". Tanpa toleransi ini, seluruh stiker lama mati dan
- * penyerahan/pengembalian di lapangan gagal. Mengembalikan daftar kandidat yang
- * dicoba berurutan.
+ * Nomor sempat BMN -> BMD, sekarang BMD -> DISKOMINFO, tapi stiker QR yang
+ * terlanjur tertempel di alat masih berisi format lama. Tanpa toleransi ini,
+ * seluruh stiker lama mati dan penyerahan/pengembalian di lapangan gagal.
+ * Mengembalikan daftar kandidat yang dicoba berurutan.
  */
 function barcode_candidates(string $scanned): array {
     $scanned = trim($scanned);
     $out = [$scanned];
-    if (stripos($scanned, 'BMN-') === 0) $out[] = 'BMD-' . substr($scanned, 4);
-    elseif (stripos($scanned, 'BMD-') === 0) $out[] = 'BMN-' . substr($scanned, 4);
+    $prefixes = ['BMN-', 'BMD-', 'DISKOMINFO-'];
+    foreach ($prefixes as $p) {
+        if (stripos($scanned, $p) !== 0) continue;
+        $rest = substr($scanned, strlen($p));
+        foreach ($prefixes as $other) {
+            if ($other !== $p) $out[] = $other . $rest;
+        }
+        break;
+    }
     return $out;
 }
 
