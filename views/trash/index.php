@@ -5,14 +5,14 @@
     </div>
 </div>
 
-<div class="card-sb">
+<div class="card-sb" data-livetable>
     <div class="card-title">Data Terhapus</div>
     <div class="table-responsive">
         <table class="table table-sb align-middle" data-testid="trash-table">
             <thead><tr><th>Jenis Data</th><th>Nama / Kode</th><th>Dihapus oleh</th><th>Tanggal Dihapus</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($rows as $r): ?>
-                <tr data-testid="trash-row-<?= e($r['type']) ?>-<?= $r['id'] ?>">
+                <tr data-ls-row data-testid="trash-row-<?= e($r['type']) ?>-<?= $r['id'] ?>">
                     <td><span class="badge bg-secondary"><?= e($r['type_label']) ?></span></td>
                     <td><strong><?= e($r['label']) ?></strong></td>
                     <td class="small text-slate"><?= e($r['deleted_by_name'] ?? '—') ?></td>
@@ -39,7 +39,7 @@
     </div>
 </div>
 
-<div class="card-sb mt-3">
+<div class="card-sb mt-3" data-livetable>
     <div class="card-title">Riwayat Pemulihan</div>
     <p class="text-slate small">Data yang pernah dihapus lalu dipulihkan kembali — supaya tetap terlihat siapa yang menghapus dan siapa yang memulihkannya.</p>
     <div class="table-responsive">
@@ -47,7 +47,7 @@
             <thead><tr><th>Jenis Data</th><th>Nama / Kode</th><th>Dihapus oleh</th><th>Dipulihkan oleh</th><th>Tanggal Dipulihkan</th></tr></thead>
             <tbody>
             <?php foreach ($restoredRows as $r): ?>
-                <tr data-testid="restored-row-<?= e($r['type']) ?>-<?= $r['id'] ?>">
+                <tr data-ls-row data-testid="restored-row-<?= e($r['type']) ?>-<?= $r['id'] ?>">
                     <td><span class="badge bg-secondary"><?= e($r['type_label']) ?></span></td>
                     <td><strong><?= e($r['label']) ?></strong></td>
                     <td class="small text-slate"><?= e($r['deleted_by_name'] ?? '—') ?></td>
